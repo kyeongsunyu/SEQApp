@@ -1118,7 +1118,7 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 	// THREAD_SocketServer.cpp
 	static UINT SERVER_SOCKET_Thread(void* pArg);
-	static void ClientVisionConn(void* arg);
+	static DWORD WINAPI ClientVisionConn(LPVOID arg);
 	static void ProcessVisionRxData(VISION_PROTOCOL_DATA VisionData);
 	static void SendVision(int CameraNo, VISION_TX_DATA VisionData);
 	size_t SERVER_SEND_MSG_ALL(char* sendmsg, char* format, ...);

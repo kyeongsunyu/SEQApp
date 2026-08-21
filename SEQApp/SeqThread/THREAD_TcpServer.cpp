@@ -120,7 +120,7 @@ UINT CSeqMain::SERVER_SOCKET_Thread(void* pArg)
 
 //		if (!strcmp(inet_ntoa(clntAddr.sin_addr), "10.10.1.40")) {
 			VisionSocket = clntSock;
-			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ClientVisionConn, (LPVOID)p_ThrArg, 0, &dwThreadID);
+			hThread = CreateThread(NULL, 0, ClientVisionConn, (LPVOID)p_ThrArg, 0, &dwThreadID);
 //		}
 		
 		if (hThread == nullptr) {
@@ -141,7 +141,7 @@ UINT CSeqMain::SERVER_SOCKET_Thread(void* pArg)
 
 
 //////////////////////////////////////////////////////////////////////////
-void CSeqMain::ClientVisionConn(void* arg)
+DWORD WINAPI CSeqMain::ClientVisionConn(LPVOID arg)
 {
 	THRARG* p_arg = (THRARG*)arg;
 	char clntIP[16];
@@ -238,6 +238,8 @@ void CSeqMain::ClientVisionConn(void* arg)
 	}
 	closesocket(clientSock);
 	shutdown(clientSock, SD_BOTH);
+
+	return 0;
 }
 //////////////////////////////////////////////////////////////////////////
 void CSeqMain::ProcessVisionRxData(VISION_PROTOCOL_DATA VisionData)
