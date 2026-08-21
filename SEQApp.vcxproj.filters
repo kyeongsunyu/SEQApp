@@ -1,0 +1,338 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Comm">
+      <UniqueIdentifier>{f2f617ca-2f21-4251-aeee-83da8597aa3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Func">
+      <UniqueIdentifier>{48744f2a-bd7d-4f60-929a-6196375ee1c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hardware">
+      <UniqueIdentifier>{89844a9b-f006-4eee-a1e4-14f238be1336}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeqMain">
+      <UniqueIdentifier>{6d6aae92-9f2a-4dd5-88fc-7245177d4d5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools">
+      <UniqueIdentifier>{69194b18-ad4b-4bcf-b0c3-f49bc3d205fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeqMain\Define">
+      <UniqueIdentifier>{3f25a8c0-c31d-452b-bcb3-c0f695d1ce52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\TinyXML">
+      <UniqueIdentifier>{daa7a7df-f574-4097-8f22-69d169f68bb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeqThread">
+      <UniqueIdentifier>{dd1ba70b-dfdf-4ca0-8f45-125910fddfb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools\Spline">
+      <UniqueIdentifier>{740cc5ce-ce53-4322-bfbf-7e4d7feb4ec4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SEQApp\Comm\CLASS_ComPacket.h">
+      <Filter>Comm</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Comm\CLASS_Serial.h">
+      <Filter>Comm</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Comm\CLASS_TcpClient.h">
+      <Filter>Comm</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Func\CLASS_IOError.h">
+      <Filter>Func</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Func\CLASS_OnePulse.h">
+      <Filter>Func</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Func\CLASS_TIMER.h">
+      <Filter>Func</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Func\SharedMemBase.h">
+      <Filter>Func</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Hardware\CLASS_AjinIO.h">
+      <Filter>Hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Hardware\CLASS_AjinMotor.h">
+      <Filter>Hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_Bit.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_Data.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_DM.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_ErrorCode.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_IO.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_Macro.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_MotorPosition.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_WinMsg.h">
+      <Filter>SeqMain\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\CLASS_Main.h">
+      <Filter>SeqMain</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\DEFINE_GV.h">
+      <Filter>SeqMain</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\SeqMain\DEFINE_GVX.h">
+      <Filter>SeqMain</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\TinyXML\tinyxml.h">
+      <Filter>Tools\TinyXML</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\TinyXML\tinyxml2.h">
+      <Filter>Tools\TinyXML</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\CLASS_FileLog.h">
+      <Filter>Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\CLASS_INI.h">
+      <Filter>Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\CLASS_MediaPlayer.h">
+      <Filter>Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\framework.h" />
+    <ClInclude Include="SEQApp\pch.h" />
+    <ClInclude Include="SEQApp\resource.h" />
+    <ClInclude Include="SEQApp\SEQApp.h" />
+    <ClInclude Include="SEQApp\SEQAppDlg.h" />
+    <ClInclude Include="SEQApp\targetver.h" />
+    <ClInclude Include="SEQApp\Tools\TinyXML\tinystr.h">
+      <Filter>Tools\TinyXML</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Hardware\CLASS_TenKey.h">
+      <Filter>Hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Hardware\CLASS_TRIGGER.h">
+      <Filter>Hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Hardware\CLASS_AjinCounter.h">
+      <Filter>Hardware</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Func\NVMMF.h">
+      <Filter>Func</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\Spline\Bezier.h">
+      <Filter>Tools\Spline</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\Spline\BSpline.h">
+      <Filter>Tools\Spline</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\Spline\CatmullRom.h">
+      <Filter>Tools\Spline</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\Spline\Curve.h">
+      <Filter>Tools\Spline</Filter>
+    </ClInclude>
+    <ClInclude Include="SEQApp\Tools\Spline\Vector.h">
+      <Filter>Tools\Spline</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SEQApp\Comm\CLASS_ComPacket.cpp">
+      <Filter>Comm</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Comm\CLASS_Serial.cpp">
+      <Filter>Comm</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Comm\CLASS_TcpClient.cpp">
+      <Filter>Comm</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Func\CLASS_IOError.cpp">
+      <Filter>Func</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Func\ENV_CalVelocity.cpp">
+      <Filter>Func</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Hardware\CLASS_AjinIO.cpp">
+      <Filter>Hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Hardware\CLASS_AjinMotor.cpp">
+      <Filter>Hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Hardware\ENV_AjinMotorProcess.cpp">
+      <Filter>Hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\CLASS_Main.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\ENV_LampBuzzer.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\ENV_Seq.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_AutoRun.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_ComCycle.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_ComTimer.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_EmerOff.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Error.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Init.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_LotEnd.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_MMI_MSG.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_ReadWrite.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Reset.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Safety.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_StartStop.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_TenkeyOperation.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_TenKeyProcess.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_TimerHandler.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Util.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\SEQ01_MTAxis.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\SEQ02_Pneumatic.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\SEQ03_AllHome.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_Main.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_MMI.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_Motion.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_RS232.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_TcpClient.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_TcpFunction.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_TcpServer.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqThread\THREAD_UdpClient.cpp">
+      <Filter>SeqThread</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxml.cpp">
+      <Filter>Tools\TinyXML</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxml2.cpp">
+      <Filter>Tools\TinyXML</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\CLASS_FileLog.cpp">
+      <Filter>Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\CLASS_INI.cpp">
+      <Filter>Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\CLASS_MediaPlayer.cpp">
+      <Filter>Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\pch.cpp" />
+    <ClCompile Include="SEQApp\SEQApp.cpp" />
+    <ClCompile Include="SEQApp\SEQAppDlg.cpp" />
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinystr.cpp">
+      <Filter>Tools\TinyXML</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxmlerror.cpp">
+      <Filter>Tools\TinyXML</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxmlparser.cpp">
+      <Filter>Tools\TinyXML</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\ENV_Console.cpp">
+      <Filter>Func</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Hardware\CLASS_TenKey.cpp">
+      <Filter>Hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Hardware\CLASS_TRIGGER.cpp">
+      <Filter>Hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\SEQ00_GVFunc.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Hardware\CLASS_AjinCounter.cpp">
+      <Filter>Hardware</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\Spline\Bezier.cpp">
+      <Filter>Tools\Spline</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\Spline\BSpline.cpp">
+      <Filter>Tools\Spline</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\Spline\CatmullRom.cpp">
+      <Filter>Tools\Spline</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\Spline\Curve.cpp">
+      <Filter>Tools\Spline</Filter>
+    </ClCompile>
+    <ClCompile Include="SEQApp\Tools\Spline\Vector.cpp">
+      <Filter>Tools\Spline</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
+    <None Include="..\res\SEQApp.rc2">
+      <Filter>리소스 파일</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\res\SEQApp.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SEQApp\SEQApp.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

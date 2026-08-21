@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{35994C27-EE70-49C7-B869-78F91D07F837}</ProjectGuid>
+    <Keyword>MFCProj</Keyword>
+    <RootNamespace>SEQApp</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <EnableUnitySupport>false</EnableUnitySupport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\32Bit;$(LibraryPath)</LibraryPath>
+    <OutDir>C:\WORK\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\64Bit;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <ConformanceMode>false</ConformanceMode>
+      <AdditionalOptions>/source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>AXL.lib;oldnames.lib;kernel32.lib;ws2_32.lib;mswsock.lib;advapi32.lib;MSVCRTD.LIB;winmm.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>AsInvoker</UACExecutionLevel>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0412</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalOptions>/MP /source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>AXL.lib;kernel32.lib;ws2_32.lib;mswsock.lib;advapi32.lib;winmm.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\64Bit;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0412</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0412</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0412</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="SEQApp\Comm\CLASS_ComPacket.h" />
+    <ClInclude Include="SEQApp\Comm\CLASS_Serial.h" />
+    <ClInclude Include="SEQApp\Comm\CLASS_TcpClient.h" />
+    <ClInclude Include="SEQApp\framework.h" />
+    <ClInclude Include="SEQApp\Func\CLASS_IOError.h" />
+    <ClInclude Include="SEQApp\Func\CLASS_OnePulse.h" />
+    <ClInclude Include="SEQApp\Func\CLASS_TIMER.h" />
+    <ClInclude Include="SEQApp\Func\NVMMF.h" />
+    <ClInclude Include="SEQApp\Func\SharedMemBase.h" />
+    <ClInclude Include="SEQApp\Hardware\CLASS_AjinCounter.h" />
+    <ClInclude Include="SEQApp\Hardware\CLASS_AjinIO.h" />
+    <ClInclude Include="SEQApp\Hardware\CLASS_AjinMotor.h" />
+    <ClInclude Include="SEQApp\Hardware\CLASS_TenKey.h" />
+    <ClInclude Include="SEQApp\Hardware\CLASS_TRIGGER.h" />
+    <ClInclude Include="SEQApp\pch.h" />
+    <ClInclude Include="SEQApp\resource.h" />
+    <ClInclude Include="SEQApp\SEQApp.h" />
+    <ClInclude Include="SEQApp\SEQAppDlg.h" />
+    <ClInclude Include="SEQApp\SeqMain\CLASS_Main.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_Bit.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_Data.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_DM.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_ErrorCode.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_IO.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_Macro.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_MotorPosition.h" />
+    <ClInclude Include="SEQApp\SeqMain\Define\DEFINE_WinMsg.h" />
+    <ClInclude Include="SEQApp\SeqMain\DEFINE_GV.h" />
+    <ClInclude Include="SEQApp\SeqMain\DEFINE_GVX.h" />
+    <ClInclude Include="SEQApp\targetver.h" />
+    <ClInclude Include="SEQApp\Tools\CLASS_FileLog.h" />
+    <ClInclude Include="SEQApp\Tools\CLASS_INI.h" />
+    <ClInclude Include="SEQApp\Tools\CLASS_MediaPlayer.h" />
+    <ClInclude Include="SEQApp\Tools\Spline\Bezier.h" />
+    <ClInclude Include="SEQApp\Tools\Spline\BSpline.h" />
+    <ClInclude Include="SEQApp\Tools\Spline\CatmullRom.h" />
+    <ClInclude Include="SEQApp\Tools\Spline\Curve.h" />
+    <ClInclude Include="SEQApp\Tools\Spline\Vector.h" />
+    <ClInclude Include="SEQApp\Tools\TinyXML\tinystr.h" />
+    <ClInclude Include="SEQApp\Tools\TinyXML\tinyxml.h" />
+    <ClInclude Include="SEQApp\Tools\TinyXML\tinyxml2.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SEQApp\Comm\CLASS_ComPacket.cpp" />
+    <ClCompile Include="SEQApp\Comm\CLASS_Serial.cpp" />
+    <ClCompile Include="SEQApp\Comm\CLASS_TcpClient.cpp" />
+    <ClCompile Include="SEQApp\Func\CLASS_IOError.cpp" />
+    <ClCompile Include="SEQApp\Func\ENV_CalVelocity.cpp" />
+    <ClCompile Include="SEQApp\Hardware\CLASS_AjinCounter.cpp" />
+    <ClCompile Include="SEQApp\Hardware\CLASS_AjinIO.cpp" />
+    <ClCompile Include="SEQApp\Hardware\CLASS_AjinMotor.cpp" />
+    <ClCompile Include="SEQApp\Hardware\CLASS_TenKey.cpp" />
+    <ClCompile Include="SEQApp\Hardware\CLASS_TRIGGER.cpp" />
+    <ClCompile Include="SEQApp\Hardware\ENV_AjinMotorProcess.cpp" />
+    <ClCompile Include="SEQApp\Hardware\axl_ecat_stub.cpp" />
+    <ClCompile Include="SEQApp\pch.cpp" />
+    <ClCompile Include="SEQApp\SEQApp.cpp" />
+    <ClCompile Include="SEQApp\SEQAppDlg.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\CLASS_Main.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\ENV_Console.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\ENV_LampBuzzer.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\ENV_Seq.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_AutoRun.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_ComCycle.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_ComTimer.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_EmerOff.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Error.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Init.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_LotEnd.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_MMI_MSG.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_ReadWrite.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Reset.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Safety.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_StartStop.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_TenkeyOperation.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_TenKeyProcess.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_TimerHandler.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\FUNC_Util.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\SEQ00_GVFunc.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\SEQ01_MTAxis.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\SEQ02_Pneumatic.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\SEQ03_AllHome.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_Main.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_MMI.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_Motion.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_RS232.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_TcpClient.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_TcpFunction.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_TcpServer.cpp" />
+    <ClCompile Include="SEQApp\SeqThread\THREAD_UdpClient.cpp" />
+    <ClCompile Include="SEQApp\Tools\CLASS_FileLog.cpp" />
+    <ClCompile Include="SEQApp\Tools\CLASS_INI.cpp" />
+    <ClCompile Include="SEQApp\Tools\CLASS_MediaPlayer.cpp" />
+    <ClCompile Include="SEQApp\Tools\Spline\Bezier.cpp" />
+    <ClCompile Include="SEQApp\Tools\Spline\BSpline.cpp" />
+    <ClCompile Include="SEQApp\Tools\Spline\CatmullRom.cpp" />
+    <ClCompile Include="SEQApp\Tools\Spline\Curve.cpp" />
+    <ClCompile Include="SEQApp\Tools\Spline\Vector.cpp" />
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinystr.cpp" />
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxml.cpp" />
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxml2.cpp" />
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxmlerror.cpp" />
+    <ClCompile Include="SEQApp\Tools\TinyXML\tinyxmlparser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\res\SEQApp.rc2" />
+    <None Include="ClassDiagram.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\res\SEQApp.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SEQApp\SEQApp.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
