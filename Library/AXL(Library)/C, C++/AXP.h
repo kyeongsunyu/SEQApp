@@ -1,4 +1,4 @@
-#ifndef __AXT_AXP_H__
+ï»¿#ifndef __AXT_AXP_H__
 #define __AXT_AXP_H__
 
 #include "AXHS.h"
@@ -28,7 +28,7 @@ extern "C" {
     //  [5] MACRO_FUNC_WAIT         : Waits for the specified time
     //  [6] MACRO_FUNC_STOP         : Stop macro driving
     // dpArg[16] : An array of arguments to the specified function
-    // ¡Ø Note: The number of arrays must be 16
+    // â€» Note: The number of arrays must be 16
     //  [0] MACRO_FUNC_CALL
     //      dArg[0] Macro Number
     //  [1] MACRO_FUNC_JUMP
@@ -47,7 +47,7 @@ extern "C" {
     //      dArg[3] Offset or Byte Size
     //        - For Digital Output  : Offset / ByteSize(For MACRO_DATA_BYTE12 Type)
     //        - For Analog Output   : Reserved
-    //      dArg[4] Ãâ·Â °ª
+    //      dArg[4] ì¶œë ¥ ê°’
     //        - For Digital Output  : Digital Output according to the setting of Data Type,
     //        - For Analog Output   : Output voltage or output Digit
     //      dArg[4] ~ dArg[15] Byte Output value (For MACRO_DATA_BYTE12 Type)
@@ -60,13 +60,13 @@ extern "C" {
     // Returns the value set in the node of the specified macro. (The return value is the value set by the AxpMacroAddNode function)
     DWORD   __stdcall AxpMacroGetNode(long lMacroNo, long lNodeNo, DWORD* upFunction, double* dpArg);
     // Checks the registered nodes in the specified macro and returns the node location where the error occurred and the error code.
-    // ¡Ø Note: Be sure to validate nodes registered with this function so that you can run macros.
+    // â€» Note: Be sure to validate nodes registered with this function so that you can run macros.
     // lMacroNo         : 0 ~ 7
     // *lpErrorNodeNo   : Node number where the error occurred
     // *upErrorCode     : Error code for the node where the error occurred
     DWORD   __stdcall AxpMacroCheckNodeAll(long lMacroNo, long *lpErrorNodeNo, DWORD *upErrorCode);
     // Starts the specified macro.
-    // ¡Ø Note: Be sure to validate the nods registered with the AxpMacroCheckNodeAll function before you can run the macro.
+    // â€» Note: Be sure to validate the nods registered with the AxpMacroCheckNodeAll function before you can run the macro.
     // lMacroNo         : 0 ~ 7
     // uCondition       : Set macro start condition
     //  [0] MACRO_START_READY       : Drive to ready state
@@ -114,7 +114,7 @@ extern "C" {
     //  [5] MACRO_FUNC_WAIT
     //  [6] MACRO_FUNC_STOP
     // dpReturnData[16]  : Return value for the specified function
-    // ¡Ø Note: The number of arrays must be 16
+    // â€» Note: The number of arrays must be 16
     //  [0] MACRO_FUNC_CALL
     //      dArg[0] Node number of the last called CALL instruction
     //      dArg[1] Returns the index of the CALL commands in the specified macro
