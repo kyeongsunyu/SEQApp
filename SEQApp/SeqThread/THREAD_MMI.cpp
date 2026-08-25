@@ -1,11 +1,11 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "..\SEQAppDlg.h"
 #include "..\SeqMain\CLASS_Main.h"
 
 
 //////////////////////////////////////////////////////////////////////////
-//HMI(Human Machine Interface) ¶Ç´Â GUI ÇÁ·Î±×·¥°ú ÇÏµå¿þ¾î Á¦¾îºÎ(Sequence) »çÀÌÀÇ Åë½ÅÀ» ´ã´çÇÏ´Â Àü¿ë ¾²·¹µåÀÔ´Ï´Ù.
-//SEQ_Main_Thread°¡ ÀåºñÀÇ ¹°¸®ÀûÀÎ ¿òÁ÷ÀÓÀ» ´ã´çÇÑ´Ù¸é, ÀÌ ¾²·¹µå´Â »ç¿ëÀÚÀÇ ¸í·ÉÀ» Àü´Þ¹Þ°í ÀåºñÀÇ »óÅÂ¸¦ È­¸é¿¡ »Ñ·ÁÁÖ´Â µ¥ÀÌÅÍ Åë·Î ¿ªÇÒÀ» ÇÕ´Ï´Ù.
+//HMI(Human Machine Interface) ë˜ëŠ” GUI í”„ë¡œê·¸ëž¨ê³¼ í•˜ë“œì›¨ì–´ ì œì–´ë¶€(Sequence) ì‚¬ì´ì˜ í†µì‹ ì„ ë‹´ë‹¹í•˜ëŠ” ì „ìš© ì“°ë ˆë“œìž…ë‹ˆë‹¤.
+//SEQ_Main_Threadê°€ ìž¥ë¹„ì˜ ë¬¼ë¦¬ì ì¸ ì›€ì§ìž„ì„ ë‹´ë‹¹í•œë‹¤ë©´, ì´ ì“°ë ˆë“œëŠ” ì‚¬ìš©ìžì˜ ëª…ë ¹ì„ ì „ë‹¬ë°›ê³  ìž¥ë¹„ì˜ ìƒíƒœë¥¼ í™”ë©´ì— ë¿Œë ¤ì£¼ëŠ” ë°ì´í„° í†µë¡œ ì—­í• ì„ í•©ë‹ˆë‹¤.
 UINT CSeqMain::MMI_Thread(void* pArg)
 {
 	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
@@ -17,8 +17,8 @@ UINT CSeqMain::MMI_Thread(void* pArg)
 
 	// SHARED MEMORY COMMUNICATION
 	while (!seqMain->m_bSeqExit) {
-		//µ¶¸³µÈ Åë½Å ·çÇÁ: MMI_MessageCommunication()À» º°µµÀÇ ¾²·¹µå¿¡¼­ µ¹¸²À¸·Î½á, 
-		// Åë½Å Áö¿¬(Latency)ÀÌ ¹ß»ýÇÏ´õ¶óµµ ¸ÞÀÎ ½ÃÄö½º(SEQ_Main_Thread)ÀÇ ½ºÄµ Å¸ÀÓ¿¡ ¿µÇâÀ» ÁÖÁö ¾Êµµ·Ï ¼³°èµÇ¾ú½À´Ï´Ù.
+		//ë…ë¦½ëœ í†µì‹  ë£¨í”„: MMI_MessageCommunication()ì„ ë³„ë„ì˜ ì“°ë ˆë“œì—ì„œ ëŒë¦¼ìœ¼ë¡œì¨, 
+		// í†µì‹  ì§€ì—°(Latency)ì´ ë°œìƒí•˜ë”ë¼ë„ ë©”ì¸ ì‹œí€€ìŠ¤(SEQ_Main_Thread)ì˜ ìŠ¤ìº” íƒ€ìž„ì— ì˜í–¥ì„ ì£¼ì§€ ì•Šë„ë¡ ì„¤ê³„ë˜ì—ˆìŠµë‹ˆë‹¤.
 		seqMain->MMI_MessageCommunication();
 		Sleep(1);
 //		WaitForSingleObject(pMain->m_pThread_SeqMMI, 1);

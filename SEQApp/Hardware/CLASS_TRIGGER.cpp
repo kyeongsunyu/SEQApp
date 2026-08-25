@@ -1,4 +1,4 @@
-#include "CLASS_TRIGGER.h"
+ï»¿#include "CLASS_TRIGGER.h"
 
 CAjinTrigger::CAjinTrigger()
 {
@@ -82,37 +82,37 @@ bool CAjinTrigger::SetTriggerConfig(int nModNo, int nTableNo, int nEncoderPortNo
 {
 //	DWORD uStatus;
 
-	//< Encoder 4Ã¤¹è ¼³Á¤
+	//< Encoder 4ì±„ë°° ì„¤ì •
 	if (AXT_RT_SUCCESS != AxcSignalSetEncInputMethod(nTableNo, 3)){
 		return false;
 	}
 
-	//< Ä«¿îÅÍ ¸ðµâÀÇ °¢ Å×ÀÌºí¿¡ ÇÒ´ç ÇÒ ¿£ÄÚ´õ ¼Ò½º ¼³Á¤
+	//< ì¹´ìš´í„° ëª¨ë“ˆì˜ ê° í…Œì´ë¸”ì— í• ë‹¹ í•  ì—”ì½”ë” ì†ŒìŠ¤ ì„¤ì •
 	if (AXT_RT_SUCCESS != AxcSignalSetEncSource(nTableNo, 0)){
 		return false;
 	}
 
-	//< Ä«¿îÅÍ ¸ðµâÀÇ °¢ Å×ÀÌºí¿¡ ÇÒ´ç ÇÒ ¿£ÄÚ´õ Ãâ·Â Æ÷Æ® ¼³Á¤
+	//< ì¹´ìš´í„° ëª¨ë“ˆì˜ ê° í…Œì´ë¸”ì— í• ë‹¹ í•  ì—”ì½”ë” ì¶œë ¥ í¬íŠ¸ ì„¤ì •
 	if (AXT_RT_SUCCESS != AxcTableSetTriggerOutport(nModNo, nTableNo, nTrigOutPortNo)){
 		return false;
 	}
 
-	//< Ä«¿îÅÍ ¸ðµâÀÇ °¢ Å×ÀÌºí¿¡ ÇÒ´ç ÇÒ ¿£ÄÚ´õ ÀÔ·Â Æ÷Æ® ¼³Á¤
+	//< ì¹´ìš´í„° ëª¨ë“ˆì˜ ê° í…Œì´ë¸”ì— í• ë‹¹ í•  ì—”ì½”ë” ìž…ë ¥ í¬íŠ¸ ì„¤ì •
 	if (AXT_RT_SUCCESS != AxcTableSetEncoderInput(nModNo, nTableNo, nEncoderPortNo, nEncoderPortNo)){
 		return false;
 	}
 
-	//< Ä«¿îÅÍ ¸ðµâÀÇ °¢ Å×ÀÌºí¿¡ ÇÒ´ç ÇÒ ¿£ÄÚ´õ ÀÔ·Â Æ÷Æ® ¼³Á¤
+	//< ì¹´ìš´í„° ëª¨ë“ˆì˜ ê° í…Œì´ë¸”ì— í• ë‹¹ í•  ì—”ì½”ë” ìž…ë ¥ í¬íŠ¸ ì„¤ì •
 	if (AXT_RT_SUCCESS != AxcTableSetTriggerLevel(nModNo, nTableNo, 1)){
 		return false;
 	}
 
-	//< Trigger Mode : CCGC_CNT_VECTOR_TRIGGER (ÁöÁ¤ÇÑ Æ®¸®°Å À§Ä¡¿¡ ¼³Á¤ÇÑ Çã¿ë ¹üÀ§¿Í º¤ÅÍ ¹æÇâÀÌ ÀÏÄ¡ÇÒ ¶§ Æ®¸®°Å¸¦ Ãâ·ÂÇÏ´Â ¸ðµå)
+	//< Trigger Mode : CCGC_CNT_VECTOR_TRIGGER (ì§€ì •í•œ íŠ¸ë¦¬ê±° ìœ„ì¹˜ì— ì„¤ì •í•œ í—ˆìš© ë²”ìœ„ì™€ ë²¡í„° ë°©í–¥ì´ ì¼ì¹˜í•  ë•Œ íŠ¸ë¦¬ê±°ë¥¼ ì¶œë ¥í•˜ëŠ” ëª¨ë“œ)
 	if (AXT_RT_SUCCESS != AxcTableSetTriggerMode(nModNo, nTableNo, 0)){
 		return false;
 	}
 
-	//< Ä«¿îÅÍ ¸ðµâÀÇ °¢ Å×ÀÌºí¿¡ ÇÒ´ç ÇÒ Data Clear ¼³Á¤
+	//< ì¹´ìš´í„° ëª¨ë“ˆì˜ ê° í…Œì´ë¸”ì— í• ë‹¹ í•  Data Clear ì„¤ì •
 	if (AXT_RT_SUCCESS != AxcTableSetTriggerDataClear(nModNo, nTableNo)){
 		return false;
 	}
@@ -136,7 +136,7 @@ bool CAjinTrigger::StartTrigger(int nModNo, int nTableNo, int nTrigCount, double
 		return false;
 	}
 
-	// Æ®¸®°Å °£°Ý ¹ÌÀÔ·Â È®ÀÎ
+	// íŠ¸ë¦¬ê±° ê°„ê²© ë¯¸ìž…ë ¥ í™•ì¸
 	if (fTrigDistance <= 0){
 		return false;
 	}
@@ -158,7 +158,7 @@ bool CAjinTrigger::StartTrigger(int nModNo, int nTableNo, int nTrigCount, double
 	}
 
 	//< Set Trigger Position, Count, Interval
-	 //- Á¤»ó ½ÇÇà½Ã ÀÚµ¿À¸·Î Æ®¸®°Å È°¼ºÈ­ µÊ. (TriggerOnOff(true))
+	 //- ì •ìƒ ì‹¤í–‰ì‹œ ìžë™ìœ¼ë¡œ íŠ¸ë¦¬ê±° í™œì„±í™” ë¨. (TriggerOnOff(true))
 	if (AXT_RT_SUCCESS != AxcTableSetTriggerData(nModNo, nTableNo, -1, nullptr, nullptr, nullptr))
 	{
 		return false;

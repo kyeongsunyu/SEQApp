@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "CLASS_ComPacket.h"
 
 
@@ -30,8 +30,8 @@ int CCommPacket::WriteCommPacket(char packet[], int n_size)
 {
 	return WriteToComm((BYTE*)packet, n_size);
 }
-//³²Àº Queue °Ù¼ö¸¦ ¸®ÅÏÇÑ´Ù. ¿¡·¯³ª¸é -1À» ¸®ÅÏ...
-// ¿¡·¯³ª´Â°æ¿ì. -> QueueÀÇ ³²Àº °Ù¼ö°¡ 0ÀÏ¶§ Read¸¦ ÇÏ¸é -1À» ¸®ÅÏ..
+//ë‚¨ì€ Queue ê²Ÿìˆ˜ë¥¼ ë¦¬í„´í•œë‹¤. ì—ëŸ¬ë‚˜ë©´ -1ì„ ë¦¬í„´...
+// ì—ëŸ¬ë‚˜ëŠ”ê²½ìš°. -> Queueì˜ ë‚¨ì€ ê²Ÿìˆ˜ê°€ 0ì¼ë•Œ Readë¥¼ í•˜ë©´ -1ì„ ë¦¬í„´..
 
 int CCommPacket::Thread()
 {

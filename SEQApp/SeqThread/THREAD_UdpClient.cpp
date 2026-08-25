@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "..\SeqMain\CLASS_Main.h"
 #include "..\SeqMain\DEFINE_GVX.h"
 #include "..\Tools\CLASS_INI.h"
@@ -28,8 +28,8 @@ UINT CSeqMain::CLIENT_UDP_Thread(void* pArg)
 
 	memset(&serverAddr, 0x00, sizeof(SOCKADDR_IN));
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1"); // ¹®ÀÚ¿­À» 4¹ÙÀÌÆ® ÁÖ¼Ò Á¤º¸·Î º¯È¯
-	serverAddr.sin_port = htons(9999); // Æ÷Æ® ¹øÈ£·Î º¯È¯
+	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1"); // ë¬¸ìì—´ì„ 4ë°”ì´íŠ¸ ì£¼ì†Œ ì •ë³´ë¡œ ë³€í™˜
+	serverAddr.sin_port = htons(9999); // í¬íŠ¸ ë²ˆí˜¸ë¡œ ë³€í™˜
 
 	char buf[MAX_BUF_LEN] = { 0, };
 

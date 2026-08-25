@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "..\SEQAppDlg.h"
 #include "..\SeqMain\CLASS_Main.h"
 //#include "..\Tools\Spline\Bezier.h"
@@ -52,11 +52,11 @@ void CSeqMain::SetPalletBegier(void)
 
 UINT CSeqMain::SEQ_Main_Thread(LPVOID param)
 {
-	/*Windows´Â ½Ç½Ã°£ OS(RTOS)°¡ ¾Æ´Ï±â ¶§¹®¿¡, Á¦¾î ·çÇÁ°¡ ´Ù¸¥ À©µµ¿ì ÀÛ¾÷(¾÷µ¥ÀÌÆ®, 
-    ¸¶¿ì½º ¿òÁ÷ÀÓ µî)¿¡ ¹Ð¸®Áö ¾Êµµ·Ï ÇÁ·Î¼¼½º ¿ì¼±¼øÀ§¸¦ ÃÖ»óÀ§·Î ¿Ã·È½À´Ï´Ù.ÀÌ´Â Àåºñ Á¦¾î¿¡¼­ ¸Å¿ì Áß¿äÇÑ ¼³Á¤ÀÔ´Ï´Ù.*/
+	/*WindowsëŠ” ì‹¤ì‹œê°„ OS(RTOS)ê°€ ì•„ë‹ˆê¸° ë•Œë¬¸ì—, ì œì–´ ë£¨í”„ê°€ ë‹¤ë¥¸ ìœˆë„ìš° ìž‘ì—…(ì—…ë°ì´íŠ¸, 
+    ë§ˆìš°ìŠ¤ ì›€ì§ìž„ ë“±)ì— ë°€ë¦¬ì§€ ì•Šë„ë¡ í”„ë¡œì„¸ìŠ¤ ìš°ì„ ìˆœìœ„ë¥¼ ìµœìƒìœ„ë¡œ ì˜¬ë ¸ìŠµë‹ˆë‹¤.ì´ëŠ” ìž¥ë¹„ ì œì–´ì—ì„œ ë§¤ìš° ì¤‘ìš”í•œ ì„¤ì •ìž…ë‹ˆë‹¤.*/
 	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS); 
 
-	//scantime(ÇÑ ·çÇÁ°¡ µµ´Â µ¥ °É¸®´Â ½Ã°£)À» ¸¶ÀÌÅ©·ÎÃÊ($\mu s$) ´ÜÀ§·Î Á¤¹ÐÇÏ°Ô ÃøÁ¤ÇÏ°í ÀÖ½À´Ï´Ù. ÀåºñÀÇ ÀÀ´ä ¼Óµµ¸¦ ¸ð´ÏÅÍ¸µÇÏ±â À§ÇÑ ¿ëµµÀÔ´Ï´Ù.
+	//scantime(í•œ ë£¨í”„ê°€ ë„ëŠ” ë° ê±¸ë¦¬ëŠ” ì‹œê°„)ì„ ë§ˆì´í¬ë¡œì´ˆ($\mu s$) ë‹¨ìœ„ë¡œ ì •ë°€í•˜ê²Œ ì¸¡ì •í•˜ê³  ìžˆìŠµë‹ˆë‹¤. ìž¥ë¹„ì˜ ì‘ë‹µ ì†ë„ë¥¼ ëª¨ë‹ˆí„°ë§í•˜ê¸° ìœ„í•œ ìš©ë„ìž…ë‹ˆë‹¤.
 	QueryPerformanceFrequency(&sysfreq);
 
 	CSeqMain* seqMain = CSeqMain::GetInstance();
@@ -76,17 +76,17 @@ UINT CSeqMain::SEQ_Main_Thread(LPVOID param)
 	dm.SystemInitialize = 1;
 	bit.AllDry = 0;
 
-	while (!seqMain->m_bSeqExit) //ÀÌ ·çÇÁ´Â while¹®À» ÅëÇØ ¹«ÇÑÈ÷ ¹Ýº¹µÇ¸ç, °¢ ´Ü°è°¡ ¼øÂ÷ÀûÀ¸·Î ½ÇÇàµË´Ï´Ù.
+	while (!seqMain->m_bSeqExit) //ì´ ë£¨í”„ëŠ” whileë¬¸ì„ í†µí•´ ë¬´í•œížˆ ë°˜ë³µë˜ë©°, ê° ë‹¨ê³„ê°€ ìˆœì°¨ì ìœ¼ë¡œ ì‹¤í–‰ë©ë‹ˆë‹¤.
 	{
 		bool ret = QueryPerformanceCounter(&st);
-		seqMain->Read_All(); //1. ¼¾¼­/ÀÔ·Â Á¤º¸ °»½Å
+		seqMain->Read_All(); //1. ì„¼ì„œ/ìž…ë ¥ ì •ë³´ ê°±ì‹ 
 		seqMain->TenKeyProcess();
 		seqMain->MotorSafetyFunction();
-		seqMain->Sequence();//Àåºñ »óÅÂ °áÁ¤ (State Machine)
-		seqMain->Write_All(); //°áÁ¤µÈ »óÅÂ¸¦ ½ÇÁ¦ ÇÏµå¿þ¾î·Î Ãâ·Â
+		seqMain->Sequence();//ìž¥ë¹„ ìƒíƒœ ê²°ì • (State Machine)
+		seqMain->Write_All(); //ê²°ì •ëœ ìƒíƒœë¥¼ ì‹¤ì œ í•˜ë“œì›¨ì–´ë¡œ ì¶œë ¥
 
 		seqMain->SetNVMMF();
-		Sleep(1); //Sleep(1)Àº CPU Á¡À¯À²ÀÌ 100%°¡ µÇ´Â °ÍÀ» ¸·¾ÆÁÖÁö¸¸, Windows È¯°æ¿¡¼­ ½ÇÁ¦·Î´Â ¾à 1ms~15ms »çÀÌÀÇ ºÒ±ÔÄ¢ÇÑ ´ë±â ½Ã°£À» °¡Áú ¼ö ÀÖ½À´Ï´Ù.
+		Sleep(1); //Sleep(1)ì€ CPU ì ìœ ìœ¨ì´ 100%ê°€ ë˜ëŠ” ê²ƒì„ ë§‰ì•„ì£¼ì§€ë§Œ, Windows í™˜ê²½ì—ì„œ ì‹¤ì œë¡œëŠ” ì•½ 1ms~15ms ì‚¬ì´ì˜ ë¶ˆê·œì¹™í•œ ëŒ€ê¸° ì‹œê°„ì„ ê°€ì§ˆ ìˆ˜ ìžˆìŠµë‹ˆë‹¤.
 //		WaitForSingleObject(pMain->m_pThread_SeqMain, 1);
 //		seqMain->Wait(1000);	
 		double scantime = tm_gScanDelay.GetTimeDiffmS();

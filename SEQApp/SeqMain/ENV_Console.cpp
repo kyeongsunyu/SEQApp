@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "CLASS_Main.h"
 #include <windows.h>
 
@@ -27,27 +27,27 @@ void CSeqMain::InitConsole(void)
 
 	::SetConsoleTitle(TEXT("SEQ Running LOG"));			// Console Title
 
-	::EnableMenuItem(hmenu, SC_MAXIMIZE, MF_BYCOMMAND);	// Maximize ¾ÆÀÌÄÜÀÌ º¸ÀÌ±â´Â ÇÏÁö¸¸ ÀÛµ¿ÇÏÁö ¾ÊÀ½
+	::EnableMenuItem(hmenu, SC_MAXIMIZE, MF_BYCOMMAND);	// Maximize ì•„ì´ì½˜ì´ ë³´ì´ê¸°ëŠ” í•˜ì§€ë§Œ ìž‘ë™í•˜ì§€ ì•ŠìŒ
 	::DeleteMenu(hmenu, SC_MAXIMIZE, MF_BYCOMMAND);
 
-	::EnableMenuItem(hmenu, SC_CLOSE, MF_BYCOMMAND);		// X ¾ÆÀÌÄÜÀÌ º¸ÀÌ±â´Â ÇÏÁö¸¸ Disabl µÊ
+	::EnableMenuItem(hmenu, SC_CLOSE, MF_BYCOMMAND);		// X ì•„ì´ì½˜ì´ ë³´ì´ê¸°ëŠ” í•˜ì§€ë§Œ Disabl ë¨
 	::DeleteMenu(hmenu, SC_CLOSE, MF_BYCOMMAND);
 	::DrawMenuBar(::GetConsoleWindow());
 
 	ShowWindow(::GetConsoleWindow(), SW_HIDE);
 	
-	SetConsoleRGB(2);		// ±Û¾¾ color º¯°æ
+	SetConsoleRGB(2);		// ê¸€ì”¨ color ë³€ê²½
 
-	system("MODE CON:COLS=120 LINES=30");// Console Å©±â
-	SetConsoleSize(10000, 2000);			 // Console buffer Å©±â ¼³Á¤
+	system("MODE CON:COLS=120 LINES=30");// Console í¬ê¸°
+	SetConsoleSize(10000, 2000);			 // Console buffer í¬ê¸° ì„¤ì •
 
-	system("VER");	// OS version Ç¥½Ã	
+	system("VER");	// OS version í‘œì‹œ	
 
-	// Åõ¸íµµ Àû¿ë Win7ÀÌ»ó Àû¿ë °¡´É	
+	// íˆ¬ëª…ë„ ì ìš© Win7ì´ìƒ ì ìš© ê°€ëŠ¥	
 	/*SetWindowLong(::GetConsoleWindow(), GWL_EXSTYLE, WS_EX_LAYERED);
 	SetLayeredWindowAttributes(::GetConsoleWindow(), RGB(0, 0, 0), 150, LWA_ALPHA);*/
 
-	// ÄÁÆ®·Ñ ÇÚµé·¯, Å°º¸µå ÀÔ·Â Ã³¸®
+	// ì»¨íŠ¸ë¡¤ í•¸ë“¤ëŸ¬, í‚¤ë³´ë“œ ìž…ë ¥ ì²˜ë¦¬
 	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT);
 	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ~ENABLE_INSERT_MODE | ~ENABLE_QUICK_EDIT_MODE);
 
@@ -61,7 +61,7 @@ void CSeqMain::InitConsole(void)
 		printf("Could not set CtrlHandler\n");
 	}
 
-	 //  console À» tray·Î ÀÌµ¿
+	 //  console ì„ trayë¡œ ì´ë™
 	 //	ShowWindow(::GetConsoleWindow(), SW_HIDE);
 	 //	NOTIFYICONDATA Tray;
 	 //	//tray info
@@ -92,7 +92,7 @@ void CSeqMain::HideConsoleWindow(void)
 }
 void CSeqMain::SetConsoleRGB(int color)
 {
-	//	system("color 1a");		// Ã¢ ÀüÃ¼ color º¯°æ	color xy => (x,y=0~F)
+	//	system("color 1a");		// ì°½ ì „ì²´ color ë³€ê²½	color xy => (x,y=0~F)
 
 	switch (color)
 	{
@@ -173,10 +173,10 @@ void CSeqMain::SetConsoleRGB(int color)
 
 void CSeqMain::SetConsoleSize(SHORT width, SHORT height)
 {
-	// ÄÜ¼Ö ¹öÆÛ Å©±â ÁöÁ¤
+	// ì½˜ì†” ë²„í¼ í¬ê¸° ì§€ì •
 	COORD coord = { width, height };
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-	//	ÄÜ¼Ö Å©±â ÁöÁ¤
+	//	ì½˜ì†” í¬ê¸° ì§€ì •
 	// 	SMALL_RECT rect;
 	// 	rect.Left = 0;
 	// 	rect.Right = width - 1;
@@ -188,10 +188,10 @@ BOOL WINAPI ContrlHandler(DWORD Opcode)
 {
 	switch (Opcode)
 	{
-	case CTRL_C_EVENT:		// VisualStudioÀÇ Menu->Debug->Ã¢->¿¹¿Ü¼³Á¤->Win32 Exceptions->Ctrl-C Thrown uncheckÇØ¾ß ÇÑ´Ù.
+	case CTRL_C_EVENT:		// VisualStudioì˜ Menu->Debug->ì°½->ì˜ˆì™¸ì„¤ì •->Win32 Exceptions->Ctrl-C Thrown uncheckí•´ì•¼ í•œë‹¤.
 		system("CLS");		// Clear screen
 		return TRUE;
-	case CTRL_BREAK_EVENT:	// VisualStudioÀÇ Menu->Debug->Ã¢->¿¹¿Ü¼³Á¤->Win32 Exceptions->Ctrl-Break Thrown uncheckÇØ¾ß ÇÑ´Ù.
+	case CTRL_BREAK_EVENT:	// VisualStudioì˜ Menu->Debug->ì°½->ì˜ˆì™¸ì„¤ì •->Win32 Exceptions->Ctrl-Break Thrown uncheckí•´ì•¼ í•œë‹¤.
 		return TRUE;
 	case CTRL_CLOSE_EVENT:
 		return TRUE;

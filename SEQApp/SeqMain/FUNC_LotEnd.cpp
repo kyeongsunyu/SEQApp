@@ -1,4 +1,4 @@
-#include "..\pch.h"
+Ôªø#include "..\pch.h"
 #include "CLASS_Main.h"
 
 
@@ -9,7 +9,7 @@ void CSeqMain::LotEndCheck(void)
 	//if (MTRDY(MTLdElev) && MTRDY(MTFrontTrayIndex) &&
 	//	MTRDY(MTRearTrayIndex) && MTRDY(MTLdElev)) {
 	//	if ((bISLdTrayCoverLoadingOn() && (TrayInCnt >= nTrayStockCount)) ||
-	//		(dm.LotEndMMICheck == 2)) {	// lot end √≥∏Æ
+	//		(dm.LotEndMMICheck == 2)) {	// lot end Ï≤òÎ¶¨
 	//		if (AINOFF(iFrontIndexTrayDetect) && tm_iFrontIndexTrayDetect_Off.TimeOvermS(10000) &&
 	//			AINOFF(iRearIndexTrayDetect) && tm_iRearIndexTrayDetect_Off.TimeOvermS(10000)) {
 	//			if (bit.AllCycleStop) {
@@ -46,13 +46,13 @@ void CSeqMain::LotEndCheck(void)
 	//		if (AINOFF(iFrontIndexTrayDetect) && tm_iFrontIndexTrayDetect_Off.TimeOvermS(5000) &&
 	//			AINOFF(iRearIndexTrayDetect) && tm_iRearIndexTrayDetect_Off.TimeOvermS(5000) ||
 	//			bit.ButtonLotEnd) {
-	//			if (dm.LotEndMMICheck == 0) {	// lot end √≥∏Æ »Æ¿Œ
+	//			if (dm.LotEndMMICheck == 0) {	// lot end Ï≤òÎ¶¨ ÌôïÏù∏
 	//				dm.LotEndMMICheck = 1;
 	//			}
 	//		}
 	//	}
 
-	//	if (dm.LotEndMMICheck == 99) {	// lot end √≥∏Æ«œΩ√∞⁄Ω¿¥œ±Ó?
+	//	if (dm.LotEndMMICheck == 99) {	// lot end Ï≤òÎ¶¨ÌïòÏãúÍ≤†ÏäµÎãàÍπå?
 	//		if (AINON(iLdTrayDetect) && tm_iLdTrayDetect_On.TimeOvermS(200) ||
 	//			AINON(iLdTrayCoverDetect) && tm_iLdTrayCoverDetect_On.TimeOvermS(200)) {
 	//			dm.LotEndMMICheck = 0;
