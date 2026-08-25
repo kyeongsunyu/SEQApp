@@ -1084,7 +1084,9 @@ BOOL CIni::__TrimString(LPTSTR lpString)
 
 LPTSTR CIni::__StrDupEx(LPCTSTR lpStart, LPCTSTR lpEnd)
 {
-	const DWORD LEN = ((DWORD)lpEnd - (DWORD)lpStart) / sizeof(TCHAR);
+	// lpEnd - lpStart is already a TCHAR count; the old form truncated both
+	// pointers to 32 bits before subtracting (C4311).
+	const DWORD LEN = (DWORD)(lpEnd - lpStart);
 	LPTSTR psz = new TCHAR[LEN + 1];
 	_tcsncpy(psz, lpStart, LEN);
 	psz[LEN] = _T('\0');

@@ -382,7 +382,7 @@ size_t CSeqMain::SERVER_SEND_MSG_ALL(char* sendmsg, char* format, ...)
 	va_end(args);
 
 	for (int i = 0; i < clntNumber; i++) {
-		send(clntSocks[i], sendmsg, sizeof(sendmsg), 0);
+		send(clntSocks[i], sendmsg, (int)strlen(sendmsg), 0);
 	}
 	return strlen(sendmsg);
 }
@@ -396,7 +396,7 @@ size_t CSeqMain::SERVER_SEND_MSG(char IP[], int port, char* sendmsg, char* forma
 
 	for (int i = 0; i < clntNumber; i++) {
 		if (!strcmp(clntAddrs[i], IP)) {
-			send(clntSocks[i], sendmsg, sizeof(sendmsg), 0);
+			send(clntSocks[i], sendmsg, (int)strlen(sendmsg), 0);
 		}
 	}
 	return strlen(sendmsg);

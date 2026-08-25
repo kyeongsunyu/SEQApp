@@ -84,6 +84,10 @@
     <AxlRoot>$(MSBuildProjectDirectory)\Library\AXL%28Library%29</AxlRoot>
     <AxlIncludeDir>$(AxlRoot)\C, C++</AxlIncludeDir>
     <AxlLibDir>$(AxlRoot)\Library\$(AxlBitDir)</AxlLibDir>
+    <!-- 억제 중인 경고. 점검할 때는 파일을 고치지 말고 빌드 시 재정의한다.
+         msbuild SEQApp.sln /p:Configuration=Debug /p:Platform=x64 /p:SeqDisabledWarnings=4819
+         4819 인코딩, 4267 size_t 축소(x64 전용), 4244 수치 축소(플랫폼 무관) -->
+    <SeqDisabledWarnings Condition="'$(SeqDisabledWarnings)'==''">4819;4267;4244</SeqDisabledWarnings>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -123,7 +127,7 @@
       <AdditionalOptions>/source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>$(SeqDisabledWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -157,7 +161,7 @@ fc /b "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)EzBasicAxl.dll" &gt;nul 2&gt;&amp;
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/MP /source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(AxlIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>$(SeqDisabledWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -192,7 +196,7 @@ fc /b "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)EzBasicAxl.dll" &gt;nul 2&gt;&amp;
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/MP /source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>$(SeqDisabledWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -228,7 +232,7 @@ fc /b "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)EzBasicAxl.dll" &gt;nul 2&gt;&amp;
       <PreprocessorDefinitions>_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/MP /source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>$(SeqDisabledWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
