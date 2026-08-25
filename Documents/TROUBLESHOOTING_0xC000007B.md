@@ -53,6 +53,44 @@ Win32 구성은 기본 출력 폴더를 쓰므로 두 비트가 같은 폴더에
 `AXL.dll` 은 2025-07-24, `EzBasicAxl.dll` 은 2025-12-10 링크 버전이다.
 장비 폴더의 파일 크기가 위와 다르면 버전 또는 비트가 어긋난 것이다.
 
+## 숨은 사본 주의: `C:\Windows\System`
+
+AXL 설치 프로그램은 `AXL.dll` 을 **`C:\Windows\System`** (16비트 시절 폴더)에도 심는다.
+이 경로는 Windows 기본 DLL 검색 경로에 포함되므로, 실행 폴더에 DLL 이 없으면
+로더가 조용히 이 사본을 집어간다. `System32` / `SysWOW64` 만 확인하면 놓친다.
+
+검색 순서(안전 검색 모드 기준)는 다음과 같고, **실행 파일 폴더가 최우선**이다.
+
+1. 실행 파일 폴더 (`C:\WORK`)
+2. 시스템 폴더 (`System32`, 32비트 프로세스는 `SysWOW64` 로 리다이렉트)
+3. **`C:\Windows\System`**
+4. Windows 폴더
+5. `PATH`
+
+의존 DLL(`EzBasicAxl.dll`)도 **AXL.dll 이 있는 폴더가 아니라 위 순서로 다시 찾는다.**
+그래서 `AXL.dll` 은 `C:\Windows\System` 에서, `EzBasicAxl.dll` 은 `C:\WORK` 에서
+서로 다른 비트로 짝이 맞지 않게 로드되는 상황이 실제로 발생했다.
+
+`Documents\Check-AxlRuntime.ps1` 이 이 검색 순서를 그대로 따라가며
+각 위치의 아키텍처와 최종 로드될 파일을 판정한다.
+
+```cmd
+powershell -ExecutionPolicy Bypass -File Documents\Check-AxlRuntime.ps1
+```
+
+## 의존 체인
+
+```
+SEQApp.exe
+  └─ AXL.dll          (mfc100, msvcr100, msvcp100, version, Secur32 ...)
+       └─ EzBasicAxl.dll   ← MSVCR80.dll / MFC80.DLL = VC++ 2005 재배포 필요
+```
+
+`EzBasicAxl.dll` 은 exe 의 import 목록에 나오지 않는다(AXL.dll 의 의존이라 한 단계 아래).
+`dumpbin /dependents SEQApp.exe` 만 봐서는 보이지 않으므로 주의한다.
+VC++ 2005 가 해당 비트로 설치돼 있지 않으면 0xC000007B 가 아니라
+0xC0150004(side-by-side 구성 오류)로 죽는다.
+
 ## 확인 절차 (개발자 명령 프롬프트)
 
 ```cmd
