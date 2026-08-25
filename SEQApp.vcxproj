@@ -89,12 +89,15 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(AxlIncludeDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(AxlLibDir);$(LibraryPath)</LibraryPath>
-    <OutDir>C:\WORK\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(AxlIncludeDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(AxlLibDir);$(LibraryPath)</LibraryPath>
+    <!-- 장비 실행 폴더. x64 구성만 여기로 내보낸다.
+         Win32 구성까지 같은 폴더를 쓰면 32/64비트 산출물이 섞여
+         0xC000007B 가 재발하므로 기본 출력 폴더를 쓰게 둔다. -->
+    <OutDir>C:\WORK\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
