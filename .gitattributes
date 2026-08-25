@@ -61,3 +61,15 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# 바이너리 파일은 줄바꿈 정규화 대상에서 제외한다.
+# (* text=auto 자동 판별에 의존하면 체크아웃 시 DLL/LIB이 손상되어
+#  0xC000007B - STATUS_INVALID_IMAGE_FORMAT 로 실행 실패할 수 있다.)
+###############################################################################
+*.dll   binary
+*.lib   binary
+*.exe   binary
+*.pdb   binary
+*.ico   binary
+*.pdf   binary

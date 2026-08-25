@@ -74,23 +74,37 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <!-- AXL(아진넥스텍) 라이브러리 경로. 32Bit/64Bit 폴더의 AXL.dll, EzBasicAxl.dll은
+         파일 이름이 서로 같으므로, 플랫폼과 다른 비트를 물면 프로세스가 로드 단계에서
+         0xC000007B(STATUS_INVALID_IMAGE_FORMAT)로 즉시 종료된다.
+         경로는 여기 한 곳에서만 정의하고, 설치본이 아니라 리포지토리 사본을 사용한다. -->
+    <AxlBitDir Condition="'$(Platform)'=='Win32'">32Bit</AxlBitDir>
+    <AxlBitDir Condition="'$(Platform)'=='x64'">64Bit</AxlBitDir>
+    <AxlRoot>$(MSBuildProjectDirectory)\Library\AXL%28Library%29</AxlRoot>
+    <AxlIncludeDir>$(AxlRoot)\C, C++</AxlIncludeDir>
+    <AxlLibDir>$(AxlRoot)\Library\$(AxlBitDir)</AxlLibDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\32Bit;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(AxlIncludeDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(AxlLibDir);$(LibraryPath)</LibraryPath>
     <OutDir>C:\WORK\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\64Bit;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(AxlIncludeDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(AxlLibDir);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(AxlIncludeDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(AxlLibDir);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(AxlIncludeDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(AxlLibDir);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -123,6 +137,13 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <!-- 빌드된 exe 옆에 항상 같은 비트의 AXL 런타임 DLL을 둔다.
+         내용이 다를 때만 복사하므로(fc /b) 반복 빌드나 실행 중 파일 잠금 영향이 없다. -->
+    <PostBuildEvent>
+      <Message>AXL 런타임 DLL 동기화 ($(AxlBitDir))</Message>
+      <Command>fc /b "$(AxlLibDir)\AXL.dll" "$(OutDir)AXL.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\AXL.dll" "$(OutDir)."
+fc /b "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)EzBasicAxl.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -132,13 +153,13 @@
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/MP /source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AxlIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>AXL.lib;kernel32.lib;ws2_32.lib;mswsock.lib;advapi32.lib;winmm.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\64Bit;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(AxlLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -150,6 +171,13 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <!-- 빌드된 exe 옆에 항상 같은 비트의 AXL 런타임 DLL을 둔다.
+         내용이 다를 때만 복사하므로(fc /b) 반복 빌드나 실행 중 파일 잠금 영향이 없다. -->
+    <PostBuildEvent>
+      <Message>AXL 런타임 DLL 동기화 ($(AxlBitDir))</Message>
+      <Command>fc /b "$(AxlLibDir)\AXL.dll" "$(OutDir)AXL.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\AXL.dll" "$(OutDir)."
+fc /b "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)EzBasicAxl.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -166,6 +194,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>AXL.lib;kernel32.lib;ws2_32.lib;mswsock.lib;advapi32.lib;winmm.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -177,6 +206,13 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <!-- 빌드된 exe 옆에 항상 같은 비트의 AXL 런타임 DLL을 둔다.
+         내용이 다를 때만 복사하므로(fc /b) 반복 빌드나 실행 중 파일 잠금 영향이 없다. -->
+    <PostBuildEvent>
+      <Message>AXL 런타임 DLL 동기화 ($(AxlBitDir))</Message>
+      <Command>fc /b "$(AxlLibDir)\AXL.dll" "$(OutDir)AXL.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\AXL.dll" "$(OutDir)."
+fc /b "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)EzBasicAxl.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -193,6 +229,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>AXL.lib;kernel32.lib;ws2_32.lib;mswsock.lib;advapi32.lib;winmm.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -204,6 +241,13 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <!-- 빌드된 exe 옆에 항상 같은 비트의 AXL 런타임 DLL을 둔다.
+         내용이 다를 때만 복사하므로(fc /b) 반복 빌드나 실행 중 파일 잠금 영향이 없다. -->
+    <PostBuildEvent>
+      <Message>AXL 런타임 DLL 동기화 ($(AxlBitDir))</Message>
+      <Command>fc /b "$(AxlLibDir)\AXL.dll" "$(OutDir)AXL.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\AXL.dll" "$(OutDir)."
+fc /b "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)EzBasicAxl.dll" &gt;nul 2&gt;&amp;1 || xcopy /Y "$(AxlLibDir)\EzBasicAxl.dll" "$(OutDir)."</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="SEQApp\Comm\CLASS_ComPacket.h" />
