@@ -14,6 +14,12 @@ BOOL WINAPI ContrlHandler(DWORD Opcode);
 
 void CSeqMain::InitConsole(void)
 {
+	// No console in the Windows-subsystem (Release) build: the /subsystem:console
+	// switch above is guarded by _DEBUG. Without this guard the system() calls below
+	// would allocate a console and flash a cmd window on startup.
+	if (::GetConsoleWindow() == NULL)
+		return;
+
 	HANDLE hwndConsole = ::GetConsoleWindow();
 	HMENU hmenu = ::GetSystemMenu(::GetConsoleWindow(), FALSE);
 //	::MoveWindow(::GetConsoleWindow(), 200, 300, 100, 30, 1);
