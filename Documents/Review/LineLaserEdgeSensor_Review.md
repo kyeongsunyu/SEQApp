@@ -148,15 +148,16 @@ OEM 센서 모듈 쪽이 맞다. 두 계열을 모두 정리한다.
 
 | 제조사 · 모델 | 원리 | 분해능 | 측정 범위 | 헤드 | 5 mm 제약 |
 |---|---|---|---|---|---|
-| **Keyence SI-F 시리즈** | 스펙트럼 간섭 | **1 nm (0.001 µm)** | 헤드별 상이 | **파이버 헤드 최소 Ø2 mm**(SI-F01 마이크로 헤드) | **○ 충족** |
+| **Keyence SI-F 시리즈** | 스펙트럼 간섭 | 공칭 1 nm (SI-F01 기준 0.25 µm 표기 자료 있음) | **스팬 약 1 mm** (SI-F01 0.05~1.1 mm) | **파이버 헤드 Ø2 mm**(SI-F01) | **○ 충족** |
 | **Precitec CHRocodile 2 IT** | 적외선 간섭 | 상한 레인지 × 3×10⁻⁶ (10.7 mm에서 약 32 nm) | **공기 간격 15 µm ~ 10,700 µm** | 컨트롤러 + 파이버 + 광학 프로브 모듈형 | 프로브 사양 확인 |
 | Micro-Epsilon interferoMETER IMS5400-TH | 근적외 백색광 절대 간섭 | 서브 nm | 두께 측정용 | IMP-TH70: 작동거리 70 mm, 스폿 Ø5 µm | 광축 접근형 |
 | Novacam | 파이버 기반 LCI | 카탈로그 확인 | 모듈형 | 스캐닝 광학 프로브, 파이버 연결 | 프로브 사양 확인 |
 
 #### 추천
 
-1. **인라인 1순위 — Keyence SI-F 시리즈.**
-   분해능 1 nm에 **파이버 헤드 최소 Ø2 mm**로, 1 µm 정확도와 헤드 5 mm 제약을 **동시에 만족하는 유일한 간섭계 계열**이다.
+1. **인라인 1순위 — Keyence SI-F01.**
+   **파이버 헤드 Ø2 mm**로 1 µm 정확도와 헤드 5 mm 제약을 **동시에 만족하는 유일한 간섭계 구성**이다.
+   단 측정 스팬이 약 1 mm로 좁고 작동 거리가 0.05~1.1 mm에 불과하다(아래 상세 스펙 참조).
    국내 기술지원·데모 대응이 가장 빠르고, 컨트롤러(SI-F1001)가 RS-232C를 제공해 기존 `CCommPacket` 구조에 바로 붙는다.
    → 3.1의 컨포컬(ENDO Ø4 mm)과 함께 **최우선 데모 대상 2종**으로 잡을 것을 권고한다.
 2. **인라인 2순위 — Precitec CHRocodile 2 IT.**
@@ -168,6 +169,58 @@ OEM 센서 모듈 쪽이 맞다. 두 계열을 모두 정리한다.
 4. **오프라인 기준기 — TRIOPTICS OptiSurf 또는 Fogale LENSCAN.**
    인라인 센서 값을 검증할 **기준 측정기**로 1대 확보하는 구성이 현실적이다.
    설비에는 인라인 센서를 넣고 주기적으로 오프라인 기준기와 상관성을 검증하는 이원화가 1 µm 관리에 유리하다.
+
+#### Keyence SI-F 시리즈 상세 스펙 (확인 결과)
+
+**구성**: 센서 헤드 + 분광 유닛(SI-F01U / SI-F10U) + 컨트롤러(SI-F1001)의 **3피스 구성**.
+광원은 SLD(슈퍼 루미네선트 다이오드), 헤드는 파이버 접속형으로 **무발열·전자노이즈 무영향**.
+
+| 모델 | 타입 | 측정 범위 | 측정 스팬 | 헤드 | 5 mm 제약 |
+|---|---|---|---|---|---|
+| **SI-F01** | 마이크로 헤드 | **0.05 ~ 1.1 mm** | 약 1.05 mm | **Ø2 mm** | **○ 충족** |
+| **SI-F10** | 장거리 타입 | **11.3 ~ 12.35 mm** | 약 1.05 mm | 외형 확인 필요 | 확인 필요 |
+| SI-F80 / SI-F80R | 웨이퍼 두께 측정용 | **80.01 ~ 81.03 mm** | 약 1.02 mm | 대형 | ✗ |
+
+- 분해능: 계열 공칭 **1 nm**. 단 일부 자료는 SI-F01에 대해 **분해능 0.25 µm / 직선성 ±0.3 µm**로 표기한다.
+  두 수치는 서로 다른 항목(표시분해능 vs 실효 분해능)일 가능성이 높으므로 **정식 데이터시트 확인 필수**.
+  어느 쪽이든 직선성 ±0.3 µm면 1 µm 요구는 충족한다.
+- 샘플링: SI-F80/F80R 기준 5 kHz.
+
+**적합성 판정**
+
+| 요구 | 판정 | 근거 |
+|---|---|---|
+| 헤드 5 mm | ○ **충족(SI-F01)** | **Ø2 mm — 지금까지 확인한 간섭계 중 유일하게 5 mm 이하** |
+| 정확도 1 µm | ○ 충족 | 직선성 ±0.3 µm(표기 기준) |
+| 곡면·유리 | △ 확인 필요 | 정반사면(웨이퍼·유리) 대상 설계. **동축 간섭 방식이라 곡면 정점의 각도 허용범위가 좁을 수 있음** |
+| SEQApp 연동 | ○ | 컨트롤러 SI-F1001 경유, 인터페이스 사양 확인 필요 |
+| **측정 스팬** | **✗ 제약** | **전 모델 약 1 mm** — 후보 중 가장 좁다 |
+| 작동 거리 | 모델별 상이 | SI-F01 **0.05~1.1 mm**(워크에 1 mm 이내 접근 필요), SI-F10 11.3 mm, SI-F80 80 mm |
+
+**가능 모델 추천**
+
+1. **SI-F01 + SI-F01U + SI-F1001 — 갭 삽입형 1순위.**
+   Ø2 mm 헤드로 **5 mm 제약을 만족하는 유일한 간섭계 구성**이다.
+   단 작동 거리가 0.05~1.1 mm로 극히 짧아 **헤드를 렌즈면에서 1 mm 이내까지 접근**시켜야 하고,
+   갭 변동이 1 mm를 넘으면 측정 범위를 벗어난다. 미세 조정량만 측정하는 용도라면 최적이다.
+2. **SI-F10 + SI-F10U + SI-F1001 — 접근 여유 확보형.**
+   기준거리 11.3 mm로 헤드를 갭에서 떨어뜨려 배치할 수 있다. 헤드 외형이 5 mm를 넘으면
+   "광축만 갭을 통과" 배치와 조합한다. 측정 스팬은 동일하게 약 1 mm.
+3. SI-F80 / SI-F80R — 기준거리 80 mm로 완전히 갭 밖에서 측정 가능하나, 웨이퍼 두께계 용도로
+   본 건과 용도가 어긋난다. 광축 접근이 확보된 경우에만 검토.
+
+> **판정 요약**: SI-F01은 "헤드 5 mm"라는 가장 풀기 어려운 제약을 유일하게 해결하는 간섭계다.
+> 그러나 **측정 스팬 약 1 mm**는 후보 중 가장 좁아, **갭 변동이 1 mm 이내로 확정될 때만 성립**한다.
+> 갭 변동 폭에 따른 선택은 다음과 같다.
+>
+> | 갭 변동 폭 | 권장 |
+> |---|---|
+> | ~1 mm 이내 | **Keyence SI-F01**(Ø2 mm, 5 mm 제약 충족) 또는 STIL ENDO Ø4 mm 컨포컬 |
+> | ~4 mm 이내 | Micro-Epsilon IMS5400-TH70/MP |
+> | ~10 mm 이내 | Micro-Epsilon confocalDT IFD2415-10 (헤드 갭 밖) |
+> | 10.7 mm까지 | Precitec CHRocodile 2 IT |
+>
+> 즉 **갭 실치수 확정 없이는 어떤 모델도 확정할 수 없다.** 이것이 현재 검토의 최대 병목이다.
 
 #### Micro-Epsilon interferoMETER IMS5400 상세 스펙 (확인 결과)
 
@@ -327,6 +380,9 @@ OEM 센서 모듈 쪽이 맞다. 두 계열을 모두 정리한다.
 - TRIOPTICS OptiSurf 중심두께·공기간격 측정(정확도 0.15 µm): https://www.trioptics.com/products/optisurf-center-thickness-and-air-gap-measurement
 - HEIDENHAIN METRO MT 12/25 길이 게이지(정확도 ±0.2 µm): https://www.heidenhain.com/fileadmin/pdf/en/01_Products/Produktinformationen/PI_HEIDENHAIN_Metro_MT12_25_ID1068623_en.pdf
 - TRIOPTICS OptiSurf LTM(단렌즈·더블릿, ±0.5 µm, 유리 두께 150 mm): https://www.trioptics.com/products/optisurf-ltm-lens-center-thickness-measurement
+- Keyence SI-F01 마이크로 헤드(Ø2 mm, 측정 범위 0.05~1.1 mm): https://www.keyence.com/products/measure/spectral/si-f/models/si-f01/
+- Keyence SI-F10 장거리 헤드(11.3~12.35 mm): https://www.keyence.com/products/measure/spectral/si-f/models/si-f10/
+- Keyence SI-F80R 웨이퍼 두께계(80.01~81.03 mm, 5 kHz): https://www.keyence.com/products/measure/spectral/si-f80r/specs/
 - Keyence SI-F 스펙트럼 간섭 변위계(분해능 1 nm, 파이버 헤드 Ø2 mm): https://www.keyence.com/products/measure/spectral/si-f/
 - Precitec CHRocodile 2 IT(공기 간격 15 µm~10,700 µm, 70 kHz): https://www.precitec.com/optical-3d-metrology/products/point-sensors/chrocodile-2-it-precise-and-fast-thickness-measurements/
 - Micro-Epsilon IMS5400-TH70(작동거리 70 mm, 스폿 Ø5 µm, 분해능 < 1 nm): https://www.micro-epsilon.com/news/2021/2021-04-19-interferoMETER-5400-TH70/
