@@ -93,6 +93,55 @@
 - **단점**: 광축 방향 광학 접근 경로 확보 필요, 장비 단가가 높고 인라인 통합 난도가 있다.
 - 측정하려는 값이 결국 **렌즈면과 기준면 사이의 공기 간격**이라면, 이 방식이 정공법이다.
 
+### 3.4 OptiSurf 계열(저간섭 간섭계) 측정기 상세 비교
+
+같은 "저간섭 간섭계" 원리라도 제품은 **완제품 측정 스테이션**과 **장비 내장용 OEM 센서 모듈**로 갈린다.
+OptiSurf는 자체 척과 정렬 기구를 갖춘 **오프라인 측정 스테이션**이므로, SEQApp 설비 안에 넣어 인라인으로 쓰려면
+OEM 센서 모듈 쪽이 맞다. 두 계열을 모두 정리한다.
+
+#### (A) 완제품 측정 스테이션 — 오프라인 기준기 / 검증용
+
+| 제조사 · 모델 | 원리 | 정확도 | 특징 |
+|---|---|---|---|
+| **TRIOPTICS OptiSurf** | 저간섭 간섭계 | **최대 0.15 µm** | 광학계 내 전 면간 거리를 1회 스캔으로 측정. 업계 표준 |
+| TRIOPTICS OptiSurf LTM | 저간섭 간섭계 | ±0.5 µm | 단렌즈·더블릿 중심두께/새그, 유리 두께 150 mm까지. 셀프센터링 척, 터치스크린 |
+| **Fogale nanotech LENSCAN** | 시간영역 저간섭 스캐닝 | 카탈로그 확인 | 조립체 내 모든 광학 요소의 중심두께·공기 간격을 광축 방향으로 측정. OptiSurf 직접 경쟁 |
+| Lumetrics OptiGauge II | 시간영역 LCI (1310 nm) | 서브 µm | 두께 12 µm ~ 16 mm(굴절률 종속). 렌즈 스택·본딩 웨이퍼 등 범용 |
+| Rotlex MCT-3000 | LCI | 서브 µm | 1초 이내 측정, 단일 렌즈에서 최대 20개 층 분리 검출 |
+
+#### (B) 장비 내장용 OEM 센서 모듈 — SEQApp 인라인 통합용 (권장)
+
+| 제조사 · 모델 | 원리 | 분해능 | 측정 범위 | 헤드 | 5 mm 제약 |
+|---|---|---|---|---|---|
+| **Keyence SI-F 시리즈** | 스펙트럼 간섭 | **1 nm (0.001 µm)** | 헤드별 상이 | **파이버 헤드 최소 Ø2 mm**(SI-F01 마이크로 헤드) | **○ 충족** |
+| **Precitec CHRocodile 2 IT** | 적외선 간섭 | 상한 레인지 × 3×10⁻⁶ (10.7 mm에서 약 32 nm) | **공기 간격 15 µm ~ 10,700 µm** | 컨트롤러 + 파이버 + 광학 프로브 모듈형 | 프로브 사양 확인 |
+| Micro-Epsilon interferoMETER IMS5400-TH | 근적외 백색광 절대 간섭 | 서브 nm | 두께 측정용 | IMP-TH70: 작동거리 70 mm, 스폿 Ø5 µm | 광축 접근형 |
+| Novacam | 파이버 기반 LCI | 카탈로그 확인 | 모듈형 | 스캐닝 광학 프로브, 파이버 연결 | 프로브 사양 확인 |
+
+#### 추천
+
+1. **인라인 1순위 — Keyence SI-F 시리즈.**
+   분해능 1 nm에 **파이버 헤드 최소 Ø2 mm**로, 1 µm 정확도와 헤드 5 mm 제약을 **동시에 만족하는 유일한 간섭계 계열**이다.
+   국내 기술지원·데모 대응이 가장 빠르고, 컨트롤러(SI-F1001)가 RS-232C를 제공해 기존 `CCommPacket` 구조에 바로 붙는다.
+   → 3.1의 컨포컬(ENDO Ø4 mm)과 함께 **최우선 데모 대상 2종**으로 잡을 것을 권고한다.
+2. **인라인 2순위 — Precitec CHRocodile 2 IT.**
+   공기 간격 측정 범위가 **최대 10.7 mm**로 넓어 갭 변동이 큰 경우 유리하다. 70 kHz 고속은 본 건에서 무의미하지만
+   넓은 레인지와 32 nm급 분해능이 장점이다.
+3. **인라인 3순위 — Micro-Epsilon IMS5400-TH.**
+   금속 하우징·능동 온도 보상으로 생산라인 통합을 전제로 설계됐다. 4장의 열 오차 대응 측면에서 이점이 있다.
+4. **오프라인 기준기 — TRIOPTICS OptiSurf 또는 Fogale LENSCAN.**
+   인라인 센서 값을 검증할 **기준 측정기**로 1대 확보하는 구성이 현실적이다.
+   설비에는 인라인 센서를 넣고 주기적으로 오프라인 기준기와 상관성을 검증하는 이원화가 1 µm 관리에 유리하다.
+
+#### 도입 전 반드시 확인할 사항
+
+- **광로 구성**: 간섭계는 빔 경로상 반사면 사이의 거리를 측정한다. 따라서 빔이 **기준면 → 공기 간격 → 렌즈면** 순서로
+  지나갈 수 있어야 한다. 기준면이 광축상에서 보이지 않는 배치라면 이 방식 자체가 성립하지 않으므로,
+  기준면의 형상·법선 방향·접근 경로를 먼저 확정해야 한다.
+- **측정 범위**: 갭 실치수가 각 모델의 공기 간격 레인지 안에 들어오는지 (예: Precitec 15 µm ~ 10.7 mm).
+- **반사율**: 금속 기준면(확산 반사)과 유리면(4 % 정반사)의 신호 세기 차이를 한 컨트롤러가 동시에 처리 가능한지.
+- **굴절률·온도 보정**: 공기 굴절률 보정 및 4장의 열팽창 대응이 적용되는지.
+
 ### 3.3 [비광학 대안] 접촉식 측장기
 
 - **HEIDENHAIN METRO MT 12**: 측정범위 12 mm, **정확도 ±0.2 µm**. 측정력 0.2~3.5 N(사양별).
@@ -185,7 +234,9 @@
 - [ ] 설치 환경 온도 변동폭 실측 (±0.5 °C 달성 가능 여부)
 - [ ] "1 µm"의 정의 확정: 반복정밀도(3σ)인지 절대정확도인지
 - [ ] 기준면의 물리적 형상·접근 경로 확인 (컨포컬로 기준면도 측정 가능한지)
-- [ ] 1순위·2순위 방식 데모기 대차 및 실측 검증
+- [ ] 기준면이 광축상에서 보이는 배치인지 확인 (간섭계 방식 성립 조건)
+- [ ] 데모 대상 2종 대차 및 실측 검증: **Keyence SI-F(Ø2 mm 헤드)**, **STIL ENDO Ø4 mm 컨포컬**
+- [ ] 오프라인 기준기(TRIOPTICS OptiSurf / Fogale LENSCAN) 확보 여부 결정
 
 ---
 
@@ -197,6 +248,12 @@
 - Precitec CHRocodile 크로매틱 컨포컬 센서: https://www.precitec.com/optical-3d-metrology/technology/chromatic-confocal-sensors/
 - TRIOPTICS OptiSurf 중심두께·공기간격 측정(정확도 0.15 µm): https://www.trioptics.com/products/optisurf-center-thickness-and-air-gap-measurement
 - HEIDENHAIN METRO MT 12/25 길이 게이지(정확도 ±0.2 µm): https://www.heidenhain.com/fileadmin/pdf/en/01_Products/Produktinformationen/PI_HEIDENHAIN_Metro_MT12_25_ID1068623_en.pdf
+- TRIOPTICS OptiSurf LTM(단렌즈·더블릿, ±0.5 µm, 유리 두께 150 mm): https://www.trioptics.com/products/optisurf-ltm-lens-center-thickness-measurement
+- Keyence SI-F 스펙트럼 간섭 변위계(분해능 1 nm, 파이버 헤드 Ø2 mm): https://www.keyence.com/products/measure/spectral/si-f/
+- Precitec CHRocodile 2 IT(공기 간격 15 µm~10,700 µm, 70 kHz): https://www.precitec.com/optical-3d-metrology/products/point-sensors/chrocodile-2-it-precise-and-fast-thickness-measurements/
+- Micro-Epsilon interferoMETER 5400-TH(서브 nm, 생산라인 통합·능동 온도 보상): https://www.micro-epsilon.com/distance-sensors/interferometers/5400-th/
+- Lumetrics OptiGauge II(1310 nm 시간영역 LCI, 12 µm~16 mm): https://www.lumetrics.com/capabilities-products/non-contact-thickness-measurement-systems/optigauge-ii
+- Novacam 파이버 기반 LCI 두께 측정: https://www.novacam.com/applications/thickness/
 - Panasonic HG-T 투과형 변위 센서(직선성 ±12 µm): https://industry.panasonic.com/ap/en/products/fasys/measurement/measurement/hg-t
 - Keyence IG 시리즈(반복 5 µm, 직선성 ±0.1 %): https://www.keyence.com/products/sensor/positioning/ig/specs/
 
