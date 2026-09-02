@@ -127,11 +127,52 @@ OEM 센서 모듈 쪽이 맞다. 두 계열을 모두 정리한다.
 2. **인라인 2순위 — Precitec CHRocodile 2 IT.**
    공기 간격 측정 범위가 **최대 10.7 mm**로 넓어 갭 변동이 큰 경우 유리하다. 70 kHz 고속은 본 건에서 무의미하지만
    넓은 레인지와 32 nm급 분해능이 장점이다.
-3. **인라인 3순위 — Micro-Epsilon IMS5400-TH.**
-   금속 하우징·능동 온도 보상으로 생산라인 통합을 전제로 설계됐다. 4장의 열 오차 대응 측면에서 이점이 있다.
+3. **인라인 3순위 — Micro-Epsilon IMS5400-TH70/MP.**
+   금속 하우징·능동 온도 보상으로 생산라인 통합을 전제로 설계됐고 직선성 < ±200 nm로 1 µm 요구에 마진이 있다.
+   **단 측정 레인지가 최대 4.2 mm로 좁아, 갭 변동 폭이 확정된 뒤에만 후보로 유효하다**(아래 상세 스펙 참조).
 4. **오프라인 기준기 — TRIOPTICS OptiSurf 또는 Fogale LENSCAN.**
    인라인 센서 값을 검증할 **기준 측정기**로 1대 확보하는 구성이 현실적이다.
    설비에는 인라인 센서를 넣고 주기적으로 오프라인 기준기와 상관성을 검증하는 이원화가 1 µm 관리에 유리하다.
+
+#### Micro-Epsilon interferoMETER IMS5400 상세 스펙 (확인 결과)
+
+| 항목 | IMS5400-TH70 / MP | IMS5400-TH45 | IMS5400-DS19 |
+|---|---|---|---|
+| 용도 | 두께·다층·**공기 간격** | 두께·다층 | 거리(변위) |
+| 측정 레인지 | **최대 4.2 mm** | 카탈로그 확인 | **거리 2.1 mm** (두께 0.01~1.3 mm) |
+| 기준(작동) 거리 | **70 mm** | **45 mm** | **19 mm** |
+| 직선성 | **< ±200 nm** | 카탈로그 확인 | 카탈로그 확인 |
+| 분해능 | < 1 nm (계열 공칭 < 30 pm) | 동일 계열 | 1 nm |
+| 스폿 직경 | **Ø5 µm** | 카탈로그 확인 | **Ø10 µm** |
+| 허용 경사각 | 센서 틸트 **±4°** | 카탈로그 확인 | 측정각 **±2°** |
+| 동시 측정 | **층·공기 간격 최대 5개** (최소 층 35 µm, 최대 1.4 mm/BK7) | 다층 | 투명체 멀티피크 시 최대 14개 거리 |
+| 측정 속도 | 최대 6 kHz | 최대 6 kHz | 최대 6 kHz |
+| 대상 재질 | 유리·필름 | 유리·필름 | **유리, 정반사·확산면 모두** |
+| 접속 | 파이버(2 m, FC/APC) | 파이버 | 파이버(진공 사양 有) |
+| 인터페이스 | Ethernet / EtherCAT / RS422 + 아날로그 출력·엔코더 입력·동기 입력·디지털 I/O, 모듈로 PROFINET·EtherNet/IP | 동일 | 동일 |
+| 옵션 | /MP 멀티피크, /90 90° 편향, /VAC 진공 | /MP | /MP, /90, /VAC |
+
+**적합성 판정**
+
+| 요구 | 판정 | 근거 |
+|---|---|---|
+| 정확도 1 µm | ○ **충족** | 직선성 < ±200 nm → 요구 대비 5배 마진 |
+| 곡면·유리 | △ 조건부 | 대응하지만 **허용 경사각 ±2~4°** — 정점에서 벗어나면 신호 소실 |
+| 헤드 5 mm | △ 확인 필요 | 파이버 접속형이나 광학 헤드 외형은 카탈로그 확인 필요 |
+| 기준면 기준 측정 | ○ | DS19는 정반사·확산면 모두 대응 → 금속 기준면 측정 가능 |
+| SEQApp 연동 | ○ | Ethernet / RS422 제공 |
+| **측정 레인지** | **✗ 제약** | **TH70/MP 최대 4.2 mm, DS19 거리 2.1 mm** |
+
+> **핵심 제약**: IMS5400 계열은 정확도는 충분하나 **측정 레인지가 2.1~4.2 mm로 좁다.**
+> 갭 변동 폭이 이 범위를 넘으면 측정 범위를 이탈한다. 65 mm 이동 구간 전체를 이 센서 하나로 볼 수는 없다.
+> - 갭 변동이 **약 4 mm 이내**로 확정되면 → **IMS5400-TH70/MP**가 유력(작동거리 70 mm로 접근성도 좋음)
+> - 그보다 크면 → **Precitec CHRocodile 2 IT**(공기 간격 15 µm ~ 10.7 mm) 또는 레인지가 넓은 컨포컬로 전환
+>
+> 즉 **갭 실치수(최소·최대) 확정이 이 모델 선정의 선결 조건**이다.
+>
+> 참고: 위 수치는 제조사 사이트 접근이 제한된 상태에서 공개 검색 자료로 확보한 값이다.
+> 특히 일부 자료에 "linearity 0.1 nm/K"로 표기된 항목은 직선성이 아니라 **온도 안정성**으로 판단되며,
+> TH45의 레인지·직선성과 광학 헤드 외형 치수는 정식 카탈로그로 반드시 재확인해야 한다.
 
 #### 도입 전 반드시 확인할 사항
 
@@ -251,6 +292,9 @@ OEM 센서 모듈 쪽이 맞다. 두 계열을 모두 정리한다.
 - TRIOPTICS OptiSurf LTM(단렌즈·더블릿, ±0.5 µm, 유리 두께 150 mm): https://www.trioptics.com/products/optisurf-ltm-lens-center-thickness-measurement
 - Keyence SI-F 스펙트럼 간섭 변위계(분해능 1 nm, 파이버 헤드 Ø2 mm): https://www.keyence.com/products/measure/spectral/si-f/
 - Precitec CHRocodile 2 IT(공기 간격 15 µm~10,700 µm, 70 kHz): https://www.precitec.com/optical-3d-metrology/products/point-sensors/chrocodile-2-it-precise-and-fast-thickness-measurements/
+- Micro-Epsilon IMS5400-TH70(작동거리 70 mm, 스폿 Ø5 µm, 분해능 < 1 nm): https://www.micro-epsilon.com/news/2021/2021-04-19-interferoMETER-5400-TH70/
+- Micro-Epsilon 멀티피크 간섭계(TH70/MP 레인지 4.2 mm, 직선성 <±200 nm, 층·공기간격 5개): https://tipteh.com/sensors/high-precision-sensors/multi-peak-industrial-interferometers/
+- Micro-Epsilon IMS5400-DS(거리 레인지·인터페이스): https://www.micro-epsilon.com/distance-sensors/interferometers/5400-ds/
 - Micro-Epsilon interferoMETER 5400-TH(서브 nm, 생산라인 통합·능동 온도 보상): https://www.micro-epsilon.com/distance-sensors/interferometers/5400-th/
 - Lumetrics OptiGauge II(1310 nm 시간영역 LCI, 12 µm~16 mm): https://www.lumetrics.com/capabilities-products/non-contact-thickness-measurement-systems/optigauge-ii
 - Novacam 파이버 기반 LCI 두께 측정: https://www.novacam.com/applications/thickness/
