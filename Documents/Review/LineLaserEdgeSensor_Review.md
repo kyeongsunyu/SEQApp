@@ -75,13 +75,48 @@
   좁은 갭에 삽입해 90° 측면 빔으로 좌·우 면을 각각 겨냥할 수 있어 본 배치와 궁합이 좋다.
   컨트롤러는 STIL ZENITH / CCS / IRIX 계열.
 - 대안 헤드: **Keyence CL-3000**(헤드 Ø8 mm, 분해능 0.1 µm, 투명체·곡면 대응),
-  **Micro-Epsilon confocalDT IFD2410/2415**(분해능 12 nm, 경사면·투명체 대응).
+  **Micro-Epsilon confocalDT IFD2410/2415**(분해능 8 nm~, 경사면·투명체 대응 — 상세는 아래 표).
 - **원리적 장점**: 백색광을 파장별로 다른 초점에 맺어 반사 파장으로 거리를 산출하므로
   삼각측량과 달리 **경면·곡면·투명 유리에서 동작**하며, 유리 앞·뒷면을 분리 측정할 수도 있다.
 - **주의점**:
   - 곡면은 수광 각도 허용 범위(통상 ±15~20°) 안에 들어와야 하므로 **정점(vertex) 정렬이 필수**다.
     정점을 벗어나면 신호가 사라지거나 오측이 된다. → X/Y 스테이지로 신호 피크 서치 루틴 필요.
   - 유리 표면 반사율이 4 %로 낮으므로 저반사 대응 컨트롤러/게인 설정 확인 필요.
+
+#### Micro-Epsilon confocalDT IFD2410 / IFD2415 상세 스펙 (확인 결과)
+
+| 항목 | IFD2410 | IFD2415 |
+|---|---|---|
+| 구성 | **센서 + 컨트롤러 일체형 (파이버 불필요)** | 동일 |
+| 모델·측정 레인지 | IFD2410-1 / -3 / -6 → **1 / 3 / 6 mm** | IFD2415-1 / -3 / -10 → **1 / 3 / 10 mm** |
+| 분해능 | **8 nm~** (일부 자료 12 nm 표기, 모델·설정 종속) | 동일 계열 |
+| 직선성 | **0.25 µm~** (모델별 상이, 장거리 모델은 확인 필요) | 동일 계열 |
+| 측정 속도 | 자료 상이: 최대 8 kHz / 25 kHz(액티브 노출 제어) | 최대 25 kHz |
+| 허용 틸트각 | **X·Y 각 ±4°** | 동일 |
+| 다층 두께 | 거리·두께 측정 | **투명체 최대 5개 층** |
+| 보호등급 | IP65 하우징(전면 IP64 표기 자료 있음) | 동일 |
+| 사용 온도 | **+5 ~ +50 °C** (보관 -20 ~ +70 °C, 습도 5~95 % 비응결) | 동일 |
+| 인터페이스 | **EtherCAT / EtherNet/IP / PROFINET / Ethernet / RS422 / 아날로그 / 엔코더** | 동일 |
+
+**적합성 판정**
+
+| 요구 | 판정 | 근거 |
+|---|---|---|
+| 정확도 1 µm | ○ 조건부 | 직선성 0.25 µm~ → **단거리 모델(1·3 mm)이면 충족**. 10 mm 모델 직선성은 확인 필요 |
+| 측정 레인지 | ○ | 1~10 mm로 IMS5400(2.1~4.2 mm)보다 넓다 |
+| 곡면·유리 | △ 조건부 | 대응하나 **틸트 ±4°** — 정점 정렬 필수, 유리 정반사면은 더 타이트할 수 있음 |
+| **헤드 5 mm** | **✗ 불가** | **센서·컨트롤러 일체형 하우징**이라 5 mm 근처가 될 수 없다 |
+| SEQApp 연동 | ◎ | 산업용 이더넷 전종 + RS422 지원, 파이버 불필요로 배선 단순 |
+
+> **판정 요약**: IFD2410/2415의 강점은 "일체형이라 통합이 쉽다"는 것인데, 이는 **헤드 5 mm 제약과 정면으로 충돌**한다.
+> 참고로 파이버형인 IFS2405 계열도 헤드가 Ø27~40 mm급이라 5 mm에 들어가지 않는다.
+> - **5 mm 제약을 유지**해야 하면 → 여전히 **STIL(Marposs) ENDO Ø4 mm**가 유일한 해다.
+> - **기구를 바꿔 헤드를 갭 밖에 둘 수 있으면** → IFD2415-3 또는 -10이 유력 후보다.
+>   일체형이라 파이버 취급이 없고, EtherCAT/Ethernet으로 SEQApp 연동이 가장 깔끔하다.
+>
+> 참고: 제조사 사이트 접근이 제한된 상태에서 공개 검색 자료로 확보한 값이다.
+> 측정 속도(8 kHz vs 25 kHz)와 보호등급(IP64/IP65)은 자료마다 표기가 달라 정식 데이터시트 확인이 필요하고,
+> **모델별 직선성 수치**는 1 µm 요구 판정에 직결되므로 반드시 원문으로 확인해야 한다.
 
 ### 3.2 [정확도 최우선] 저간섭 간섭계 — 공기 간격 직접 측정
 
@@ -285,6 +320,8 @@ OEM 센서 모듈 쪽이 맞다. 두 계열을 모두 정리한다.
 
 - STIL(Marposs) ChromaPoint / ENDO 미니어처 광학 헤드(Ø4/6/8 mm, 직진·90° 빔): https://www.marposs.com/eng/product/chromapoint-miniature-optical-heads
 - Keyence CL-3000 컨포컬 변위 센서(헤드 Ø8 mm): https://www.keyence.com/products/measure/laser-1d/cl-3000/
+- Micro-Epsilon confocalDT IFD2410/2415(일체형, 레인지 1~10 mm, 분해능 8 nm~, 직선성 0.25 µm~): https://www.micro-epsilon.com/distance-sensors/confocal-sensors/confocaldt-ifd2410-2415/
+- Micro-Epsilon IFS2405 유니버설 센서(레인지 0.3~30 mm, 틸트 ±10~17°): https://www.micro-epsilon.com/distance-sensors/confocal-sensors/sensors/universal-sensors/
 - Micro-Epsilon confocalDT(경사면·투명체 대응): https://www.micro-epsilon.com/distance-sensors/confocal-sensors/
 - Precitec CHRocodile 크로매틱 컨포컬 센서: https://www.precitec.com/optical-3d-metrology/technology/chromatic-confocal-sensors/
 - TRIOPTICS OptiSurf 중심두께·공기간격 측정(정확도 0.15 µm): https://www.trioptics.com/products/optisurf-center-thickness-and-air-gap-measurement
