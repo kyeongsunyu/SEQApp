@@ -1,0 +1,241 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1344" height="950" viewBox="0 0 1344 950">
+<rect width="100%" height="100%" fill="#fbfbf8"/>
+<g stroke-linecap="round">
+<line x1="32.0" y1="918.4" x2="1312.0" y2="918.4" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="1312.0" y1="918.4" x2="1312.0" y2="32.0" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="1312.0" y1="32.0" x2="32.0" y2="32.0" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="32.0" y1="32.0" x2="32.0" y2="918.4" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="38.4" y1="912.0" x2="1305.6" y2="912.0" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="1305.6" y1="912.0" x2="1305.6" y2="38.4" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="1305.6" y1="38.4" x2="38.4" y2="38.4" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="38.4" y1="38.4" x2="38.4" y2="912.0" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="800.0" y1="912.0" x2="1305.6" y2="912.0" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="1305.6" y1="912.0" x2="1305.6" y2="771.2" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="1305.6" y1="771.2" x2="800.0" y2="771.2" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="800.0" y1="771.2" x2="800.0" y2="912.0" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="800.0" y1="876.8" x2="1305.6" y2="876.8" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="800.0" y1="841.6" x2="1305.6" y2="841.6" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="800.0" y1="806.4" x2="1305.6" y2="806.4" stroke="#1a1a1a" stroke-width="2.2"/>
+<line x1="1120.0" y1="912.0" x2="1120.0" y2="806.4" stroke="#1a1a1a" stroke-width="2.2"/>
+<text x="809.6" y="793.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="11.8" fill="#1a1a1a" text-anchor="start">LINE SCAN INSPECTION  /  1-AXIS ENCODER TRIGGER</text>
+<text x="809.6" y="828.8" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="10.4" fill="#1a1a1a" text-anchor="start">SHEET 2 : X4 COMMAND / STATUS WIRING</text>
+<text x="809.6" y="860.8" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="start">PROJECT : SEQApp</text>
+<text x="809.6" y="896.0" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="start">DRAWN   : (   )    CHK : (   )</text>
+<text x="1129.6" y="860.8" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="start">SHEET 2 OF 3</text>
+<text x="1129.6" y="896.0" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="start">Rev.2   SIZE A3   DATE:(      )</text>
+<line x1="76.8" y1="643.2" x2="352.0" y2="643.2" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="352.0" y1="643.2" x2="352.0" y2="80.0" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="352.0" y1="80.0" x2="76.8" y2="80.0" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="76.8" y1="80.0" x2="76.8" y2="643.2" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="76.8" y1="102.4" x2="352.0" y2="102.4" stroke="#3465a4" stroke-width="2.2"/>
+<text x="214.4" y="96.0" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="9.8" fill="#1a1a1a" text-anchor="middle">AJINEXTEK</text>
+<text x="214.4" y="121.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="middle">AXM motion board</text>
+<text x="214.4" y="137.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="middle">+ AXD digital I/O</text>
+<line x1="934.4" y1="643.2" x2="1209.6" y2="643.2" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="1209.6" y1="643.2" x2="1209.6" y2="80.0" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="1209.6" y1="80.0" x2="934.4" y2="80.0" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="934.4" y1="80.0" x2="934.4" y2="643.2" stroke="#3465a4" stroke-width="2.2"/>
+<line x1="934.4" y1="102.4" x2="1209.6" y2="102.4" stroke="#3465a4" stroke-width="2.2"/>
+<text x="1072.0" y="96.0" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="9.8" fill="#1a1a1a" text-anchor="middle">MBDLT25SM</text>
+<text x="1072.0" y="121.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="middle">CONNECTOR  X4</text>
+<text x="1072.0" y="137.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="middle">50 PIN</text>
+<circle cx="352.0" cy="124.8" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="127.3" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">PULSE OUT +</text>
+<circle cx="934.4" cy="124.8" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="127.3" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">PULS1</text>
+<line x1="352.0" y1="124.8" x2="934.4" y2="124.8" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="124.8" x2="914.6" y2="121.6" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="124.8" x2="914.6" y2="128.0" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="825.6" y1="135.0" x2="908.8" y2="135.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="135.0" x2="908.8" y2="114.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="114.6" x2="825.6" y2="114.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="114.6" x2="825.6" y2="135.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="127.4" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="158.4" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="160.9" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">PULSE OUT -</text>
+<circle cx="934.4" cy="158.4" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="160.9" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">PULS2</text>
+<line x1="352.0" y1="158.4" x2="934.4" y2="158.4" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="158.4" x2="914.6" y2="155.2" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="158.4" x2="914.6" y2="161.6" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="825.6" y1="168.6" x2="908.8" y2="168.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="168.6" x2="908.8" y2="148.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="148.2" x2="825.6" y2="148.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="148.2" x2="825.6" y2="168.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="161.0" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="192.0" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="194.5" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">DIR OUT +</text>
+<circle cx="934.4" cy="192.0" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="194.5" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">SIGN1</text>
+<line x1="352.0" y1="192.0" x2="934.4" y2="192.0" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="192.0" x2="914.6" y2="188.8" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="192.0" x2="914.6" y2="195.2" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="825.6" y1="202.2" x2="908.8" y2="202.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="202.2" x2="908.8" y2="181.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="181.8" x2="825.6" y2="181.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="181.8" x2="825.6" y2="202.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="194.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="225.6" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="228.1" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">DIR OUT -</text>
+<circle cx="934.4" cy="225.6" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="228.1" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">SIGN2</text>
+<line x1="352.0" y1="225.6" x2="934.4" y2="225.6" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="225.6" x2="914.6" y2="222.4" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="921.6" y1="225.6" x2="914.6" y2="228.8" stroke="#1f9ede" stroke-width="1.9"/>
+<line x1="825.6" y1="235.8" x2="908.8" y2="235.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="235.8" x2="908.8" y2="215.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="215.4" x2="825.6" y2="215.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="215.4" x2="825.6" y2="235.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="228.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="259.2" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="261.7" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">SERVO ON</text>
+<circle cx="934.4" cy="259.2" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="261.7" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">SRV-ON</text>
+<line x1="352.0" y1="259.2" x2="934.4" y2="259.2" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="259.2" x2="914.6" y2="256.0" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="259.2" x2="914.6" y2="262.4" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="269.4" x2="908.8" y2="269.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="269.4" x2="908.8" y2="249.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="249.0" x2="825.6" y2="249.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="249.0" x2="825.6" y2="269.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="261.8" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="292.8" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="295.3" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">ALARM CLEAR</text>
+<circle cx="934.4" cy="292.8" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="295.3" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">A-CLR</text>
+<line x1="352.0" y1="292.8" x2="934.4" y2="292.8" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="292.8" x2="914.6" y2="289.6" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="292.8" x2="914.6" y2="296.0" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="303.0" x2="908.8" y2="303.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="303.0" x2="908.8" y2="282.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="282.6" x2="825.6" y2="282.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="282.6" x2="825.6" y2="303.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="295.4" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="326.4" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="328.9" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">DEV CTR CLEAR</text>
+<circle cx="934.4" cy="326.4" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="328.9" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">CL</text>
+<line x1="352.0" y1="326.4" x2="934.4" y2="326.4" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="326.4" x2="914.6" y2="323.2" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="326.4" x2="914.6" y2="329.6" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="336.6" x2="908.8" y2="336.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="336.6" x2="908.8" y2="316.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="316.2" x2="825.6" y2="316.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="316.2" x2="825.6" y2="336.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="329.0" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="360.0" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="362.5" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">OVERTRAVEL +</text>
+<circle cx="934.4" cy="360.0" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="362.5" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">POT</text>
+<line x1="352.0" y1="360.0" x2="934.4" y2="360.0" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="360.0" x2="914.6" y2="356.8" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="360.0" x2="914.6" y2="363.2" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="370.2" x2="908.8" y2="370.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="370.2" x2="908.8" y2="349.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="349.8" x2="825.6" y2="349.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="349.8" x2="825.6" y2="370.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="362.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="393.6" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="396.1" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">OVERTRAVEL -</text>
+<circle cx="934.4" cy="393.6" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="396.1" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">NOT</text>
+<line x1="352.0" y1="393.6" x2="934.4" y2="393.6" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="393.6" x2="914.6" y2="390.4" stroke="#26a269" stroke-width="1.9"/>
+<line x1="921.6" y1="393.6" x2="914.6" y2="396.8" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="403.8" x2="908.8" y2="403.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="403.8" x2="908.8" y2="383.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="383.4" x2="825.6" y2="383.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="383.4" x2="825.6" y2="403.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="396.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="427.2" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="429.7" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">ALARM IN</text>
+<circle cx="934.4" cy="427.2" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="429.7" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">ALM+ / ALM-</text>
+<line x1="352.0" y1="427.2" x2="934.4" y2="427.2" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="427.2" x2="371.8" y2="430.4" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="427.2" x2="371.8" y2="424.0" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="437.4" x2="908.8" y2="437.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="437.4" x2="908.8" y2="417.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="417.0" x2="825.6" y2="417.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="417.0" x2="825.6" y2="437.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="429.8" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="460.8" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="463.3" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">SERVO READY IN</text>
+<circle cx="934.4" cy="460.8" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="463.3" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">S-RDY+ / -</text>
+<line x1="352.0" y1="460.8" x2="934.4" y2="460.8" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="460.8" x2="371.8" y2="464.0" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="460.8" x2="371.8" y2="457.6" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="471.0" x2="908.8" y2="471.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="471.0" x2="908.8" y2="450.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="450.6" x2="825.6" y2="450.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="450.6" x2="825.6" y2="471.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="463.4" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="494.4" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="496.9" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">IN-POSITION IN</text>
+<circle cx="934.4" cy="494.4" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="496.9" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">INP+ / INP-</text>
+<line x1="352.0" y1="494.4" x2="934.4" y2="494.4" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="494.4" x2="371.8" y2="497.6" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="494.4" x2="371.8" y2="491.2" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="504.6" x2="908.8" y2="504.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="504.6" x2="908.8" y2="484.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="484.2" x2="825.6" y2="484.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="484.2" x2="825.6" y2="504.6" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="497.0" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="528.0" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="530.5" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">BRAKE OUT</text>
+<circle cx="934.4" cy="528.0" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="530.5" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">BRK-OFF+ / -</text>
+<line x1="352.0" y1="528.0" x2="934.4" y2="528.0" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="528.0" x2="371.8" y2="531.2" stroke="#26a269" stroke-width="1.9"/>
+<line x1="364.8" y1="528.0" x2="371.8" y2="524.8" stroke="#26a269" stroke-width="1.9"/>
+<line x1="825.6" y1="538.2" x2="908.8" y2="538.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="538.2" x2="908.8" y2="517.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="517.8" x2="825.6" y2="517.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="517.8" x2="825.6" y2="538.2" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="530.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="561.6" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="564.1" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">DC24V +</text>
+<circle cx="934.4" cy="561.6" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="564.1" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">COM+</text>
+<line x1="352.0" y1="561.6" x2="934.4" y2="561.6" stroke="#e01b24" stroke-width="1.9"/>
+<line x1="921.6" y1="561.6" x2="914.6" y2="558.4" stroke="#e01b24" stroke-width="1.9"/>
+<line x1="921.6" y1="561.6" x2="914.6" y2="564.8" stroke="#e01b24" stroke-width="1.9"/>
+<line x1="825.6" y1="571.8" x2="908.8" y2="571.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="571.8" x2="908.8" y2="551.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="551.4" x2="825.6" y2="551.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="551.4" x2="825.6" y2="571.8" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="564.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<circle cx="352.0" cy="595.2" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="345.0" y="597.7" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="end">DC24V 0V</text>
+<circle cx="934.4" cy="595.2" r="2.9" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+<text x="941.4" y="597.7" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.2" fill="#7a7a7a" text-anchor="start">COM-</text>
+<line x1="352.0" y1="595.2" x2="934.4" y2="595.2" stroke="#e01b24" stroke-width="1.9"/>
+<line x1="921.6" y1="595.2" x2="914.6" y2="592.0" stroke="#e01b24" stroke-width="1.9"/>
+<line x1="921.6" y1="595.2" x2="914.6" y2="598.4" stroke="#e01b24" stroke-width="1.9"/>
+<line x1="825.6" y1="605.4" x2="908.8" y2="605.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="605.4" x2="908.8" y2="585.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="908.8" y1="585.0" x2="825.6" y2="585.0" stroke="#7a7a7a" stroke-width="1.2"/>
+<line x1="825.6" y1="585.0" x2="825.6" y2="605.4" stroke="#7a7a7a" stroke-width="1.2"/>
+<text x="867.2" y="597.8" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="middle">X4-__</text>
+<text x="643.2" y="96.3" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="9.8" fill="#1a1a1a" text-anchor="middle">SIGNAL</text>
+<text x="867.2" y="95.6" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.8" fill="#7a7a7a" text-anchor="middle">PIN (TBD)</text>
+<line x1="76.8" y1="886.4" x2="1209.6" y2="886.4" stroke="#c8a000" stroke-width="1.2"/>
+<line x1="1209.6" y1="886.4" x2="1209.6" y2="700.8" stroke="#c8a000" stroke-width="1.2"/>
+<line x1="1209.6" y1="700.8" x2="76.8" y2="700.8" stroke="#c8a000" stroke-width="1.2"/>
+<line x1="76.8" y1="700.8" x2="76.8" y2="886.4" stroke="#c8a000" stroke-width="1.2"/>
+<line x1="76.8" y1="723.2" x2="1209.6" y2="723.2" stroke="#c8a000" stroke-width="1.2"/>
+<text x="84.8" y="716.8" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="9.1" fill="#c8a000" text-anchor="start">NOTES</text>
+<text x="84.8" y="739.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">1. PIN NUMBER COLUMN IS INTENTIONALLY LEFT BLANK. THE X4 PIN ASSIGNMENT WAS NOT VERIFIED AGAINST THE</text>
+<text x="84.8" y="755.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">   MBDLT25SM MANUAL. FILL IN FROM THE OFFICIAL PIN LAYOUT BEFORE HARNESS FABRICATION.</text>
+<text x="84.8" y="771.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">2. COMMAND PULSE : USE LINE DRIVER (DIFFERENTIAL) OUTPUT. SET AxmMotSetPulseOutMethod TO 1-PULSE MODE</text>
+<text x="84.8" y="787.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">   (PULSE + DIR, uMethod 0..3) AND MATCH DRIVER Pr0.05..Pr0.07.</text>
+<text x="84.8" y="803.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">3. ELECTRONIC GEAR (Pr0.08..Pr0.10) SET SO THAT ONE COMMAND PULSE = 0.5 um OF TRAVEL.</text>
+<text x="84.8" y="819.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">   AT 500 mm/s THIS GIVES 1.0 Mpps, WELL INSIDE THE 4 Mpps DRIVER COMMAND INPUT LIMIT.</text>
+<text x="84.8" y="835.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">4. STATUS OUTPUTS (ALM / S-RDY / INP / BRK-OFF) ARE OPTO-ISOLATED PAIRS - OBSERVE POLARITY.</text>
+<text x="84.8" y="851.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">5. HARNESS : 50 PIN CRIMP CONNECTOR. SHIELDED TWISTED PAIR FOR PULS / SIGN PAIRS,</text>
+<text x="84.8" y="867.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">   SHIELD GROUNDED AT THE DRIVER END ONLY. ROUTE CLEAR OF U/V/W MOTOR POWER.</text>
+<text x="84.8" y="883.2" font-family="DejaVu Sans Mono,Consolas,monospace" font-size="7.5" fill="#7a7a7a" text-anchor="start">6. OVERTRAVEL / EMG MAY ALSO BE HARD-WIRED TO THE SAFETY CIRCUIT - SEE MACHINE SAFETY DRAWING.</text>
+</g>
+</svg>
