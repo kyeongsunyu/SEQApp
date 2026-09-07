@@ -173,6 +173,11 @@ void CSeqMain::InitIO(void)
 	// 	aio->ExtTriggerStart();
 
 	AjinCounter = new CAjinCounter();
+
+	// Position synchronised line scan trigger (SIO-HPC4L, periodic mode).
+	// Built here so the counter channel count is known; the scan sequence
+	// configures it per scan through StartPeriodicTrigger().
+	AjinTrigger = new CAjinTrigger();
 }
 //////////////////////////////////////////////////////////////////////////
 void CSeqMain::InitMotorBase(void)
@@ -281,5 +286,6 @@ void CSeqMain::ObjectDelete(void)
 	if (AjinIO != NULL)			delete AjinIO;
 	if (AjinAIO != NULL)		delete AjinAIO;
 	if (AjinCounter != NULL)	delete AjinCounter;
+	if (AjinTrigger != NULL)	delete AjinTrigger;
 	if (pFileLog != NULL)		delete pFileLog;
 }

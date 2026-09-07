@@ -280,6 +280,24 @@ AXL 단일 라이브러리로 통합 제어합니다.
 
 버퍼를 사용하지 않는 하드웨어 위치주기 트리거입니다. **트리거 개수 제한이 없습니다.**
 
+> **구현 완료** — `SEQApp/Hardware/CLASS_TRIGGER.{h,cpp}`의 `CAjinTrigger`에 반영되어 있고
+> `FUNC_Init.cpp`의 `InitIO()`에서 전역 `AjinTrigger`로 생성됩니다.
+> 아래 raw API 시퀀스는 참고용이며, 실제 호출은 `PERIODIC_TRIG_CFG`를 채워
+> `AjinTrigger->StartPeriodicTrigger(cfg)` 한 번으로 끝납니다.
+>
+> ```cpp
+> PERIODIC_TRIG_CFG cfg;              // 기본값: UPP 0.1um, 피치 5um, 폭 2us, High active
+> cfg.lChannelNo = 0;
+> cfg.dScanStart = 0.0;
+> cfg.dScanEnd   = 200.0;             // -> 40,000 트리거
+> AjinTrigger->ResetScanOrigin(0);
+> AjinTrigger->StartPeriodicTrigger(cfg);
+> ```
+>
+> `StartPeriodicTrigger()`는 **피치가 정수 엔코더 카운트가 아니면 거부**하고
+> 반올림으로 생길 상대오차를 로그에 출력합니다 (3.1절의 C-1 제약을 코드로 강제).
+> 펄스폭 1 µs 미만, 채널 범위 초과, 구간 역전도 같은 방식으로 막습니다.
+
 ```cpp
 AxcTriggerSetEnable       (ch, 0);          // 설정 중 출력 정지
 AxcTriggerSetEncoderInput (ch, encInput);   // 엔코더 입력 0~3

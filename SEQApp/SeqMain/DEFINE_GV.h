@@ -37,6 +37,7 @@ CAjinBase* AjinBase;
 CAjinIO* AjinIO;
 CAjinAIO* AjinAIO;
 CAjinCounter* AjinCounter;
+CAjinTrigger* AjinTrigger;
 
 CAjinMotor* MTAxis[50];
 
