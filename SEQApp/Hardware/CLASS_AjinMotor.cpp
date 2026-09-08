@@ -1,6 +1,7 @@
 #include "..\pch.h"
 #include "CLASS_AjinMotor.h"
 #include "..\SeqMain\DEFINE_GVX.h"
+#include "..\Tools\CLASS_INI.h"
 
 extern DWORD	AxmTriggerSetBlockByEvent(long lAxisNo, DWORD dwEventSignal, double dPeriod, double dTrigTime, long lTrigLevel, DWORD dwSelect, DWORD dwOnce);
 
@@ -24,18 +25,35 @@ void CAjinBase::InitBase()
 {
 	const long lIrqNo = 7;
 
-	// bct2dMode selects the hardware type, not a simulation: FALSE for EtherCAT
-	// based motion, TRUE for a pulse-train (ct2d) system, where the wrappers
-	// below skip the calls that only exist on an EtherCAT node network.
+	// How the machine is built and whether the library came up are different
+	// questions. Deriving the hardware type from AxlOpen()'s result conflated
+	// them: a driver that never loaded looked exactly like a pulse system, and
+	// once the open started succeeding the same code would have called this an
+	// EtherCAT machine. So the type comes from configuration.
 	//
-	// Whether the library came up at all is a separate question from which type
-	// of hardware is attached. The old code answered both with one branch and
-	// printed "Success" either way, so a driver that never loaded looked exactly
-	// like a working pulse system.
+	//   [HARDWARE] MotionType = 0  EtherCAT node network
+	//                         = 1  pulse train (ct2d)   <- default
+	CIni Ini(_T("C:/WORK/Config.ini"));
+	int nMotionType = 1;
+	if (Ini.IsKeyExist(_T("HARDWARE"), _T("MotionType"))) {
+		nMotionType = Ini.GetInt(_T("HARDWARE"), _T("MotionType"), 1);
+	}
+	else {
+		// First run on this machine: write the default back so the setting is
+		// visible in the file rather than hidden in the binary.
+		Ini.WriteInt(_T("HARDWARE"), _T("MotionType"), nMotionType);
+		printf("[AXL] Config.ini [HARDWARE] MotionType was missing;"
+			   " defaulted to %d and written back\n", nMotionType);
+	}
+	bct2dMode = (nMotionType != 0) ? TRUE : FALSE;
+	printf("[AXL] hardware type : %s  ([HARDWARE] MotionType=%d)\n",
+		   bct2dMode ? "ct2d / pulse" : "EtherCAT", nMotionType);
+
 	// Which AXL.dll actually got loaded, and what version it is. Copies exist in
 	// the output folder, in System32 and in the installed SDK, so the loader's
-	// choice is not obvious - and a DLL that does not match the running EzManager
-	// reports AXT_RT_NOT_RUN_EZMANAGER (1057) even while EzManager is up.
+	// choice is not obvious - and a DLL whose SHM version does not match the
+	// running EzManager reports AXT_RT_NOT_RUN_EZMANAGER (1057) even while
+	// EzManager is up.
 	HMODULE hAxl = ::GetModuleHandleA("AXL.dll");
 	if (hAxl != NULL) {
 		char szPath[MAX_PATH] = { 0 };
@@ -53,70 +71,44 @@ void CAjinBase::InitBase()
 		printf("[AXL] AxlGetLibVersion() failed, code %lu (0x%lx)\n", dwVer, dwVer);
 	}
 
-	// AxlOpen() resets the hardware chip and brings up the EtherCAT master, which
-	// is why it returns 1057 (EzManager not running) on a pulse-type board set
-	// even while EzManager is up. AxlOpenNoReset() skips that reset - it is what
-	// the AutoFocus SEQ project uses to drive this same board set on x64.
-	//
-	// So the two calls also tell the hardware types apart, which is a firmer
-	// basis than the old "AxlOpen failed, must be ct2d" guess:
-	//   AxlOpen OK          -> EtherCAT node network
-	//   only NoReset OK     -> pulse (ct2d) system
-	//   neither             -> library never came up; nothing is reachable
+	// AxlOpen() resets the hardware chip; AxlOpenNoReset() skips that. Try both
+	// before giving up - neither changes the hardware type decided above.
 	DWORD dwCode = AxlOpen(lIrqNo);
 	if (dwCode != AXT_RT_SUCCESS) {
 		printf("[AXL] AxlOpen(%ld) returned %lu (0x%lx), retrying with"
 			   " AxlOpenNoReset()\n", lIrqNo, dwCode, dwCode);
-
-		DWORD dwNoReset = AxlOpenNoReset(lIrqNo);
-		if (dwNoReset == AXT_RT_SUCCESS) {
-			bct2dMode = TRUE;
-			printf("[AXL] AxlOpenNoReset(%ld) OK -> ct2d (pulse) mode\n", lIrqNo);
-
-			long lAxisCount = 0;
-			if (AxmInfoGetAxisCount(&lAxisCount) == AXT_RT_SUCCESS) {
-				printf("[AXL] %ld axis available\n", lAxisCount);
-			}
-			return;
-		}
-
-		printf("[AXL] AxlOpenNoReset(%ld) also failed, code %lu (0x%lx)\n",
-			   lIrqNo, dwNoReset, dwNoReset);
-		dwCode = dwNoReset;
+		dwCode = AxlOpenNoReset(lIrqNo);
 	}
 
-	bct2dMode = (dwCode != AXT_RT_SUCCESS);
-
-	if (!bct2dMode) {
+	if (dwCode == AXT_RT_SUCCESS) {
 		long lAxisCount = 0;
 		DWORD dwAxis = AxmInfoGetAxisCount(&lAxisCount);
 		if (dwAxis == AXT_RT_SUCCESS) {
-			printf("[AXL] open OK (IRQ %ld) - EtherCAT mode, %ld axis\n",
+			printf("[AXL] open OK (IRQ %ld) - %ld axis available\n",
 				   lIrqNo, lAxisCount);
 		}
 		else {
-			printf("[AXL] open OK (IRQ %ld) - EtherCAT mode, AxmInfoGetAxisCount()"
-				   " failed, code 0x%lx\n", lIrqNo, dwAxis);
+			printf("[AXL] open OK (IRQ %ld) - AxmInfoGetAxisCount() failed,"
+				   " code 0x%lx\n", lIrqNo, dwAxis);
 		}
 		return;
 	}
 
-	printf("[AXL] AxlOpen(%ld) returned %lu (0x%lx) -> ct2d (pulse) mode\n",
-		   lIrqNo, dwCode, dwCode);
+	printf("[AXL] open FAILED, code %lu (0x%lx)\n", dwCode, dwCode);
 
-	// A closed library is not a hardware type, it is a fault: every AXL call
-	// then returns AXT_RT_NOT_OPEN (1053) and no board is reachable, pulse or
-	// otherwise. Say so plainly instead of leaving it to be inferred later.
+	// A closed library is a fault, not a hardware type: every AXL call then
+	// returns AXT_RT_NOT_OPEN (1053) and no board is reachable either way.
 	if (!AxlIsOpened()) {
 		printf("[AXL] WARNING: library is NOT open - every AXL call will fail with"
 			   " 1053 (AXT_RT_NOT_OPEN).\n");
 		if (dwCode == 1057) {   // AXT_RT_NOT_RUN_EZMANAGER
 			printf("      1057 = EzManager not running. If EzManager IS running,"
-				   " the loaded AXL.dll\n"
-				   "      above most likely does not match it - compare its version"
-				   " and bitness with\n"
-				   "      the EzSoftware installation, and check that both run in the"
-				   " same session.\n");
+				   " the AXL.dll listed\n"
+				   "      above does not match it - AXL and EzManager handshake"
+				   " through shared memory\n"
+				   "      and the SHM versions must agree. Compare its version with"
+				   " the EzSoftware\n"
+				   "      installation under Program Files.\n");
 		}
 		else {
 			printf("      Check the AXL driver installation, board detection in"
