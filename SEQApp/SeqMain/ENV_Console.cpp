@@ -28,7 +28,12 @@ void CSeqMain::InitConsole(void)
 	::DeleteMenu(hmenu, SC_CLOSE, MF_BYCOMMAND);
 	::DrawMenuBar(::GetConsoleWindow());
 
-	ShowWindow(::GetConsoleWindow(), SW_HIDE);
+	// Debug build links with /subsystem:console (see the pragma above), so a
+	// console does exist here. Hiding it swallowed every printf, including the
+	// counter module report from CAjinTrigger. Left visible for commissioning -
+	// use ShowConsoleWindow() / HideConsoleWindow() to toggle it at runtime.
+	// In Release there is no console at all, so this line was a no-op there.
+//	ShowWindow(::GetConsoleWindow(), SW_HIDE);
 	
 	SetConsoleRGB(2);		// ±Û¾¾ color º¯°æ
 
