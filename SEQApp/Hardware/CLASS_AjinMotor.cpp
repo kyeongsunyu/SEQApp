@@ -22,15 +22,31 @@ unsigned short int CAjinBase::Isct2dMode()
 
 void CAjinBase::InitBase()
 {
-	long lAxisCount;
-	if (AxlOpen(7) == AXT_RT_SUCCESS) {	// success
-		bct2dMode = FALSE;
-		AxmInfoGetAxisCount(&lAxisCount);
-		printf("Motion Board Initialize Success for EtherCat!...\n");
+	const long lIrqNo = 7;
+
+	// Report the code AxlOpen() returns. Throwing it away left "Success for
+	// FallBack" as the only clue, and that message reads like a success when it
+	// is in fact the failure branch: in fallback no hardware is driven at all,
+	// yet the sequence still prints "Servo ON" for every axis.
+	DWORD dwCode = AxlOpen(lIrqNo);
+	if (dwCode != AXT_RT_SUCCESS) {
+		bct2dMode = TRUE;
+		printf("[AXL] AxlOpen(%ld) FAILED, code %lu (0x%lx)"
+			   " - FALLBACK simulation mode, hardware is NOT driven\n",
+			   lIrqNo, dwCode, dwCode);
+		return;
+	}
+
+	bct2dMode = FALSE;
+
+	long lAxisCount = 0;
+	DWORD dwAxis = AxmInfoGetAxisCount(&lAxisCount);
+	if (dwAxis == AXT_RT_SUCCESS) {
+		printf("[AXL] open OK (IRQ %ld), %ld axis available\n", lIrqNo, lAxisCount);
 	}
 	else {
-		bct2dMode = TRUE;
-		printf("Motion Board Initialize Success for FallBack!...\n");
+		printf("[AXL] open OK (IRQ %ld), AxmInfoGetAxisCount() failed, code 0x%lx\n",
+			   lIrqNo, dwAxis);
 	}
 }
 DWORD CAjinBase::GetModuleNodeStatus(long lBoardNo, long lModulePos)
