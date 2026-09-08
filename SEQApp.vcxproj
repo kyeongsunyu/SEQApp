@@ -85,7 +85,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Library\AXL%28Library%29\Library\64Bit;$(LibraryPath)</LibraryPath>
-    <OutDir>C:\WORK\</OutDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
