@@ -3,42 +3,55 @@
 
 CAjinCounter::CAjinCounter(void)
 {
-	DWORD uStatus;
-	DWORD Code;
-
-	if (AxlIsOpened()) {
-		Code = AxcInfoIsCNTModule(&uStatus);
-		if (Code == AXT_RT_SUCCESS) {
-			if (uStatus == STATUS_EXIST) {
-				long lModuleCounts;
-				Code = AxcInfoGetModuleCount(&lModuleCounts);
-				if (Code == AXT_RT_SUCCESS) {
-					printf("Number of CNT Module : %d\n", lModuleCounts);
-				}
-				else
-					printf("AxcInfoGetModuleCounts() : ERRORcode 0x%x\n", Code);
-
-				//CNT Ã¤³ÎÀÇ °³¼ö¸¦ È®ÀÎ
-				long lChCounts;
-				for (int ModuleNo = 0; ModuleNo < lModuleCounts; ModuleNo++)
-				{
-					Code = AxcInfoGetChannelCount(ModuleNo, &lChCounts);
-					if (Code == AXT_RT_SUCCESS)
-						//printf("%d¹øÂ° ¸ðµâ : CNT Ã¤³Î %d°³ \n", ModuleNo, lChCounts);
-					if (Code != AXT_RT_SUCCESS)
-						printf("AxcnfoGetChannelcount()) : ERROR code 0x%x\n", Code);
-				}
-				//µî·ÏµÇ¾î ÀÖ´Â ÀüÃ¼ CNT Ã¤³ÎÀÇ °³¼ö¸¦ ¹ÝÈ¯
-				long lCNTChannelCounts;
-				Code = AxcInfoGetTotalChannelCount(&lCNTChannelCounts);
-				//printf("µî·ÏµÇ¾î ÀÖ´Â ÀüÃ¼ CNTÃ¤³Î °³¼ö´Â %d°³ÀÔ´Ï´Ù.\n", lCNTChannelCounts);
-
-			}
-		}
-		else {
-			printf("AxcInfoIsCNTModule() : ERROR ( Return FALSE ) code 0x%x\n", Code);
-		}
+	// Every exit reports why. Staying silent made a board-less PC look identical
+	// to a wiring fault: with AXL closed the whole body was skipped and nothing
+	// was printed at all.
+	if (!AxlIsOpened()) {
+		printf("[COUNTER] AXL not opened - counter unavailable\n");
+		return;
 	}
+
+	DWORD uStatus = 0;
+	DWORD dwCode  = AxcInfoIsCNTModule(&uStatus);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[COUNTER] AxcInfoIsCNTModule() failed, code 0x%lx\n", dwCode);
+		return;
+	}
+	if (uStatus != STATUS_EXIST) {
+		printf("[COUNTER] CNT module not found - counter unavailable\n");
+		return;
+	}
+
+	long lModuleCounts = 0;
+	dwCode = AxcInfoGetModuleCount(&lModuleCounts);
+	if (dwCode != AXT_RT_SUCCESS) {
+		// Previously this only printed and fell through, leaving lModuleCounts
+		// uninitialised as the bound of the loop below.
+		printf("[COUNTER] AxcInfoGetModuleCount() failed, code 0x%lx\n", dwCode);
+		return;
+	}
+	printf("[COUNTER] CNT modules : %ld\n", lModuleCounts);
+
+	for (long lModuleNo = 0; lModuleNo < lModuleCounts; lModuleNo++) {
+		long lChCounts = 0;
+		dwCode = AxcInfoGetChannelCount(lModuleNo, &lChCounts);
+		if (dwCode != AXT_RT_SUCCESS) {
+			// The old error test sat inside a success-only if whose body had been
+			// commented out, so that if swallowed the test and it could never run.
+			printf("[COUNTER]   module %ld : AxcInfoGetChannelCount() failed, code 0x%lx\n",
+				   lModuleNo, dwCode);
+			continue;
+		}
+		printf("[COUNTER]   module %ld : %ld channel(s)\n", lModuleNo, lChCounts);
+	}
+
+	long lTotalChannels = 0;
+	dwCode = AxcInfoGetTotalChannelCount(&lTotalChannels);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[COUNTER] AxcInfoGetTotalChannelCount() failed, code 0x%lx\n", dwCode);
+		return;
+	}
+	printf("[COUNTER] CNT ready, %ld channel(s) total\n", lTotalChannels);
 }
 CAjinCounter::~CAjinCounter(void)
 {
