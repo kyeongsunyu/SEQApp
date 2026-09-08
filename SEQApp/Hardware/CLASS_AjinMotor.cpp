@@ -24,29 +24,44 @@ void CAjinBase::InitBase()
 {
 	const long lIrqNo = 7;
 
-	// Report the code AxlOpen() returns. Throwing it away left "Success for
-	// FallBack" as the only clue, and that message reads like a success when it
-	// is in fact the failure branch: in fallback no hardware is driven at all,
-	// yet the sequence still prints "Servo ON" for every axis.
+	// bct2dMode selects the hardware type, not a simulation: FALSE for EtherCAT
+	// based motion, TRUE for a pulse-train (ct2d) system, where the wrappers
+	// below skip the calls that only exist on an EtherCAT node network.
+	//
+	// Whether the library came up at all is a separate question from which type
+	// of hardware is attached. The old code answered both with one branch and
+	// printed "Success" either way, so a driver that never loaded looked exactly
+	// like a working pulse system.
 	DWORD dwCode = AxlOpen(lIrqNo);
-	if (dwCode != AXT_RT_SUCCESS) {
-		bct2dMode = TRUE;
-		printf("[AXL] AxlOpen(%ld) FAILED, code %lu (0x%lx)"
-			   " - FALLBACK simulation mode, hardware is NOT driven\n",
-			   lIrqNo, dwCode, dwCode);
+	bct2dMode = (dwCode != AXT_RT_SUCCESS);
+
+	if (!bct2dMode) {
+		long lAxisCount = 0;
+		DWORD dwAxis = AxmInfoGetAxisCount(&lAxisCount);
+		if (dwAxis == AXT_RT_SUCCESS) {
+			printf("[AXL] open OK (IRQ %ld) - EtherCAT mode, %ld axis\n",
+				   lIrqNo, lAxisCount);
+		}
+		else {
+			printf("[AXL] open OK (IRQ %ld) - EtherCAT mode, AxmInfoGetAxisCount()"
+				   " failed, code 0x%lx\n", lIrqNo, dwAxis);
+		}
 		return;
 	}
 
-	bct2dMode = FALSE;
+	printf("[AXL] AxlOpen(%ld) returned %lu (0x%lx) -> ct2d (pulse) mode\n",
+		   lIrqNo, dwCode, dwCode);
 
-	long lAxisCount = 0;
-	DWORD dwAxis = AxmInfoGetAxisCount(&lAxisCount);
-	if (dwAxis == AXT_RT_SUCCESS) {
-		printf("[AXL] open OK (IRQ %ld), %ld axis available\n", lIrqNo, lAxisCount);
-	}
-	else {
-		printf("[AXL] open OK (IRQ %ld), AxmInfoGetAxisCount() failed, code 0x%lx\n",
-			   lIrqNo, dwAxis);
+	// A closed library is not a hardware type, it is a fault: every AXL call
+	// then returns AXT_RT_NOT_OPEN (1053) and no board is reachable, pulse or
+	// otherwise. Say so plainly instead of leaving it to be inferred later.
+	if (!AxlIsOpened()) {
+		printf("[AXL] WARNING: library is NOT open - every AXL call will fail with"
+			   " 1053.\n"
+			   "      Check the AXL driver installation, board detection in Device"
+			   " Manager,\n"
+			   "      whether another process holds the boards, and IRQ %ld.\n",
+			   lIrqNo);
 	}
 }
 DWORD CAjinBase::GetModuleNodeStatus(long lBoardNo, long lModulePos)
