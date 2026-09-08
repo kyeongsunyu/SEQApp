@@ -53,7 +53,38 @@ void CAjinBase::InitBase()
 		printf("[AXL] AxlGetLibVersion() failed, code %lu (0x%lx)\n", dwVer, dwVer);
 	}
 
+	// AxlOpen() resets the hardware chip and brings up the EtherCAT master, which
+	// is why it returns 1057 (EzManager not running) on a pulse-type board set
+	// even while EzManager is up. AxlOpenNoReset() skips that reset - it is what
+	// the AutoFocus SEQ project uses to drive this same board set on x64.
+	//
+	// So the two calls also tell the hardware types apart, which is a firmer
+	// basis than the old "AxlOpen failed, must be ct2d" guess:
+	//   AxlOpen OK          -> EtherCAT node network
+	//   only NoReset OK     -> pulse (ct2d) system
+	//   neither             -> library never came up; nothing is reachable
 	DWORD dwCode = AxlOpen(lIrqNo);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXL] AxlOpen(%ld) returned %lu (0x%lx), retrying with"
+			   " AxlOpenNoReset()\n", lIrqNo, dwCode, dwCode);
+
+		DWORD dwNoReset = AxlOpenNoReset(lIrqNo);
+		if (dwNoReset == AXT_RT_SUCCESS) {
+			bct2dMode = TRUE;
+			printf("[AXL] AxlOpenNoReset(%ld) OK -> ct2d (pulse) mode\n", lIrqNo);
+
+			long lAxisCount = 0;
+			if (AxmInfoGetAxisCount(&lAxisCount) == AXT_RT_SUCCESS) {
+				printf("[AXL] %ld axis available\n", lAxisCount);
+			}
+			return;
+		}
+
+		printf("[AXL] AxlOpenNoReset(%ld) also failed, code %lu (0x%lx)\n",
+			   lIrqNo, dwNoReset, dwNoReset);
+		dwCode = dwNoReset;
+	}
+
 	bct2dMode = (dwCode != AXT_RT_SUCCESS);
 
 	if (!bct2dMode) {
