@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -123,6 +123,11 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <PostBuildEvent>
+      <Message>Copy AXL runtime (32Bit) to $(OutDir)</Message>
+      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\32Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -150,6 +155,11 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <PostBuildEvent>
+      <Message>Copy AXL runtime (64Bit) to $(OutDir)</Message>
+      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\64Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -177,6 +187,11 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <PostBuildEvent>
+      <Message>Copy AXL runtime (32Bit) to $(OutDir)</Message>
+      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\32Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -204,6 +219,11 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <PostBuildEvent>
+      <Message>Copy AXL runtime (64Bit) to $(OutDir)</Message>
+      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\64Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "$(ProjectDir)Library\AXL%28Library%29\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="SEQApp\Comm\CLASS_ComPacket.h" />
