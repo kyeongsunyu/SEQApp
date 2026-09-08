@@ -77,26 +77,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Library\AXL%28Library%29\Library\32Bit;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\32Bit;$(ProjectDir)Library\AXL%28Library%29\Library\32Bit;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Library\AXL%28Library%29\Library\64Bit;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\64Bit;$(ProjectDir)Library\AXL%28Library%29\Library\64Bit;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Library\AXL%28Library%29\Library\32Bit;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\32Bit;$(ProjectDir)Library\AXL%28Library%29\Library\32Bit;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Library\AXL%28Library%29\Library\64Bit;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;$(ProjectDir)Library\AXL%28Library%29\C, C++;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\Library\64Bit;$(ProjectDir)Library\AXL%28Library%29\Library\64Bit;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -132,8 +132,8 @@
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copy AXL runtime (32Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -163,8 +163,8 @@ xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copy AXL runtime (64Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -196,8 +196,8 @@ xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copy AXL runtime (32Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -229,8 +229,8 @@ xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copy AXL runtime (64Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
+xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
