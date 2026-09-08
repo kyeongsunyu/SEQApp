@@ -3,25 +3,35 @@
 
 CAjinTrigger::CAjinTrigger()
 {
-	// Stays zero when AXL is closed or no counter module is present, so the
-	// channel range check in the periodic mode calls rejects every channel
-	// instead of comparing against an uninitialised value.
+	// Stays zero unless a counter module actually reports channels, so every
+	// periodic mode call refuses instead of driving a channel that is not there.
 	lCntChannelCounts = 0;
 
-	if (AxlIsOpened()) {
-		DWORD uStatus;
-		AxcInfoIsCNTModule(&uStatus);
-		if (uStatus == STATUS_EXIST) {
-			printf("CNT module Exist");
-
-			uStatus = AxcInfoGetTotalChannelCount(&lCntChannelCounts);
-			printf("Total Channel Count = %d\n", lCntChannelCounts);
-
-		}
-		else {
-			printf("CNT module not Found");
-		}
+	// Each failure path says why. Reporting nothing made a board-less PC look
+	// identical to a wiring fault, which cost a debugging session.
+	if (!AxlIsOpened()) {
+		printf("[TRIGGER] AXL not opened - counter trigger unavailable\n");
+		return;
 	}
+
+	DWORD uStatus = 0;
+	DWORD dwCode  = AxcInfoIsCNTModule(&uStatus);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AxcInfoIsCNTModule() failed, code 0x%lx\n", dwCode);
+		return;
+	}
+	if (uStatus != STATUS_EXIST) {
+		printf("[TRIGGER] CNT module not found - counter trigger unavailable\n");
+		return;
+	}
+
+	dwCode = AxcInfoGetTotalChannelCount(&lCntChannelCounts);
+	if (dwCode != AXT_RT_SUCCESS) {
+		lCntChannelCounts = 0;
+		printf("[TRIGGER] AxcInfoGetTotalChannelCount() failed, code 0x%lx\n", dwCode);
+		return;
+	}
+	printf("[TRIGGER] CNT module ready, %ld channel(s)\n", lCntChannelCounts);
 }
 
 CAjinTrigger::~CAjinTrigger()
