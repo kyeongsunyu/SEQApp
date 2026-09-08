@@ -32,6 +32,27 @@ void CAjinBase::InitBase()
 	// of hardware is attached. The old code answered both with one branch and
 	// printed "Success" either way, so a driver that never loaded looked exactly
 	// like a working pulse system.
+	// Which AXL.dll actually got loaded, and what version it is. Copies exist in
+	// the output folder, in System32 and in the installed SDK, so the loader's
+	// choice is not obvious - and a DLL that does not match the running EzManager
+	// reports AXT_RT_NOT_RUN_EZMANAGER (1057) even while EzManager is up.
+	HMODULE hAxl = ::GetModuleHandleA("AXL.dll");
+	if (hAxl != NULL) {
+		char szPath[MAX_PATH] = { 0 };
+		if (::GetModuleFileNameA(hAxl, szPath, MAX_PATH) > 0) {
+			printf("[AXL] module  : %s\n", szPath);
+		}
+	}
+
+	char szVer[64] = { 0 };
+	DWORD dwVer = AxlGetLibVersion(szVer);
+	if (dwVer == AXT_RT_SUCCESS) {
+		printf("[AXL] version : %s\n", szVer);
+	}
+	else {
+		printf("[AXL] AxlGetLibVersion() failed, code %lu (0x%lx)\n", dwVer, dwVer);
+	}
+
 	DWORD dwCode = AxlOpen(lIrqNo);
 	bct2dMode = (dwCode != AXT_RT_SUCCESS);
 
@@ -57,11 +78,21 @@ void CAjinBase::InitBase()
 	// otherwise. Say so plainly instead of leaving it to be inferred later.
 	if (!AxlIsOpened()) {
 		printf("[AXL] WARNING: library is NOT open - every AXL call will fail with"
-			   " 1053.\n"
-			   "      Check the AXL driver installation, board detection in Device"
-			   " Manager,\n"
-			   "      whether another process holds the boards, and IRQ %ld.\n",
-			   lIrqNo);
+			   " 1053 (AXT_RT_NOT_OPEN).\n");
+		if (dwCode == 1057) {   // AXT_RT_NOT_RUN_EZMANAGER
+			printf("      1057 = EzManager not running. If EzManager IS running,"
+				   " the loaded AXL.dll\n"
+				   "      above most likely does not match it - compare its version"
+				   " and bitness with\n"
+				   "      the EzSoftware installation, and check that both run in the"
+				   " same session.\n");
+		}
+		else {
+			printf("      Check the AXL driver installation, board detection in"
+				   " Device Manager,\n"
+				   "      whether another process holds the boards, and IRQ %ld.\n",
+				   lIrqNo);
+		}
 	}
 }
 DWORD CAjinBase::GetModuleNodeStatus(long lBoardNo, long lModulePos)
