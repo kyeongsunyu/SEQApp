@@ -5,6 +5,30 @@
 
 extern DWORD	AxmTriggerSetBlockByEvent(long lAxisNo, DWORD dwEventSignal, double dPeriod, double dTrigTime, long lTrigLevel, DWORD dwSelect, DWORD dwOnce);
 
+// Where the machine configuration lives. The ANSI copy of the directory is
+// separate only because the console diagnostics below go through printf.
+static const TCHAR* const CONFIG_INI_PATH  = _T("C:/WORK/Config.ini");
+static const char*  const CONFIG_DIR_ANSI  = "C:\\WORK";
+static const char*  const CONFIG_INI_ANSI  = "C:\\WORK\\Config.ini";
+
+// Renders a Win32 error code as text, so a failure says what went wrong
+// instead of only which number came back. Always returns pszBuf.
+static const char* Win32ErrText(DWORD dwErr, char* pszBuf, DWORD dwBufLen)
+{
+	if (pszBuf == NULL || dwBufLen == 0)
+		return "";
+
+	pszBuf[0] = '\0';
+	DWORD dwLen = ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+								   NULL, dwErr, 0, pszBuf, dwBufLen, NULL);
+
+	// FormatMessage ends its text with CRLF, which would split the log line.
+	while (dwLen > 0 && (pszBuf[dwLen - 1] == '\r' || pszBuf[dwLen - 1] == '\n'))
+		pszBuf[--dwLen] = '\0';
+
+	return pszBuf;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 CAjinBase::CAjinBase():address(0),axis(0),output(0)
@@ -33,7 +57,25 @@ void CAjinBase::InitBase()
 	//
 	//   [HARDWARE] MotionType = 0  EtherCAT node network
 	//                         = 1  pulse train (ct2d)   <- default
-	CIni Ini(_T("C:/WORK/Config.ini"));
+
+	// WritePrivateProfileString() creates the file but never the directory it
+	// sits in, so on a machine without C:\WORK the first-run write failed and no
+	// Config.ini ever appeared - silently, because nobody read the result.
+	char szErr[256] = { 0 };
+	if (!::CreateDirectoryA(CONFIG_DIR_ANSI, NULL)) {
+		DWORD dwErr = ::GetLastError();
+		if (dwErr != ERROR_ALREADY_EXISTS) {
+			printf("[AXL] cannot create %s : error %lu (%s)\n",
+				   CONFIG_DIR_ANSI, dwErr, Win32ErrText(dwErr, szErr, sizeof(szErr)));
+			printf("[AXL] the config file cannot be written there;"
+				   " create the folder by hand, or run elevated\n");
+		}
+	}
+	else {
+		printf("[AXL] created %s\n", CONFIG_DIR_ANSI);
+	}
+
+	CIni Ini(CONFIG_INI_PATH);
 	int nMotionType = 1;
 	if (Ini.IsKeyExist(_T("HARDWARE"), _T("MotionType"))) {
 		nMotionType = Ini.GetInt(_T("HARDWARE"), _T("MotionType"), 1);
@@ -41,9 +83,20 @@ void CAjinBase::InitBase()
 	else {
 		// First run on this machine: write the default back so the setting is
 		// visible in the file rather than hidden in the binary.
-		Ini.WriteInt(_T("HARDWARE"), _T("MotionType"), nMotionType);
-		printf("[AXL] Config.ini [HARDWARE] MotionType was missing;"
-			   " defaulted to %d and written back\n", nMotionType);
+		::SetLastError(ERROR_SUCCESS);
+		if (Ini.WriteInt(_T("HARDWARE"), _T("MotionType"), nMotionType)) {
+			printf("[AXL] Config.ini [HARDWARE] MotionType was missing;"
+				   " defaulted to %d and written back\n", nMotionType);
+		}
+		else {
+			DWORD dwErr = ::GetLastError();
+			printf("[AXL] could not write [HARDWARE] MotionType to %s : error %lu (%s)\n",
+				   CONFIG_INI_ANSI, dwErr,
+				   Win32ErrText(dwErr, szErr, sizeof(szErr)));
+			printf("[AXL] continuing with the built in default MotionType=%d;"
+				   " the setting stays invisible until the file can be written\n",
+				   nMotionType);
+		}
 	}
 	bct2dMode = (nMotionType != 0) ? TRUE : FALSE;
 	printf("[AXL] hardware type : %s  ([HARDWARE] MotionType=%d)\n",
