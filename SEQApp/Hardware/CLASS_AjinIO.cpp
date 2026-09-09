@@ -1,4 +1,4 @@
-#include "..\pch.h"
+Ôªø#include "..\pch.h"
 #include "CLASS_AjinIO.h"
 
 #define AXT_OUT_START_ADDRESS	20
@@ -11,11 +11,11 @@
 #define AXT_SMC_4V51					0x33				// MCX314,  4 Axis
 #define AXT_SMC_2V53					0x35				// PMD, 2 Axis
 #define AXT_SMC_2V54					0x36				// MCX312,  2 Axis
-#define AXT_SIO_DI32					0x97				// Digital IN  32¡°
-#define AXT_SIO_DO32P					0x98				// Digital OUT 32¡°
-#define AXT_SIO_DB32P					0x99				// Digital IN 16¡° / OUT 16¡°
-#define AXT_SIO_DO32T					0x9E				// Digital OUT 16¡°, Power TR √‚∑¬
-#define AXT_SIO_DB32T					0x9F				// Digital IN 16¡° / OUT 16¡°, Power TR √‚∑¬
+#define AXT_SIO_DI32					0x97				// Digital IN  32Ï†ê
+#define AXT_SIO_DO32P					0x98				// Digital OUT 32Ï†ê
+#define AXT_SIO_DB32P					0x99				// Digital IN 16Ï†ê / OUT 16Ï†ê
+#define AXT_SIO_DO32T					0x9E				// Digital OUT 16Ï†ê, Power TR Ï∂úÎ†•
+#define AXT_SIO_DB32T					0x9F				// Digital IN 16Ï†ê / OUT 16Ï†ê, Power TR Ï∂úÎ†•
 #define AXT_SIO_AI4R					0xA1				// A1h(161) : AI 4Ch, 12 bit
 #define AXT_SIO_AI16H					0xA3				// A3h(163) : AI 4Ch, 16 bit
 #define AXT_SIO_AO4R					0xA2				// A2h(162) : AO 4Ch, 12 bit
@@ -233,19 +233,19 @@ DWORD	AxmTriggerSetBlockByEvent(long lAxisNo, DWORD dwEventSignal, double dPerio
 	if (dwOnce == 1)	dwRemain = QI_OPERATION_ONCE_RUN;
 	else			dwRemain = QI_OPERATION_CONTINUE_RUN;
 
-	// TRGPW º≥¡§
+	// TRGPW ÏÑ§Ï†ï
 	AxmGetCommandData32Qi(lAxisNo, QiTRGPWRead, &dwData);
 
-	dwData &= 0xFFFFFFEF;	// Level √ ±‚»≠
-	dwData &= 0xFFFFFFFE;	// ¡÷±‚∏µÂ º≥¡§ 
-	dwData |= 0x00000080;	// ∆Æ∏Æ∞≈ √‚∑¬ ªÁøÎ º≥¡§
+	dwData &= 0xFFFFFFEF;	// Level Ï¥àÍ∏∞Ìôî
+	dwData &= 0xFFFFFFFE;	// Ï£ºÍ∏∞Î™®Îìú ÏÑ§Ï†ï 
+	dwData |= 0x00000080;	// Ìä∏Î¶¨Í±∞ Ï∂úÎ†• ÏÇ¨Ïö© ÏÑ§Ï†ï
 
 	// Trigger Level
 	lPulseWidth = FLOAT_To_INT((Bound(1, 50000, dTrigTime) / 1000000.0) * 39321600L) - 1;
 	dwLevel |= ((lPulseWidth << 8) & 0xFFFFFF00);
 	dwData |= dwLevel;
 
-	// Trigger ¡÷±‚ º≥¡§
+	// Trigger Ï£ºÍ∏∞ ÏÑ§Ï†ï
 	dwSCRCON = dwRemain |
 		QI_INTERRUPT_GEN_DISABLE |
 		QI_OPERATION_EVENT_AND |
@@ -293,7 +293,7 @@ DWORD	AxmTriggerSetBlockByEvent(long lAxisNo, DWORD dwEventSignal, double dPerio
 	dwQiCommand = SCR_CMD(lAxisNo, QiTRGPWWrite);
 	AxmSetScriptCaptionQi(lAxisNo, QI_SCR_REG1, dwSCRCON, dwQiCommand, dwData);
 
-	// QIEvent2ø°º≠ ∆Æ∏Æ∞≈ √‚∑¬ «ÿ¡¶
+	// QIEvent2ÏóêÏÑú Ìä∏Î¶¨Í±∞ Ï∂úÎ†• Ìï¥Ï†ú
 	dwSCRCON = dwRemain |
 		QI_INTERRUPT_GEN_DISABLE |
 		QI_OPERATION_EVENT_NONE |
@@ -368,8 +368,8 @@ void CAjinAIO::InitCard()
 	for (int ModuleNo = 0; ModuleNo < IModuleCounts; ModuleNo++)
 	{
 		// Grasp IO channel
-		Code = AxaInfoGetInputCount(ModuleNo, &IInputCounts);//¿‘∑¬ √§≥Œ ∞≥ºˆ »Æ¿Œ
-		DWORD Code2 = AxaInfoGetOutputCount(ModuleNo, &IOutputCounts);//√‚∑¬ √§≥Œ ∞≥ºˆ »Æ¿Œ
+		Code = AxaInfoGetInputCount(ModuleNo, &IInputCounts);//ÏûÖÎ†• Ï±ÑÎÑê Í∞úÏàò ÌôïÏù∏
+		DWORD Code2 = AxaInfoGetOutputCount(ModuleNo, &IOutputCounts);//Ï∂úÎ†• Ï±ÑÎÑê Í∞úÏàò ÌôïÏù∏
 		if (Code == AXT_RT_SUCCESS || Code2 == AXT_RT_SUCCESS) {
 			printf("%d Module : Input Channel %d, Output Channel %d\n", ModuleNo, IInputCounts, IOutputCounts);
 		}

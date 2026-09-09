@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <windows.h>
 #include <stdio.h>
@@ -712,7 +712,7 @@ public:
 		{
 			pData->WorkTable[nWT].nStatus[n] = 0;
 		}
-		spdlog::info("MMF Data Write ¿öÅ©Å×ÀÌºí[{}], ÆÄÆ®³Ñ¹ö[{}], ¼¥¿À´õ[{}], ÀÛ¾÷¹øÈ£[{}]", nWT, nPartNum, nSharpNum, nWorkNum);
+		spdlog::info("MMF Data Write ì›Œí¬í…Œì´ë¸”[{}], íŒŒíŠ¸ë„˜ë²„[{}], ìƒµì˜¤ë”[{}], ì‘ì—…ë²ˆí˜¸[{}]", nWT, nPartNum, nSharpNum, nWorkNum);
 		return TRUE;
 	}
 
@@ -729,7 +729,7 @@ public:
 
 		auto pData = static_cast<_MMF*>(pLoc);
 		pData->WorkTable[nWT].nStatus[static_cast<int>(nDevide)] = static_cast<int>(nStatus);
-		spdlog::info("MMF Status Write ¿öÅ©Å×ÀÌºí[{}], À§Ä¡[{}], »óÅÂ[{}]", nWT, static_cast<int>(nDevide), static_cast<int>(nStatus));
+		spdlog::info("MMF Status Write ì›Œí¬í…Œì´ë¸”[{}], ìœ„ì¹˜[{}], ìƒíƒœ[{}]", nWT, static_cast<int>(nDevide), static_cast<int>(nStatus));
 		return TRUE;
 	}*/
 

@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "CLASS_FileLog.h"
 #include "..\SeqMain\DEFINE_GVX.h"
 #include "..\SeqMain\CLASS_Main.h"
@@ -40,13 +40,13 @@ char* CFileLog::Get_file_head(int type)
 }
 void CFileLog::CreateDir(char* Path)
 {
-	// ÀÌ¹Ì ÀÖÀ¸¸é »ı¼ºÇÏÁö ¾Ê´Â´Ù.
-	char DirName[256] = { 0, };  //»ı¼ºÇÒ µğ·ºÃÊ¸® ÀÌ¸§ 
-	char* p = Path;     //ÀÎÀÚ·Î ¹ŞÀº µğ·ºÅä¸® 
+	// ì´ë¯¸ ìˆìœ¼ë©´ ìƒì„±í•˜ì§€ ì•ŠëŠ”ë‹¤.
+	char DirName[256] = { 0, };  //ìƒì„±í•  ë””ë ‰ì´ˆë¦¬ ì´ë¦„ 
+	char* p = Path;     //ì¸ìë¡œ ë°›ì€ ë””ë ‰í† ë¦¬ 
 	char* q = DirName;
 	while (*p)
 	{
-		if (('\\' == *p) || ('/' == *p))   //·çÆ®µğ·ºÅä¸® È¤Àº Subµğ·ºÅä¸® 
+		if (('\\' == *p) || ('/' == *p))   //ë£¨íŠ¸ë””ë ‰í† ë¦¬ í˜¹ì€ Subë””ë ‰í† ë¦¬ 
 		{
 			if (':' != *(p - 1))
 			{
@@ -434,7 +434,7 @@ void CFileLog::Delete_Dated_File(char *dir, int ndeleteday)
 		do {
 			if (wcscmp(FindFileData.cFileName, L".") && wcscmp(FindFileData.cFileName, L"..")) {
 				if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) {
-					// Read-Only file Ã³¸®
+					// Read-Only file ì²˜ë¦¬
 					SetFileAttributes(FindFileData.cFileName, FindFileData.dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
 				}
 			}
@@ -511,8 +511,8 @@ bool CFileLog::TimeNDayCheck(FILETIME ftm, int n_day)
 	return FALSE;
 }
 int CFileLog::is_leap_year(int year)
-/* year°¡ À±³âÀÌ¸é 1À», ¾Æ´Ï¸é 0À» ¸®ÅÏÇÑ´Ù.*/
-/* ÀÌ ÇÔ¼ö´Â ¸ÅÅ©·Î ÇÔ¼ö·Î ¸¸µé¾îµµ µÈ´Ù.   */
+/* yearê°€ ìœ¤ë…„ì´ë©´ 1ì„, ì•„ë‹ˆë©´ 0ì„ ë¦¬í„´í•œë‹¤.*/
+/* ì´ í•¨ìˆ˜ëŠ” ë§¤í¬ë¡œ í•¨ìˆ˜ë¡œ ë§Œë“¤ì–´ë„ ëœë‹¤.   */
 {
 	if (year % 400 == 0) return(1);
 	else if (year % 100 == 0) return(0);
@@ -521,7 +521,7 @@ int CFileLog::is_leap_year(int year)
 }
 
 int CFileLog::get_last_day(int year, int month)
-/* year³â month¿ùÀÇ ¸¶Áö¸· ³¯À» ¼ıÀÚ·Î ¸®ÅÏÇÑ´Ù. */
+/* yearë…„ monthì›”ì˜ ë§ˆì§€ë§‰ ë‚ ì„ ìˆ«ìë¡œ ë¦¬í„´í•œë‹¤. */
 {
 	if (month == 2) {
 		if (is_leap_year(year)) return(29);
@@ -532,13 +532,13 @@ int CFileLog::get_last_day(int year, int month)
 }
 
 long CFileLog::get_passed_day(int year, int month, int day, int start_year)
-/* start_year³â 1¿ù 1ÀÏºÎÅÍ year³â month¿ù dayÀÏ±îÁö °æ°úµÈ ³¯ ¼ö¸¦ ¸®ÅÏÇÑ´Ù. */
+/* start_yearë…„ 1ì›” 1ì¼ë¶€í„° yearë…„ monthì›” dayì¼ê¹Œì§€ ê²½ê³¼ëœ ë‚  ìˆ˜ë¥¼ ë¦¬í„´í•œë‹¤. */
 {
 	long passed_day;
 	int i;
 
 	passed_day = day - 1;
-	/* À±³âÀÌ¸é 366ÀÏÀ» ´õÇÏ°í,Æò³âÀÌ¸é 365ÀÏÀ» ´õÇÑ´Ù. */
+	/* ìœ¤ë…„ì´ë©´ 366ì¼ì„ ë”í•˜ê³ ,í‰ë…„ì´ë©´ 365ì¼ì„ ë”í•œë‹¤. */
 	for (i = start_year; i < year; i++) if (is_leap_year(i)) passed_day += 366;
 	else passed_day += 365;
 	for (i = 1; i < month; i++) passed_day += get_last_day(year, month);

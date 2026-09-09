@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "CLASS_TcpClient.h"
 #include <stdio.h>
 #include <winsock2.h>
@@ -6,7 +6,7 @@
 
 CTcpClient::CTcpClient()
 {
-	//Å¬·¡½º ¸â¹ö º¯¼öµéÀ» ¾ÈÀüÇÑ ÃÊ±â »óÅÂ·Î ¼³Á¤ÇÕ
+	//í´ë˜ìŠ¤ ë©¤ë²„ ë³€ìˆ˜ë“¤ì„ ì•ˆì „í•œ ì´ˆê¸° ìƒíƒœë¡œ ì„¤ì •í•©
 	socket_Client = -1;
 	strServerIP = "";	
 	nPort = 0;
@@ -18,28 +18,28 @@ bool CTcpClient::Connect(char* IP, int nPort)
 	//create socket if it is not already created
 	//if (socket_Client == -1) 
 	//{
-		socket_Client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //IPv4(AF_INET) ±â¹İÀÇ TCP ½ºÆ®¸² ¼ÒÄÏ(SOCK_STREAM, IPPROTO_TCP)À» »ı¼ºÇÕ´Ï´Ù.
+		socket_Client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //IPv4(AF_INET) ê¸°ë°˜ì˜ TCP ìŠ¤íŠ¸ë¦¼ ì†Œì¼“(SOCK_STREAM, IPPROTO_TCP)ì„ ìƒì„±í•©ë‹ˆë‹¤.
 		if (socket_Client == INVALID_SOCKET) {
 			printf("Failed to call socket() with error code : %d\n", WSAGetLastError());
-			WSACleanup(); //// WSAStartupÀÌ ÀÌÀü¿¡ È£ÃâµÇ¾ú´Ù°í °¡Á¤
+			WSACleanup(); //// WSAStartupì´ ì´ì „ì— í˜¸ì¶œë˜ì—ˆë‹¤ê³  ê°€ì •
 		}
 
 		//setup socket option	
 		option = TRUE;
-		// 1. ÁÖ¼Ò Àç»ç¿ë Çã¿ë (SO_REUSEADDR)
+		// 1. ì£¼ì†Œ ì¬ì‚¬ìš© í—ˆìš© (SO_REUSEADDR)
 		iError = setsockopt(socket_Client, SOL_SOCKET, SO_REUSEADDR, (const char*)&option, sizeof(option));
 		if (iError == INVALID_SOCKET) {
 			printf("socket option failed: SO_REUSEADDR(%d)\n", WSAGetLastError());
 		}
-		// 2. LINGER ¿É¼Ç ¼³Á¤ (Close ÈÄ Áï½Ã ÀÚ¿ø ÇØÁ¦)
+		// 2. LINGER ì˜µì…˜ ì„¤ì • (Close í›„ ì¦‰ì‹œ ìì› í•´ì œ)
 		struct linger LINGER;
-		LINGER.l_onoff = 1; // Linger ¿É¼Ç  ¿ò
-		LINGER.l_linger = 0; // ´ë±â ½Ã°£ 0ÃÊ
-		shutdown(socket_Client, SD_BOTH); // ¿¬°á Á¾·á ¿äÃ»
-		// ÀÌ ¼³Á¤Àº closesocket() È£Ãâ ½Ã ³²¾ÆÀÖ´Â µ¥ÀÌÅÍ¸¦ ±â´Ù¸®Áö ¾Ê°í
-       // Áï½Ã ¼ÒÄÏÀ» °­Á¦ Á¾·áÇÏ°í ¸®¼Ò½º¸¦ ÇØÁ¦ÇÕ´Ï´Ù.
+		LINGER.l_onoff = 1; // Linger ì˜µì…˜  ì›€
+		LINGER.l_linger = 0; // ëŒ€ê¸° ì‹œê°„ 0ì´ˆ
+		shutdown(socket_Client, SD_BOTH); // ì—°ê²° ì¢…ë£Œ ìš”ì²­
+		// ì´ ì„¤ì •ì€ closesocket() í˜¸ì¶œ ì‹œ ë‚¨ì•„ìˆëŠ” ë°ì´í„°ë¥¼ ê¸°ë‹¤ë¦¬ì§€ ì•Šê³ 
+       // ì¦‰ì‹œ ì†Œì¼“ì„ ê°•ì œ ì¢…ë£Œí•˜ê³  ë¦¬ì†ŒìŠ¤ë¥¼ í•´ì œí•©ë‹ˆë‹¤.
 		setsockopt(socket_Client, SOL_SOCKET, SO_LINGER, (const char*)&LINGER, sizeof(LINGER));
-		// 3. Nagle ¾Ë°í¸®Áò ºñÈ°¼ºÈ­ (TCP_NODELAY)
+		// 3. Nagle ì•Œê³ ë¦¬ì¦˜ ë¹„í™œì„±í™” (TCP_NODELAY)
 		iError = setsockopt(socket_Client, IPPROTO_TCP, TCP_NODELAY, (const char*)&TcpNoDelay, sizeof(int));
 		printf("*** Nagle Algorithm is disabled ***\n");
 
@@ -47,7 +47,7 @@ bool CTcpClient::Connect(char* IP, int nPort)
 	//else {/* OK , nothing */}
 
 	//setup address structure
-	//... IP¿Í Port ¼³Á¤ ...
+	//... IPì™€ Port ì„¤ì • ...
 	memset(&m_srv_addr, 0x00, sizeof(struct sockaddr_in));
 	m_srv_addr.sin_family = AF_INET;
 	m_srv_addr.sin_addr.s_addr = inet_addr(IP);
@@ -55,7 +55,7 @@ bool CTcpClient::Connect(char* IP, int nPort)
 
 	if (connect(socket_Client, (struct sockaddr*)&m_srv_addr, sizeof(m_srv_addr)) < 0)
 	{
-		// ¿¬°á ½ÇÆĞ Ã³¸®
+		// ì—°ê²° ì‹¤íŒ¨ ì²˜ë¦¬
 		printf("Failed to connect with error code : %d\n", WSAGetLastError());
 		closesocket(socket_Client);
 		//			SendMessage(Communicator->Handle, WM_SERVER_DISCONNECT, 0, 0);
@@ -65,11 +65,11 @@ bool CTcpClient::Connect(char* IP, int nPort)
 		//			SendMessage(Communicator->Handle, WM_SERVER_CONNECT, 0, 0);
 		printf("Successfully Connected to Server...\n");
 
-		DWORD dwMode = SOCK_MODE_NON_BOLCKING;// ... ³íºí·ÎÅ· ¼³Á¤ ...
+		DWORD dwMode = SOCK_MODE_NON_BOLCKING;// ... ë…¼ë¸”ë¡œí‚¹ ì„¤ì • ...
 		
 		int nResult = ioctlsocket(socket_Client, FIONBIO, &dwMode);
-		//¼ÒÄÏÀ» ³íºí·ÎÅ·(Non-Blocking) ¸ğµå·Î º¯°æÇÕ´Ï´Ù. ÀÌ ¼³Á¤ ´öºĞ¿¡ recv³ª send °°Àº ÇÔ¼ö¸¦ È£ÃâÇßÀ» ¶§, 
-		// ´çÀå µ¥ÀÌÅÍ°¡ ¾ø´õ¶óµµ ÇÁ·Î±×·¥ÀÌ ¸ØÃßÁö ¾Ê°í Áï½Ã Á¦¾î¸¦ ¹İÈ¯ÇÏ°Ô µË´Ï´Ù.
+		//ì†Œì¼“ì„ ë…¼ë¸”ë¡œí‚¹(Non-Blocking) ëª¨ë“œë¡œ ë³€ê²½í•©ë‹ˆë‹¤. ì´ ì„¤ì • ë•ë¶„ì— recvë‚˜ send ê°™ì€ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí–ˆì„ ë•Œ, 
+		// ë‹¹ì¥ ë°ì´í„°ê°€ ì—†ë”ë¼ë„ í”„ë¡œê·¸ë¨ì´ ë©ˆì¶”ì§€ ì•Šê³  ì¦‰ì‹œ ì œì–´ë¥¼ ë°˜í™˜í•˜ê²Œ ë©ë‹ˆë‹¤.
 		if (nResult != NO_ERROR) {
 			printf("ioctlsocket() call failed with error code : %ld\n", nResult);
 			return false;
@@ -88,32 +88,32 @@ void CTcpClient::ReadData()
 
 	nReadBytes = recv(socket_Client, ptr, sizeof(WORD), 0); // Read Packet Length (2 bytes)
 	if (nReadBytes > 0) {
-		//ÀÌ Å¬¶óÀÌ¾ğÆ®´Â Length - prefixed protocol(±æÀÌ ¼±Çà ÇÁ·ÎÅäÄİ) ¹æ½ÄÀ» »ç¿ëÇÕ´Ï´Ù.
-		//Ã¹ ¹øÂ° recv È£Ãâ¿¡¼­ ÆĞÅ¶ÀÇ °¡Àå ¾Õ 2¹ÙÀÌÆ®(WORD)¸¦ ÀĞ¾î¿Í ÀüÃ¼ ÆĞÅ¶ÀÇ ±æÀÌ(m_wPktLen)¸¦ ¾Ë¾Æ³À´Ï´Ù.
+		//ì´ í´ë¼ì´ì–¸íŠ¸ëŠ” Length - prefixed protocol(ê¸¸ì´ ì„ í–‰ í”„ë¡œí† ì½œ) ë°©ì‹ì„ ì‚¬ìš©í•©ë‹ˆë‹¤.
+		//ì²« ë²ˆì§¸ recv í˜¸ì¶œì—ì„œ íŒ¨í‚·ì˜ ê°€ì¥ ì• 2ë°”ì´íŠ¸(WORD)ë¥¼ ì½ì–´ì™€ ì „ì²´ íŒ¨í‚·ì˜ ê¸¸ì´(m_wPktLen)ë¥¼ ì•Œì•„ëƒ…ë‹ˆë‹¤.
 		ptr += nReadBytes;
 		PROTOCOL_DATA* pCommPkt = (PROTOCOL_DATA*)buf;
-		nTotPktLen = pCommPkt->m_wPktLen; // ÀüÃ¼ ÆĞÅ¶ ±æÀÌ ÃßÃâ (2¹ÙÀÌÆ®)
+		nTotPktLen = pCommPkt->m_wPktLen; // ì „ì²´ íŒ¨í‚· ê¸¸ì´ ì¶”ì¶œ (2ë°”ì´íŠ¸)
 		
-		nReadBytes = recv(socket_Client, ptr, nTotPktLen - 2, 0);// ³ª¸ÓÁö µ¥ÀÌÅÍ ¼ö½Å
+		nReadBytes = recv(socket_Client, ptr, nTotPktLen - 2, 0);// ë‚˜ë¨¸ì§€ ë°ì´í„° ìˆ˜ì‹ 
 		if (nReadBytes > 0) {
 			ptr += nReadBytes;
-			*ptr = '\0';// ¹®ÀÚ¿­ Á¾·á (³Î ¹®ÀÚ) Ãß°¡
+			*ptr = '\0';// ë¬¸ìì—´ ì¢…ë£Œ (ë„ ë¬¸ì) ì¶”ê°€
 			printf("received data buf= %s\n", buf);
-			PacketProcessor(buf);// µî·ÏµÈ Äİ¹é ÇÔ¼ö È£Ãâ
+			PacketProcessor(buf);// ë“±ë¡ëœ ì½œë°± í•¨ìˆ˜ í˜¸ì¶œ
 		}
 	}
 	else if (nReadBytes == 0)
 	{
-		//»ó´ë¹æÀÌ Á¤»óÀûÀ¸·Î ¼ÒÄÏÀ» ´İ¾ÒÀ» ¶§(Gracefully socket closed).¿¬°á »óÅÂ¸¦ false·Î ¹Ù²Ù°í ¼ÒÄÏÀ» ´İ½À´Ï´Ù.
+		//ìƒëŒ€ë°©ì´ ì •ìƒì ìœ¼ë¡œ ì†Œì¼“ì„ ë‹«ì•˜ì„ ë•Œ(Gracefully socket closed).ì—°ê²° ìƒíƒœë¥¼ falseë¡œ ë°”ê¾¸ê³  ì†Œì¼“ì„ ë‹«ìŠµë‹ˆë‹¤.
 		printf("Gracefully socket closed by remote peer : [%s]\n", inet_ntoa(m_srv_addr.sin_addr));
 		bConnected = false;
 		closesocket(socket_Client);
 	}
-	else if (nReadBytes < 0) //¼ö½Å ¿À·ù ¹ß»ı.
+	else if (nReadBytes < 0) //ìˆ˜ì‹  ì˜¤ë¥˜ ë°œìƒ.
 	{
 		int nErrCode = WSAGetLastError();
 
-		//¼ÒÄÏÀÌ ³íºí·ÎÅ· ¸ğµåÀÎµ¥ ÇöÀç ÀĞÀ» µ¥ÀÌÅÍ°¡ ¾øÀ» ¶§ ¹ß»ıÇÏ´Â Á¤»óÀûÀÎ »óÅÂÀÔ´Ï´Ù.ÀÌ ¿À·ù´Â ¹«½ÃÇÏ°í ·çÇÁ¸¦ °è¼Ó µ¹°Ô µË´Ï´Ù.
+		//ì†Œì¼“ì´ ë…¼ë¸”ë¡œí‚¹ ëª¨ë“œì¸ë° í˜„ì¬ ì½ì„ ë°ì´í„°ê°€ ì—†ì„ ë•Œ ë°œìƒí•˜ëŠ” ì •ìƒì ì¸ ìƒíƒœì…ë‹ˆë‹¤.ì´ ì˜¤ë¥˜ëŠ” ë¬´ì‹œí•˜ê³  ë£¨í”„ë¥¼ ê³„ì† ëŒê²Œ ë©ë‹ˆë‹¤.
 		if (nErrCode != WSAEWOULDBLOCK) {
 			printf("recv() call failed with error code : %d\n", WSAGetLastError());
 			bConnected = false;
@@ -123,8 +123,8 @@ void CTcpClient::ReadData()
 }
 void CTcpClient::SendData(char* msg, char* format, ...)
 {
-	WaitForSingleObject(hMutex, INFINITE); //1. ¹ÂÅØ½º È¹µæ
-	// va_list¸¦ »ç¿ëÇÏ¿© °¡º¯ ÀÎÀÚ Çü½ÄÈ­ (vsprintf)
+	WaitForSingleObject(hMutex, INFINITE); //1. ë®¤í…ìŠ¤ íšë“
+	// va_listë¥¼ ì‚¬ìš©í•˜ì—¬ ê°€ë³€ ì¸ì í˜•ì‹í™” (vsprintf)
 	va_list args;
 	va_start(args, format);
 	vsprintf(msg, format, args);
@@ -134,7 +134,7 @@ void CTcpClient::SendData(char* msg, char* format, ...)
 	memset(sndmsg, 0, sizeof(sndmsg));
 	strcpy(sndmsg, msg);
 	send(socket_Client, sndmsg, sizeof(sndmsg), 0);
-	ReleaseMutex(hMutex);// 2. ¹ÂÅØ½º ÇØÁ¦
+	ReleaseMutex(hMutex);// 2. ë®¤í…ìŠ¤ í•´ì œ
 }
 
 void CTcpClient::Close()

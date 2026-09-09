@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "CLASS_Main.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -167,7 +167,7 @@ void CSeqMain::SetNVMMF(void)
 
 }
 void CSeqMain::SetAllMap(int Target[50][50], int MapState)
-{	// FlipY1, FlipY2, PalletY1, PalletY2 ÀÚÀç À¯¹« »óÅÂ
+{	// FlipY1, FlipY2, PalletY1, PalletY2 ìì¬ ìœ ë¬´ ìƒíƒœ
 	//for (int i = 0; i < 50; i++) {
 	//	for (int j = 0; j < 50; j++) {
 	//		Target[i][j] = MapState;
@@ -239,7 +239,7 @@ void CSeqMain::SetAllMap(int Target[50][50], int MapState)
 //}
 //
 //void CSeqMain::SetAllTriggerMap(int Target[50][50], int MapState)
-//{	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger Ã³¸® »óÅÂ
+//{	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger ì²˜ë¦¬ ìƒíƒœ
 //
 //	//for (int i = 0; i < 50; i++) {
 //	//	for (int j = 0; j < 50; j++) {
@@ -251,11 +251,11 @@ void CSeqMain::SetAllMap(int Target[50][50], int MapState)
 //
 //bool CSeqMain::GetTriggerPosIDX(int Target[50][50], int& xpos, int& ypos)
 //{
-//	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger Ã³¸® »óÅÂ
+//	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger ì²˜ë¦¬ ìƒíƒœ
 //	int x, y;
 //
 //	for (x = 0; x < TrigXCnt; x++) {
-//		if (x % 2) { // È¦¼ö¿­
+//		if (x % 2) { // í™€ìˆ˜ì—´
 //			for (y = (TrigYCnt - 1); y >= 0; y--) {
 //				if (Target[x][y] == 1) {
 //					xpos = x;
@@ -264,7 +264,7 @@ void CSeqMain::SetAllMap(int Target[50][50], int MapState)
 //				}
 //			}
 //		}
-//		else {	// Â¦¼ö ¿­		
+//		else {	// ì§ìˆ˜ ì—´		
 //			for (y = 0; y < TrigYCnt; y++) {
 //				if (Target[x][y] == 1) {
 //					xpos = x;
@@ -280,14 +280,14 @@ void CSeqMain::SetAllMap(int Target[50][50], int MapState)
 //}
 //void CSeqMain::SetTriggerPosIDX(int Target[50][50], int x, int y, int MapState)
 //{	
-//	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger Ã³¸® »óÅÂ
+//	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger ì²˜ë¦¬ ìƒíƒœ
 //	Target[x][y] = MapState;
 //}
 //
 //void CSeqMain::CalcTriggerPos(int Target)
 //{	
 	/*
-	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger Position °è»ê
+	// FlipY1, FlipY2, PalletY1, PalletY2 Vision Trigger Position ê³„ì‚°
 	double XSize, YSize;
 	double XGap, YGap;
 	int SnapX = RcpVal.SnapXCnt;
@@ -354,10 +354,10 @@ void CSeqMain::SetAllMap(int Target[50][50], int MapState)
 int CSeqMain::GetPickUpDirection(int Target[50][50], int MapDir)
 {
 	// MapDir == MAP_DIR_X			// MapDir == MAP_DIR_Y
-	// ===================¢º		// ||  ¡ã ||  ¡ã
-	// ¢¸===================		// ||  || ||  ||
-	// ====================¢º		// ||  || ||  ||	
-	// ¢¸===================        // ¡å  || ¡å  ||
+	// ===================â–¶		// ||  â–² ||  â–²
+	// â—€===================		// ||  || ||  ||
+	// ====================â–¶		// ||  || ||  ||	
+	// â—€===================        // â–¼  || â–¼  ||
 
 
 	int ZigZag = RIGHT_TP_LEFT;	// defalut ZigZag direction
@@ -425,7 +425,7 @@ bool CSeqMain::GetPickUpPosIDX(int Target[50][50], int MapDir, int ZigZag, int* 
 	// PalletY1, PalletY2 Pick Up Map Position Index
 	int x, y;
 	
-	if (MapDir == MAP_DIR_X) { // °¡·Î ¹æÇâ
+	if (MapDir == MAP_DIR_X) { // ê°€ë¡œ ë°©í–¥
 		for (y = 0; y < UnitYCnt; y++) {
 			if (ZigZag == RIGHT_TP_LEFT) {
 				for (x = UnitXCnt - 1; x >= 0; x--) {
@@ -447,7 +447,7 @@ bool CSeqMain::GetPickUpPosIDX(int Target[50][50], int MapDir, int ZigZag, int* 
 			}
 		}
 	}
-	else if (MapDir == MAP_DIR_Y) { // ¼¼·Î ¹æÇâ
+	else if (MapDir == MAP_DIR_Y) { // ì„¸ë¡œ ë°©í–¥
 		for (x = 0; x < UnitXCnt; x++) {
 			if (ZigZag == UP_TO_DOWN) {
 				for (y = 0; y < UnitYCnt; y++) {
@@ -506,7 +506,7 @@ bool CSeqMain::GetPickUpPosIDX(int Target[50][50], int MapDir, int ZigZag, int* 
 	//}
 
 	//if (bTrayExist) {
-	//	if (MapDir == MAP_DIR_X) { // °¡·Î ¹æÇâ
+	//	if (MapDir == MAP_DIR_X) { // ê°€ë¡œ ë°©í–¥
 	//		for (y = 0; y < YCount; y++) {
 	//			if (ZigZag == RIGHT_TP_LEFT) {
 	//				for (x = XCount - 1; x >= 0; x--) {
@@ -528,7 +528,7 @@ bool CSeqMain::GetPickUpPosIDX(int Target[50][50], int MapDir, int ZigZag, int* 
 	//			}
 	//		}
 	//	}
-	//	else if (MapDir == MAP_DIR_Y) { // ¼¼·Î ¹æÇâ
+	//	else if (MapDir == MAP_DIR_Y) { // ì„¸ë¡œ ë°©í–¥
 	//		for (x = 0; x < XCount; x++) {
 	//			if (ZigZag == UP_TO_DOWN) {
 	//				for (y = 0; y < YCount; y++) {

@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////
+ï»¿/////////////////////////////////////////////////////////////////////
 //                 Ini.cpp
 //
 // "CIni" is a simple API wrap class used for ini file access.
@@ -902,7 +902,7 @@ BOOL CALLBACK CIni:: __KeyPairProc(LPCTSTR lpString, LPVOID lpParam)
 	// extract the sub-string on left side of the '='
 	LPTSTR psz = new TCHAR[_tcslen(lpString) + 1];
 
-#if 0    // kimdg. ¿¡·¯°¡ ¹ß»ıÇÏ¿© ¼öÁ¤.
+#if 0    // kimdg. ì—ëŸ¬ê°€ ë°œìƒí•˜ì—¬ ìˆ˜ì •.
     for (int i = 0; &lpString[i] < p; i++)
         psz[i] = lpString[i];
 

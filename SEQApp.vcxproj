@@ -113,7 +113,7 @@
       <AdditionalOptions>/source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4828;4267;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -147,7 +147,7 @@ if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasi
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/MP /source-charset:utf-8 /execution-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\EzSoftware UC\AXL%28Library%29\C, C++;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4828;4267;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -180,7 +180,7 @@ if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasi
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4828;4267;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>AXL.lib;kernel32.lib;ws2_32.lib;mswsock.lib;advapi32.lib;winmm.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -215,7 +215,7 @@ if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasi
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;NDEBUG;AXL_ECAT_STUB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <DisableSpecificWarnings>4819;4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4828;4267;4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>AXL.lib;kernel32.lib;ws2_32.lib;mswsock.lib;advapi32.lib;winmm.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>

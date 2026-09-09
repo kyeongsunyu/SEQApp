@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "CLASS_Main.h"
 #include "DEFINE_GVX.h"
 
@@ -157,7 +157,7 @@ void CSeqMain::TenKeyProcess(void)
 			//if (bit.AutoRun) {
 			//	seq_rsp.nMsgNo = WM_SEQ_OPERATION_RSP;
 			//	seq_rsp.nResult = RESPONSE_NAK;
-			//	sprintf(seq_rsp.strResultMsg, "Auto Run ÁßÀÔ´Ï´Ù. RESET ÇÒ¼ö ¾ø½À´Ï´Ù");
+			//	sprintf(seq_rsp.strResultMsg, "Auto Run ì¤‘ìž…ë‹ˆë‹¤. RESET í• ìˆ˜ ì—†ìŠµë‹ˆë‹¤");
 			//}
 			//else {
 			//	seq_rsp.nMsgNo = WM_SEQ_OPERATION_RSP;
@@ -181,7 +181,7 @@ void CSeqMain::TenKeyProcess(void)
 			//if (bit.AutoRun) {
 			//	seq_rsp.nMsgNo = WM_SEQ_OPERATION_RSP;
 			//	seq_rsp.nResult = RESPONSE_NAK;
-			//	sprintf(seq_rsp.strResultMsg, "Auto Run ÁßÀÔ´Ï´Ù. LOT END ÇÒ¼ö ¾ø½À´Ï´Ù");
+			//	sprintf(seq_rsp.strResultMsg, "Auto Run ì¤‘ìž…ë‹ˆë‹¤. LOT END í• ìˆ˜ ì—†ìŠµë‹ˆë‹¤");
 			//}
 			//else {
 				seq_rsp.nMsgNo = WM_SEQ_OPERATION_RSP;

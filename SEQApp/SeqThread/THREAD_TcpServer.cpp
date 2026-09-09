@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "..\SeqMain\CLASS_Main.h"
 #include "..\SeqMain\DEFINE_GVX.h"
 #include <WinSock2.h>
@@ -24,7 +24,7 @@ extern HANDLE	hMutex;
 void DecodeMSG(int n_strlen, char msg[1024]);
 void ParseResult(char strpara[]);
 
-typedef struct _ThrArg {	// ClientConn ¿¡ Àü´ŞÇÒ arg
+typedef struct _ThrArg {	// ClientConn ì— ì „ë‹¬í•  arg
 	SOCKET clntSock;
 	char clntIP[16];
 	int  clntPort;
@@ -69,10 +69,10 @@ UINT CSeqMain::SERVER_SOCKET_Thread(void* pArg)
 	}
 
 	struct linger LINGER;
-	LINGER.l_onoff = 1;     /* SO_LINGER ¿É¼ÇÀ» Àû¿ëÇÑ´Ù, TRUE/FALSE */
-	LINGER.l_linger = 0;    /* ´ë±â½Ã°£ (sec) */
-	shutdown(servSock, SD_BOTH); /* ¼ÒÄÏÀÌ ´İÈ÷±â Àü¿¡ ¸ğµç µ¥ÀÌÅÍ¸¦ º¸³»°í, ¼ö½ÅÇÏµµ·Ï È®½ÇÈ÷ ÇÏ±â À§ÇØ¼­ */
-	setsockopt(servSock, SOL_SOCKET, SO_LINGER, (const char*)&LINGER, sizeof(LINGER));  /* ¿É¼Ç Àû¿ë */
+	LINGER.l_onoff = 1;     /* SO_LINGER ì˜µì…˜ì„ ì ìš©í•œë‹¤, TRUE/FALSE */
+	LINGER.l_linger = 0;    /* ëŒ€ê¸°ì‹œê°„ (sec) */
+	shutdown(servSock, SD_BOTH); /* ì†Œì¼“ì´ ë‹«íˆê¸° ì „ì— ëª¨ë“  ë°ì´í„°ë¥¼ ë³´ë‚´ê³ , ìˆ˜ì‹ í•˜ë„ë¡ í™•ì‹¤íˆ í•˜ê¸° ìœ„í•´ì„œ */
+	setsockopt(servSock, SOL_SOCKET, SO_LINGER, (const char*)&LINGER, sizeof(LINGER));  /* ì˜µì…˜ ì ìš© */
 
 	iError = setsockopt(servSock, IPPROTO_TCP, TCP_NODELAY, (const char*)&TcpNoDelay, sizeof(int));
 	printf("*** Nagle Algorithm is disabled ***\n");
@@ -442,7 +442,7 @@ void CSeqMain::DecodeMSG(int n_strlen, char msg[2052])
 			// CNT
 			break;
 		case 2:
-			// °³¼ö
+			// ê°œìˆ˜
 			nVisionResultUnitCount = atoi(token);
 			printf("nVisionResultUnitCount=%d\n", nVisionResultUnitCount);
 			bit.VisionDataReceived = 1;

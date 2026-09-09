@@ -1,24 +1,24 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "..\SeqMain\CLASS_Main.h"
 #include "..\SeqMain\DEFINE_GVX.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#define DEFAULT_FAMILY     PF_INET // Accept either IPv4 or IPv6 ±âº»ÀûÀ¸·Î IPv4 ÁÖ¼Ò ÆÐ¹Ð¸®¸¦ »ç¿ëÇÔÀ» ³ªÅ¸³À´Ï´Ù.
+#define DEFAULT_FAMILY     PF_INET // Accept either IPv4 or IPv6 ê¸°ë³¸ì ìœ¼ë¡œ IPv4 ì£¼ì†Œ íŒ¨ë°€ë¦¬ë¥¼ ì‚¬ìš©í•¨ì„ ë‚˜íƒ€ëƒ…ë‹ˆë‹¤.
 
 #define	MAX_PACKET_SIZE		65535
 #define DEFAULT_PACKET_SIZE	1024
-#define MAX_TCP_LIMIT				1460 //TCP ¼¼±×¸ÕÆ®ÀÇ ÃÖ´ë µ¥ÀÌÅÍ Å©±â(MTU 1500¿¡¼­ TCP/IP Çì´õ¸¦ »« °ª ±ÙÃ³)ÀÔ´Ï´Ù.
-#define MAX_UDP_LIMIT			1472 //UDP µ¥ÀÌÅÍ±×·¥ÀÇ ÃÖ´ë µ¥ÀÌÅÍ Å©±â(MTU 1500¿¡¼­ UDP/IP Çì´õ¸¦ »« °ª ±ÙÃ³)ÀÔ´Ï´Ù.
+#define MAX_TCP_LIMIT				1460 //TCP ì„¸ê·¸ë¨¼íŠ¸ì˜ ìµœëŒ€ ë°ì´í„° í¬ê¸°(MTU 1500ì—ì„œ TCP/IP í—¤ë”ë¥¼ ëº€ ê°’ ê·¼ì²˜)ìž…ë‹ˆë‹¤.
+#define MAX_UDP_LIMIT			1472 //UDP ë°ì´í„°ê·¸ëž¨ì˜ ìµœëŒ€ ë°ì´í„° í¬ê¸°(MTU 1500ì—ì„œ UDP/IP í—¤ë”ë¥¼ ëº€ ê°’ ê·¼ì²˜)ìž…ë‹ˆë‹¤.
 
-#define RECV_TIMEOUT				5000 //¼ö½Å Å¸ÀÓ¾Æ¿ô °ª (5000ms, Áï 5ÃÊ)ÀÔ´Ï´Ù.
-#define SEND_TIMEOUT				5000 //¼Û½Å Å¸ÀÓ¾Æ¿ô °ª (5000ms, Áï 5ÃÊ)ÀÔ´Ï´Ù.
+#define RECV_TIMEOUT				5000 //ìˆ˜ì‹  íƒ€ìž„ì•„ì›ƒ ê°’ (5000ms, ì¦‰ 5ì´ˆ)ìž…ë‹ˆë‹¤.
+#define SEND_TIMEOUT				5000 //ì†¡ì‹  íƒ€ìž„ì•„ì›ƒ ê°’ (5000ms, ì¦‰ 5ì´ˆ)ìž…ë‹ˆë‹¤.
 
-#define WFD_RECV_DATA			1     //WaitForData ÇÔ¼ö¿¡¼­ ¼ö½Å ´ë±â À¯ÇüÀ» ³ªÅ¸³À´Ï´Ù.
-#define WFD_SEND_DATA			2     //WaitForData ÇÔ¼ö¿¡¼­ ¼Û½Å °¡´É ´ë±â À¯ÇüÀ» ³ªÅ¸³À´Ï´Ù.
+#define WFD_RECV_DATA			1     //WaitForData í•¨ìˆ˜ì—ì„œ ìˆ˜ì‹  ëŒ€ê¸° ìœ í˜•ì„ ë‚˜íƒ€ëƒ…ë‹ˆë‹¤.
+#define WFD_SEND_DATA			2     //WaitForData í•¨ìˆ˜ì—ì„œ ì†¡ì‹  ê°€ëŠ¥ ëŒ€ê¸° ìœ í˜•ì„ ë‚˜íƒ€ëƒ…ë‹ˆë‹¤.
 
 #define RECV_BUF_ERROR			0
-#define RECV_BUF_TIMEOUT		-1   //¼ö½Å ÇÔ¼ö¿¡¼­ Å¸ÀÓ¾Æ¿ô ¹ß»ýÀ» ³ªÅ¸³»´Â ¹ÝÈ¯ °ªÀÔ´Ï´Ù.
+#define RECV_BUF_TIMEOUT		-1   //ìˆ˜ì‹  í•¨ìˆ˜ì—ì„œ íƒ€ìž„ì•„ì›ƒ ë°œìƒì„ ë‚˜íƒ€ë‚´ëŠ” ë°˜í™˜ ê°’ìž…ë‹ˆë‹¤.
 
 _Post_ _Notnull_ HANDLE hMutex;
 //////////////////////////////////////////////////////////////////////////
@@ -38,11 +38,11 @@ void WinSockInitialize(void)
 	WORD wVersionRequested;
 	WSADATA wsaData;
 
-	WSACleanup(); // ±âÁ¸¿¡ ÃÊ±âÈ­µÈ ¼ÒÄÏ È¯°æ Á¤¸® (¾ÈÀü Á¶Ä¡)
+	WSACleanup(); // ê¸°ì¡´ì— ì´ˆê¸°í™”ëœ ì†Œì¼“ í™˜ê²½ ì •ë¦¬ (ì•ˆì „ ì¡°ì¹˜)
 
 	wVersionRequested = MAKEWORD(2, 2);
-	iError = WSAStartup(wVersionRequested, &wsaData);	// Winsock 2.2 ¹öÀüÀ¸·Î ÃÊ±âÈ­ Winsock DLLÀ» ·ÎµåÇÏ°í Winsock 2.2 ¹öÀüÀ» »ç¿ëÇÏµµ·Ï ÃÊ±âÈ­ÇÕ´Ï´Ù.
-																			//ÀÌ´Â ¸ðµç Winsock ÇÔ¼ö¸¦ »ç¿ëÇÏ±â Àü¿¡ ¹Ýµå½Ã È£ÃâµÇ¾î¾ß ÇÏ´Â ÇÔ¼öÀÔ´Ï´Ù.
+	iError = WSAStartup(wVersionRequested, &wsaData);	// Winsock 2.2 ë²„ì „ìœ¼ë¡œ ì´ˆê¸°í™” Winsock DLLì„ ë¡œë“œí•˜ê³  Winsock 2.2 ë²„ì „ì„ ì‚¬ìš©í•˜ë„ë¡ ì´ˆê¸°í™”í•©ë‹ˆë‹¤.
+																			//ì´ëŠ” ëª¨ë“  Winsock í•¨ìˆ˜ë¥¼ ì‚¬ìš©í•˜ê¸° ì „ì— ë°˜ë“œì‹œ í˜¸ì¶œë˜ì–´ì•¼ í•˜ëŠ” í•¨ìˆ˜ìž…ë‹ˆë‹¤.
 	if (iError != 0) {
 		printf("Error %d: Winsock not available\n", iError);
 	}
@@ -62,7 +62,7 @@ int SendBuffer(SOCKET s, char* Buffer, int Length, int iFragmentBuffer, int iTim
 		printf("send: Timeout on select()\n");
 	}
 
-	SendLength = send(s, &Buffer[TotalSent], Length, 0);// µ¥ÀÌÅÍ Àü¼Û
+	SendLength = send(s, &Buffer[TotalSent], Length, 0);// ë°ì´í„° ì „ì†¡
 	if (SendLength == SOCKET_ERROR) {
 		printf("Socket send failed with error (%d)\n", WSAGetLastError());
 		return(0);
@@ -73,7 +73,7 @@ int SendBuffer(SOCKET s, char* Buffer, int Length, int iFragmentBuffer, int iTim
 }
 //////////////////////////////////////////////////////////////////////////
 BOOL WaitForData(SOCKET pSocket, long iTimeOut, long WaitType) 
-//Æ¯Á¤ ¼ÒÄÏ¿¡¼­ µ¥ÀÌÅÍ¸¦ ¼ö½ÅÇÒ ¼ö ÀÖ´ÂÁö ¶Ç´Â µ¥ÀÌÅÍ¸¦ ¼Û½ÅÇÒ ¼ö ÀÖ´ÂÁö¸¦ ÁöÁ¤µÈ iTimeOut ½Ã°£ µ¿¾È select() ÇÔ¼ö¸¦ »ç¿ëÇÏ¿© ±â´Ù¸³´Ï´Ù.
+//íŠ¹ì • ì†Œì¼“ì—ì„œ ë°ì´í„°ë¥¼ ìˆ˜ì‹ í•  ìˆ˜ ìžˆëŠ”ì§€ ë˜ëŠ” ë°ì´í„°ë¥¼ ì†¡ì‹ í•  ìˆ˜ ìžˆëŠ”ì§€ë¥¼ ì§€ì •ëœ iTimeOut ì‹œê°„ ë™ì•ˆ select() í•¨ìˆ˜ë¥¼ ì‚¬ìš©í•˜ì—¬ ê¸°ë‹¤ë¦½ë‹ˆë‹¤.
 {
 	struct timeval timeout;
 	fd_set fdSet;
@@ -81,20 +81,20 @@ BOOL WaitForData(SOCKET pSocket, long iTimeOut, long WaitType)
 
 	// Timeout after 1 seconds, 0 microseconds 
 	timeout.tv_sec = iTimeOut / 1000; // Extract the seconds
-	timeout.tv_usec = (iTimeOut % 1000) * 1000; // and microseconds of the timeout, timeval ±¸Á¶Ã¼ ¼³Á¤
+	timeout.tv_usec = (iTimeOut % 1000) * 1000; // and microseconds of the timeout, timeval êµ¬ì¡°ì²´ ì„¤ì •
 
 												// Clear file descriptor set
-	FD_ZERO(&fdSet); // °¨½ÃÇÒ ¼ÒÄÏÀ» fd_set¿¡ Ãß°¡
+	FD_ZERO(&fdSet); // ê°ì‹œí•  ì†Œì¼“ì„ fd_setì— ì¶”ê°€
 
 	// Set the bit for network socket 'dataSock' in the descriptor set
 	FD_SET(pSocket, &fdSet); 
 
 	// Block until data is available on this socket, or iTimeOut milliseconds has passed
-	if (WaitType == WFD_RECV_DATA) //¼ö½Å °¡´É ¿©ºÎ °¨½Ã
+	if (WaitType == WFD_RECV_DATA) //ìˆ˜ì‹  ê°€ëŠ¥ ì—¬ë¶€ ê°ì‹œ
 		errorCode = select(1, &fdSet, NULL, NULL, &timeout);
-	//¿ªÇÒ: Æ¯Á¤ ¼ÒÄÏ¿¡¼­ µ¥ÀÌÅÍ¸¦ ¼ö½ÅÇÒ ¼ö ÀÖ´ÂÁö ¶Ç´Â µ¥ÀÌÅÍ¸¦ ¼Û½ÅÇÒ ¼ö ÀÖ´ÂÁö¸¦ ÁöÁ¤µÈ iTimeOut ½Ã°£ µ¿¾È select() ÇÔ¼ö¸¦ »ç¿ëÇÏ¿© ±â´Ù¸³´Ï´Ù.
+	//ì—­í• : íŠ¹ì • ì†Œì¼“ì—ì„œ ë°ì´í„°ë¥¼ ìˆ˜ì‹ í•  ìˆ˜ ìžˆëŠ”ì§€ ë˜ëŠ” ë°ì´í„°ë¥¼ ì†¡ì‹ í•  ìˆ˜ ìžˆëŠ”ì§€ë¥¼ ì§€ì •ëœ iTimeOut ì‹œê°„ ë™ì•ˆ select() í•¨ìˆ˜ë¥¼ ì‚¬ìš©í•˜ì—¬ ê¸°ë‹¤ë¦½ë‹ˆë‹¤.
 	else
-		if (WaitType == WFD_SEND_DATA)// ¼Û½Å °¡´É ¿©ºÎ °¨½Ã
+		if (WaitType == WFD_SEND_DATA)// ì†¡ì‹  ê°€ëŠ¥ ì—¬ë¶€ ê°ì‹œ
 			errorCode = select(1, NULL, &fdSet, NULL, &timeout);
 		else
 			errorCode = 0;
@@ -107,8 +107,8 @@ BOOL WaitForData(SOCKET pSocket, long iTimeOut, long WaitType)
 }
 //////////////////////////////////////////////////////////////////////////
 
-//¿ªÇÒ: WaitForData¸¦ È£ÃâÇÏ¿© ¼ÒÄÏ¿¡ µ¥ÀÌÅÍ°¡ µµÂøÇÒ ¶§±îÁö ±â´Ù¸° ÈÄ, 
-// µ¥ÀÌÅÍ¸¦ ¼ö½ÅÇÕ´Ï´Ù. Å¸ÀÓ¾Æ¿ô ½Ã RECV_BUF_TIMEOUT(-1)À» ¹ÝÈ¯ÇÏ°í, ¿¬°á ¿À·ù ½Ã RECV_BUF_ERROR(0)À» ¹ÝÈ¯ÇÏ¿© ÇÔ¼ö È£ÃâÀÚ¿¡°Ô »óÅÂ¸¦ ¾Ë¸³´Ï´Ù.
+//ì—­í• : WaitForDataë¥¼ í˜¸ì¶œí•˜ì—¬ ì†Œì¼“ì— ë°ì´í„°ê°€ ë„ì°©í•  ë•Œê¹Œì§€ ê¸°ë‹¤ë¦° í›„, 
+// ë°ì´í„°ë¥¼ ìˆ˜ì‹ í•©ë‹ˆë‹¤. íƒ€ìž„ì•„ì›ƒ ì‹œ RECV_BUF_TIMEOUT(-1)ì„ ë°˜í™˜í•˜ê³ , ì—°ê²° ì˜¤ë¥˜ ì‹œ RECV_BUF_ERROR(0)ì„ ë°˜í™˜í•˜ì—¬ í•¨ìˆ˜ í˜¸ì¶œìžì—ê²Œ ìƒíƒœë¥¼ ì•Œë¦½ë‹ˆë‹¤.
 double RecvStart, RecvEnd;
 int RecvBuffer(SOCKET s, char* Buffer, int MaxLength, int iTimeOut)
 {
@@ -120,12 +120,12 @@ int RecvBuffer(SOCKET s, char* Buffer, int MaxLength, int iTimeOut)
 
 	TotalRecv = 0;
 
-	if (!WaitForData(s, iTimeOut, WFD_RECV_DATA)) { //// ¼ö½Å °¡´É ´ë±â
+	if (!WaitForData(s, iTimeOut, WFD_RECV_DATA)) { //// ìˆ˜ì‹  ê°€ëŠ¥ ëŒ€ê¸°
 		//		RtPrintf("Socket %d recv: Timeout on select()\n", s);
 		return(RECV_BUF_TIMEOUT);
 	}
 
-	RecvLength = recv(s, &Buffer[TotalRecv], MaxLength, 0);// µ¥ÀÌÅÍ ¼ö½Å
+	RecvLength = recv(s, &Buffer[TotalRecv], MaxLength, 0);// ë°ì´í„° ìˆ˜ì‹ 
 	if (RecvLength == SOCKET_ERROR || RecvLength == 0) {
 		printf("%Iu Socket recv failed with error (%d)\n", s, WSAGetLastError());
 		return(RECV_BUF_ERROR);
@@ -176,8 +176,8 @@ void error(char* str)
 	puts(str);
 	exit(1);
 }
-// checksum °Ë»ç ÇÔ¼ö,IP ¹× ICMP Çì´õ¿¡ »ç¿ëµÇ´Â 1ÀÇ º¸¼ö ÇÕ(one's complement sum) Ã¼Å©¼¶À» °è»êÇÕ´Ï´Ù.
-//¿ªÇÒ: IP ¹× ICMP ÇÁ·ÎÅäÄÝ¿¡¼­ ¿À·ù °ËÃâÀ» À§ÇØ »ç¿ëµÇ´Â **Ã¼Å©¼¶(Checksum)**À» °è»êÇÕ´Ï´Ù. ÀÌ´Â ICMP ÆÐÅ¶À» Á÷Á¢ ±¸¼ºÇÒ ¶§ ÇÊ¼öÀûÀÎ °úÁ¤ÀÔ´Ï´Ù.
+// checksum ê²€ì‚¬ í•¨ìˆ˜,IP ë° ICMP í—¤ë”ì— ì‚¬ìš©ë˜ëŠ” 1ì˜ ë³´ìˆ˜ í•©(one's complement sum) ì²´í¬ì„¬ì„ ê³„ì‚°í•©ë‹ˆë‹¤.
+//ì—­í• : IP ë° ICMP í”„ë¡œí† ì½œì—ì„œ ì˜¤ë¥˜ ê²€ì¶œì„ ìœ„í•´ ì‚¬ìš©ë˜ëŠ” **ì²´í¬ì„¬(Checksum)**ì„ ê³„ì‚°í•©ë‹ˆë‹¤. ì´ëŠ” ICMP íŒ¨í‚·ì„ ì§ì ‘ êµ¬ì„±í•  ë•Œ í•„ìˆ˜ì ì¸ ê³¼ì •ìž…ë‹ˆë‹¤.
 USHORT checksum(USHORT* buffer, int size)
 {
 	unsigned long cksum = 0;
@@ -192,7 +192,7 @@ USHORT checksum(USHORT* buffer, int size)
 	cksum += (cksum >> 16);
 	return (USHORT)(~cksum);
 }
-// icmp Çì´õ ±¸Á¶Ã¼ ¼±¾ð
+// icmp í—¤ë” êµ¬ì¡°ì²´ ì„ ì–¸
 typedef struct icmp_hdr {
 	unsigned char icmp_type;
 	unsigned char icmp_code;
@@ -205,13 +205,13 @@ typedef struct icmp_hdr {
 void cmp_ping(void)
 {
 
-	//ICMP Çì´õ Á÷Á¢ ±¸¼º : ICMP_HDR ±¸Á¶Ã¼¸¦ ¸¸µé¾î Å¸ÀÔ(8, Echo Request)°ú Ã¼Å©¼¶À» Á÷Á¢ °è»êÇß½À´Ï´Ù.
-	//RAW ¼ÒÄÏ »ý¼º : socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)¸¦ ÅëÇØ ½Ã½ºÅÛÀÌ ÀÚµ¿À¸·Î Çì´õ¸¦ °ü¸®ÇÏÁö ¸øÇÏ°Ô ¸·°í »ç¿ëÀÚ°¡ Á¦¾î±ÇÀ» °¡Á³½À´Ï´Ù.
+	//ICMP í—¤ë” ì§ì ‘ êµ¬ì„± : ICMP_HDR êµ¬ì¡°ì²´ë¥¼ ë§Œë“¤ì–´ íƒ€ìž…(8, Echo Request)ê³¼ ì²´í¬ì„¬ì„ ì§ì ‘ ê³„ì‚°í–ˆìŠµë‹ˆë‹¤.
+	//RAW ì†Œì¼“ ìƒì„± : socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)ë¥¼ í†µí•´ ì‹œìŠ¤í…œì´ ìžë™ìœ¼ë¡œ í—¤ë”ë¥¼ ê´€ë¦¬í•˜ì§€ ëª»í•˜ê²Œ ë§‰ê³  ì‚¬ìš©ìžê°€ ì œì–´ê¶Œì„ ê°€ì¡ŒìŠµë‹ˆë‹¤.
 	WSADATA wsaData;
 	SOCKET s;
 	SOCKADDR_STORAGE dest;
-	ICMP_HDR* icmp = NULL; // ICMP Çì´õ ±¸Á¶Ã¼ Æ÷ÀÎÅÍ
-	char buf[sizeof(ICMP_HDR) + 32];// Ã¼Å©¼¶ °è»ê
+	ICMP_HDR* icmp = NULL; // ICMP í—¤ë” êµ¬ì¡°ì²´ í¬ì¸í„°
+	char buf[sizeof(ICMP_HDR) + 32];// ì²´í¬ì„¬ ê³„ì‚°
 	icmp = (ICMP_HDR*)buf;
 	icmp->icmp_type = 8;
 	icmp->icmp_code = 0;
@@ -224,19 +224,19 @@ void cmp_ping(void)
 
 	if (WSAStartup(WINSOCK_VERSION, &wsaData) != 0)
 		error("WSAStartup Error!");
-	//ÀÏ¹ÝÀûÀÎ ¼ÒÄÏ(TCPÀÇ $SOCK\_STREAM$, UDPÀÇ $SOCK\_DGRAM$)Àº Ä¿³ÎÀÌ Àü¼Û °èÃþ Çì´õ(TCP / UDP Çì´õ)¿Í ³×Æ®¿öÅ© °èÃþ Çì´õ(IP Çì´õ)¸¦ ÀÚµ¿À¸·Î »ý¼ºÇØ ÁÝ´Ï´Ù.
-	// ¹Ý¸é, RAW ¼ÒÄÏÀº ¾ÖÇÃ¸®ÄÉÀÌ¼ÇÀÌ ÀÌ Çì´õµéÀ» Á÷Á¢ ±¸¼ºÇÒ ¼ö ÀÖ°Ô ÇØÁÝ´Ï´Ù.
-	s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);// RAW ¼ÒÄÏ »ý¼º
+	//ì¼ë°˜ì ì¸ ì†Œì¼“(TCPì˜ $SOCK\_STREAM$, UDPì˜ $SOCK\_DGRAM$)ì€ ì»¤ë„ì´ ì „ì†¡ ê³„ì¸µ í—¤ë”(TCP / UDP í—¤ë”)ì™€ ë„¤íŠ¸ì›Œí¬ ê³„ì¸µ í—¤ë”(IP í—¤ë”)ë¥¼ ìžë™ìœ¼ë¡œ ìƒì„±í•´ ì¤ë‹ˆë‹¤.
+	// ë°˜ë©´, RAW ì†Œì¼“ì€ ì• í”Œë¦¬ì¼€ì´ì…˜ì´ ì´ í—¤ë”ë“¤ì„ ì§ì ‘ êµ¬ì„±í•  ìˆ˜ ìžˆê²Œ í•´ì¤ë‹ˆë‹¤.
+	s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);// RAW ì†Œì¼“ ìƒì„±
 
 	if (s == INVALID_SOCKET)
 		error("socket() Error!");
 
 	((SOCKADDR_IN*)&dest)->sin_family = AF_INET;
-	((SOCKADDR_IN*)&dest)->sin_port = htons(0);     // ICMP¿¡¼­ Æ÷Æ®´Â ¹«½ÃÇÑ´Ù
+	((SOCKADDR_IN*)&dest)->sin_port = htons(0);     // ICMPì—ì„œ í¬íŠ¸ëŠ” ë¬´ì‹œí•œë‹¤
 	((SOCKADDR_IN*)&dest)->sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
 
-	for (int i = 0; i < 10; i++) {       // 10¹øÀ» pingº¸³½´Ù, ÀÌ¶§ wireshark¸¦ È®ÀÎÇÏ¸é Á¤»óÀûÀ¸·Î icmp ÆÐÅ¶ÀÌ ³¯¾Æ°¡´Â°ÍÀ» È®ÀÎ ÇÒ ¼ö ÀÖ´Ù.
-		sendto(s, buf, sizeof(ICMP_HDR) + 32, 0, (SOCKADDR*)&dest, sizeof(dest)); // ICMP ÆÐÅ¶ Àü¼Û
+	for (int i = 0; i < 10; i++) {       // 10ë²ˆì„ pingë³´ë‚¸ë‹¤, ì´ë•Œ wiresharkë¥¼ í™•ì¸í•˜ë©´ ì •ìƒì ìœ¼ë¡œ icmp íŒ¨í‚·ì´ ë‚ ì•„ê°€ëŠ”ê²ƒì„ í™•ì¸ í•  ìˆ˜ ìžˆë‹¤.
+		sendto(s, buf, sizeof(ICMP_HDR) + 32, 0, (SOCKADDR*)&dest, sizeof(dest)); // ICMP íŒ¨í‚· ì „ì†¡
 		Sleep(1000);
 	}
 	closesocket(s);

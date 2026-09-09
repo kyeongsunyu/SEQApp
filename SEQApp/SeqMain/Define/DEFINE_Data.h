@@ -1,10 +1,10 @@
-#ifndef _DEF_DATA_STRUCTURE_H
+Ôªø#ifndef _DEF_DATA_STRUCTURE_H
 #define _DEF_DATA_STRUCTURE_H
 
 #pragma once
 
 /************************************************************************/
-/*	DWORD128 ªÁøÎπ˝	                                                    */
+/*	DWORD128 ÏÇ¨Ïö©Î≤ï	                                                    */
 /*	DWORD128 MatchData[100];                                            */
 /*	DWORD64 mask	                                                    */
 /*	MatchData[y].Data[0]&=(~mask);                                      */
@@ -163,8 +163,8 @@ enum _ePicker
 
 enum _eFlip
 {
-	HORIZONTAL =0,	// ¡¬øÏ Flip
-	VERTICAL = 1,	// ªÛ«œ Flip
+	HORIZONTAL =0,	// Ï¢åÏö∞ Flip
+	VERTICAL = 1,	// ÏÉÅÌïò Flip
 };
 
 enum _eZigZagLeftRight

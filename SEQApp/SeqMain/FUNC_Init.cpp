@@ -1,4 +1,4 @@
-#include "..\pch.h"
+ï»¿#include "..\pch.h"
 #include "CLASS_Main.h"
 #include "DEFINE_GVX.h"
 #include "..\Tools\TinyXML\tinyxml2.h"
@@ -8,33 +8,33 @@ using namespace tinyxml2;
 //////////////////////////////////////////////////////////////////////////
 void CSeqMain::Load_Motor_Parameter(void)
 {
-	int nMotorNo;  //ÇöÀç Ã³¸® ÁßÀÎ **¸ðÅÍ ¹øÈ£(Motor Number)**¸¦ ÀúÀåÇÒ Á¤¼öÇü º¯¼ö¸¦ ¼±¾ðÇÕ´Ï´Ù.
-	tinyxml2::XMLDocument doc;  //TinyXML-2ÀÇ ÇÙ½É Å¬·¡½ºÀÎ XMLDocument °´Ã¼¸¦ »ý¼ºÇÕ´Ï´Ù. ÀÌ °´Ã¼°¡ XML ÆÄÀÏ ÀüÃ¼¸¦ ¸Þ¸ð¸®¿¡ ·ÎµåÇÏ°í °ü¸®ÇÕ´Ï´Ù 
-	doc.LoadFile("C:\\WORK\\CONFIG\\MotorConfig.xml");	//ÁöÁ¤µÈ °æ·Î¿¡¼­ "MotorConfig.xml" ÆÄÀÏÀ» ÀÐ¾î µé¿© doc °´Ã¼¿¡ ÆÄ½Ì(parsing)ÇÕ´Ï´Ù.
+	int nMotorNo;  //í˜„ìž¬ ì²˜ë¦¬ ì¤‘ì¸ **ëª¨í„° ë²ˆí˜¸(Motor Number)**ë¥¼ ì €ìž¥í•  ì •ìˆ˜í˜• ë³€ìˆ˜ë¥¼ ì„ ì–¸í•©ë‹ˆë‹¤.
+	tinyxml2::XMLDocument doc;  //TinyXML-2ì˜ í•µì‹¬ í´ëž˜ìŠ¤ì¸ XMLDocument ê°ì²´ë¥¼ ìƒì„±í•©ë‹ˆë‹¤. ì´ ê°ì²´ê°€ XML íŒŒì¼ ì „ì²´ë¥¼ ë©”ëª¨ë¦¬ì— ë¡œë“œí•˜ê³  ê´€ë¦¬í•©ë‹ˆë‹¤ 
+	doc.LoadFile("C:\\WORK\\CONFIG\\MotorConfig.xml");	//ì§€ì •ëœ ê²½ë¡œì—ì„œ "MotorConfig.xml" íŒŒì¼ì„ ì½ì–´ ë“¤ì—¬ doc ê°ì²´ì— íŒŒì‹±(parsing)í•©ë‹ˆë‹¤.
 
-	tinyxml2::XMLElement* pRoot = doc.RootElement(); //XML ¹®¼­ÀÇ **ÃÖ»óÀ§ ¿¤¸®¸ÕÆ® (Root Element)**¸¦ °¡Á®¿É´Ï´Ù. ¿¹¸¦ µé¾î, XML ÆÄÀÏÀÌ <CONFIG>...</CONFIG>·Î ½ÃÀÛÇÑ´Ù¸é, pRoot´Â <CONFIG> ¿¤¸®¸ÕÆ®¸¦ °¡¸®Åµ´Ï´Ù. 
-	tinyxml2::XMLElement* cfg = pRoot->FirstChildElement("MOTOR");  //·çÆ® ¿¤¸®¸ÕÆ®ÀÇ ÀÚ½Ä Áß¿¡¼­ ÅÂ±× ÀÌ¸§ÀÌ "MOTOR"ÀÎ Ã¹ ¹øÂ° ¿¤¸®¸ÕÆ®¸¦ Ã£¾Æ¼­ cfg Æ÷ÀÎÅÍ¿¡ ÇÒ´çÇÕ´Ï´Ù. ÀÌ ÄÚµå´Â ÀÏ¹ÝÀûÀ¸·Î ¸ðÅÍ ¼³Á¤ÀÇ ¹Ýº¹ ½ÃÀÛÁ¡À» Ã£½À´Ï´Ù.
-	for (tinyxml2::XMLElement* ele = cfg; ele != NULL; ele = ele->NextSiblingElement()) //¹Ýº¹ ½ÃÀÛ (ele = cfg): ¹Ýº¹ º¯¼ö ele°¡ Ã¹ ¹øÂ° "MOTOR" ¿¤¸®¸ÕÆ®¸¦ °¡¸®Å°¸ç ½ÃÀÛÇÕ´Ï´Ù.
+	tinyxml2::XMLElement* pRoot = doc.RootElement(); //XML ë¬¸ì„œì˜ **ìµœìƒìœ„ ì—˜ë¦¬ë¨¼íŠ¸ (Root Element)**ë¥¼ ê°€ì ¸ì˜µë‹ˆë‹¤. ì˜ˆë¥¼ ë“¤ì–´, XML íŒŒì¼ì´ <CONFIG>...</CONFIG>ë¡œ ì‹œìž‘í•œë‹¤ë©´, pRootëŠ” <CONFIG> ì—˜ë¦¬ë¨¼íŠ¸ë¥¼ ê°€ë¦¬í‚µë‹ˆë‹¤. 
+	tinyxml2::XMLElement* cfg = pRoot->FirstChildElement("MOTOR");  //ë£¨íŠ¸ ì—˜ë¦¬ë¨¼íŠ¸ì˜ ìžì‹ ì¤‘ì—ì„œ íƒœê·¸ ì´ë¦„ì´ "MOTOR"ì¸ ì²« ë²ˆì§¸ ì—˜ë¦¬ë¨¼íŠ¸ë¥¼ ì°¾ì•„ì„œ cfg í¬ì¸í„°ì— í• ë‹¹í•©ë‹ˆë‹¤. ì´ ì½”ë“œëŠ” ì¼ë°˜ì ìœ¼ë¡œ ëª¨í„° ì„¤ì •ì˜ ë°˜ë³µ ì‹œìž‘ì ì„ ì°¾ìŠµë‹ˆë‹¤.
+	for (tinyxml2::XMLElement* ele = cfg; ele != NULL; ele = ele->NextSiblingElement()) //ë°˜ë³µ ì‹œìž‘ (ele = cfg): ë°˜ë³µ ë³€ìˆ˜ eleê°€ ì²« ë²ˆì§¸ "MOTOR" ì—˜ë¦¬ë¨¼íŠ¸ë¥¼ ê°€ë¦¬í‚¤ë©° ì‹œìž‘í•©ë‹ˆë‹¤.
 
-		/*¹Ýº¹ Á¶°Ç(ele != NULL) : ÇöÀç ¿¤¸®¸ÕÆ® Æ÷ÀÎÅÍ°¡ NULLÀÌ ¾Æ´Ï¸é(Áï, ´ÙÀ½ ¿¤¸®¸ÕÆ®°¡ Á¸ÀçÇÏ¸é) °è¼Ó ¹Ýº¹ÇÕ´Ï´Ù.
+		/*ë°˜ë³µ ì¡°ê±´(ele != NULL) : í˜„ìž¬ ì—˜ë¦¬ë¨¼íŠ¸ í¬ì¸í„°ê°€ NULLì´ ì•„ë‹ˆë©´(ì¦‰, ë‹¤ìŒ ì—˜ë¦¬ë¨¼íŠ¸ê°€ ì¡´ìž¬í•˜ë©´) ê³„ì† ë°˜ë³µí•©ë‹ˆë‹¤.
 
-		¹Ýº¹ Áõ°¨(ele = ele->NextSiblingElement()) : ÇöÀç "MOTOR" ¿¤¸®¸ÕÆ®¿Í * *µ¿ÀÏÇÑ ·¹º§(Sibling) * *¿¡ ÀÖ´Â ´ÙÀ½ ¿¤¸®¸ÕÆ®¸¦ Ã£¾Æ¼­ ele¿¡ ÇÒ´çÇÕ´Ï´Ù. 
-		* *NextSiblingElement() * *´Â ÅÂ±× ÀÌ¸§À» ÁöÁ¤ÇÏÁö ¾Ê¾ÒÀ¸¹Ç·Î, ´ÙÀ½ ¸ðµç ¿¤¸®¸ÕÆ®¸¦ Ã£Áö¸¸, cfg°¡ ÀÌ¹Ì "MOTOR" ¿¤¸®¸ÕÆ®ÀÌ¹Ç·Î, 
-		ÀÌ ¹Ýº¹¹®Àº º¸Åë ÆÄÀÏ ³»ÀÇ ¸ðµç "MOTOR" ºí·ÏÀ» ¼ø¼­´ë·Î Ã³¸®ÇÏ°Ô µË´Ï´Ù.*/
+		ë°˜ë³µ ì¦ê°(ele = ele->NextSiblingElement()) : í˜„ìž¬ "MOTOR" ì—˜ë¦¬ë¨¼íŠ¸ì™€ * *ë™ì¼í•œ ë ˆë²¨(Sibling) * *ì— ìžˆëŠ” ë‹¤ìŒ ì—˜ë¦¬ë¨¼íŠ¸ë¥¼ ì°¾ì•„ì„œ eleì— í• ë‹¹í•©ë‹ˆë‹¤. 
+		* *NextSiblingElement() * *ëŠ” íƒœê·¸ ì´ë¦„ì„ ì§€ì •í•˜ì§€ ì•Šì•˜ìœ¼ë¯€ë¡œ, ë‹¤ìŒ ëª¨ë“  ì—˜ë¦¬ë¨¼íŠ¸ë¥¼ ì°¾ì§€ë§Œ, cfgê°€ ì´ë¯¸ "MOTOR" ì—˜ë¦¬ë¨¼íŠ¸ì´ë¯€ë¡œ, 
+		ì´ ë°˜ë³µë¬¸ì€ ë³´í†µ íŒŒì¼ ë‚´ì˜ ëª¨ë“  "MOTOR" ë¸”ë¡ì„ ìˆœì„œëŒ€ë¡œ ì²˜ë¦¬í•˜ê²Œ ë©ë‹ˆë‹¤.*/
 	{
-		nMotorNo = ele->IntAttribute("NO");//ÇöÀç <MOTOR> ¿¤¸®¸ÕÆ®ÀÇ NO ¼Ó¼º(Attribute) °ªÀ» Á¤¼ö·Î ÀÐ¾î¿Í nMotorNo¿¡ ÀúÀåÇÕ´Ï´Ù. ÀÌ °ªÀÌ ÇöÀç ¼³Á¤ÇÒ ¸ðÅÍÀÇ °íÀ¯ ¹øÈ£ÀÔ´Ï´Ù.
-		if (MTAxis[nMotorNo + 1] != NULL) {//MTAxis´Â ¸ðÅÍ Ãà °´Ã¼(Æ÷ÀÎÅÍ ¹è¿­)·Î ÃßÁ¤µË´Ï´Ù. nMotorNo + 1 ÀÎµ¦½º¿¡ ÇØ´çÇÏ´Â ¸ðÅÍ °´Ã¼°¡ À¯È¿ÇÑÁö (NULLÀÌ ¾Æ´ÑÁö) È®ÀÎÇÏ¿©, °´Ã¼°¡ ÃÊ±âÈ­µÈ °æ¿ì¿¡¸¸ ¼³Á¤ °ªÀ» Àû¿ëÇÕ´Ï´Ù. (ÀÎµ¦½º°¡ +1ÀÎ °ÍÀº ÇÁ·Î±×·¡¹Ö °ü·Ê»ó ¸ðÅÍ ¹øÈ£°¡ 0ºÎÅÍ ½ÃÀÛÇÏÁö¸¸ ¹è¿­ ÀÎµ¦½º´Â 1ºÎÅÍ ½ÃÀÛÇÒ ¼ö ÀÖ±â ¶§¹®ÀÔ´Ï´Ù.)
-			MTAxis[nMotorNo + 1]->bCwLimitLevel = ele->IntAttribute("PEndL"); //Á¤¹æÇâ ¸®¹ÌÆ® ¼¾¼­ ·¹º§ (Positive End Limit Level) ¼Ó¼º **PEndL**ÀÇ °ªÀ» ÀÐ¾î¿Í ¸ðÅÍ °´Ã¼ÀÇ bCwLimitLevel ¸â¹ö º¯¼ö¿¡ ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->bCCwLimitLevel = ele->IntAttribute("NEndL");//¿ª¹æÇâ ¸®¹ÌÆ® ¼¾¼­ ·¹º§ (Negative End Limit Level) ¼Ó¼º **NEndL**ÀÇ °ªÀ» ÀÐ¾î¿Í bCCwLimitLevel¿¡ ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->bServoOnLevel = ele->IntAttribute("SONL");//¼­º¸ On ½ÅÈ£ ·¹º§ (Servo ON Level) ¼Ó¼º **SONL**ÀÇ °ªÀ» ¼³Á¤ÇÕ
-			MTAxis[nMotorNo + 1]->bAlarmLevel = ele->IntAttribute("AlmL");//¾Ë¶÷ ½ÅÈ£ ·¹º§ (Alarm Level) ¼Ó¼º **AlmL**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->bInpLevel = ele->IntAttribute("InpL");//À§Ä¡ °áÁ¤ ¿Ï·á ½ÅÈ£ ·¹º§ (In-Position Level) ¼Ó¼º **InpL**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->bInpEnable = ele->IntAttribute("InpE");//À§Ä¡ °áÁ¤ ¿Ï·á ½ÅÈ£ »ç¿ë ¿©ºÎ (In-Position Enable) ¼Ó¼º **InpE**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->nPulseOutM = ele->IntAttribute("PulseM");//Ãâ·Â ÆÞ½º ¸ðµå (Pulse Out Mode) ¼Ó¼º **PulseM**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->nEncDir = ele->IntAttribute("EncDir");//¿£ÄÚ´õ ¹æÇâ (Encoder Direction) ¼Ó¼º **EncDir**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->nEncType = ele->IntAttribute("EncType");//¿£ÄÚ´õ Å¸ÀÔ (Encoder Type) ¼Ó¼º **EncType**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->nMotorType = ele->IntAttribute("MotorType");//¸ðÅÍ Å¸ÀÔ (Motor Type) ¼Ó¼º **MotorType**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
-			MTAxis[nMotorNo + 1]->nSensorType = ele->IntAttribute("SensorType");//¼¾¼­ Å¸ÀÔ (Sensor Type) ¼Ó¼º **SensorType**ÀÇ °ªÀ» ¼³Á¤ÇÕ´Ï´Ù.
+		nMotorNo = ele->IntAttribute("NO");//í˜„ìž¬ <MOTOR> ì—˜ë¦¬ë¨¼íŠ¸ì˜ NO ì†ì„±(Attribute) ê°’ì„ ì •ìˆ˜ë¡œ ì½ì–´ì™€ nMotorNoì— ì €ìž¥í•©ë‹ˆë‹¤. ì´ ê°’ì´ í˜„ìž¬ ì„¤ì •í•  ëª¨í„°ì˜ ê³ ìœ  ë²ˆí˜¸ìž…ë‹ˆë‹¤.
+		if (MTAxis[nMotorNo + 1] != NULL) {//MTAxisëŠ” ëª¨í„° ì¶• ê°ì²´(í¬ì¸í„° ë°°ì—´)ë¡œ ì¶”ì •ë©ë‹ˆë‹¤. nMotorNo + 1 ì¸ë±ìŠ¤ì— í•´ë‹¹í•˜ëŠ” ëª¨í„° ê°ì²´ê°€ ìœ íš¨í•œì§€ (NULLì´ ì•„ë‹Œì§€) í™•ì¸í•˜ì—¬, ê°ì²´ê°€ ì´ˆê¸°í™”ëœ ê²½ìš°ì—ë§Œ ì„¤ì • ê°’ì„ ì ìš©í•©ë‹ˆë‹¤. (ì¸ë±ìŠ¤ê°€ +1ì¸ ê²ƒì€ í”„ë¡œê·¸ëž˜ë° ê´€ë¡€ìƒ ëª¨í„° ë²ˆí˜¸ê°€ 0ë¶€í„° ì‹œìž‘í•˜ì§€ë§Œ ë°°ì—´ ì¸ë±ìŠ¤ëŠ” 1ë¶€í„° ì‹œìž‘í•  ìˆ˜ ìžˆê¸° ë•Œë¬¸ìž…ë‹ˆë‹¤.)
+			MTAxis[nMotorNo + 1]->bCwLimitLevel = ele->IntAttribute("PEndL"); //ì •ë°©í–¥ ë¦¬ë¯¸íŠ¸ ì„¼ì„œ ë ˆë²¨ (Positive End Limit Level) ì†ì„± **PEndL**ì˜ ê°’ì„ ì½ì–´ì™€ ëª¨í„° ê°ì²´ì˜ bCwLimitLevel ë©¤ë²„ ë³€ìˆ˜ì— ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->bCCwLimitLevel = ele->IntAttribute("NEndL");//ì—­ë°©í–¥ ë¦¬ë¯¸íŠ¸ ì„¼ì„œ ë ˆë²¨ (Negative End Limit Level) ì†ì„± **NEndL**ì˜ ê°’ì„ ì½ì–´ì™€ bCCwLimitLevelì— ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->bServoOnLevel = ele->IntAttribute("SONL");//ì„œë³´ On ì‹ í˜¸ ë ˆë²¨ (Servo ON Level) ì†ì„± **SONL**ì˜ ê°’ì„ ì„¤ì •í•©
+			MTAxis[nMotorNo + 1]->bAlarmLevel = ele->IntAttribute("AlmL");//ì•ŒëžŒ ì‹ í˜¸ ë ˆë²¨ (Alarm Level) ì†ì„± **AlmL**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->bInpLevel = ele->IntAttribute("InpL");//ìœ„ì¹˜ ê²°ì • ì™„ë£Œ ì‹ í˜¸ ë ˆë²¨ (In-Position Level) ì†ì„± **InpL**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->bInpEnable = ele->IntAttribute("InpE");//ìœ„ì¹˜ ê²°ì • ì™„ë£Œ ì‹ í˜¸ ì‚¬ìš© ì—¬ë¶€ (In-Position Enable) ì†ì„± **InpE**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->nPulseOutM = ele->IntAttribute("PulseM");//ì¶œë ¥ íŽ„ìŠ¤ ëª¨ë“œ (Pulse Out Mode) ì†ì„± **PulseM**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->nEncDir = ele->IntAttribute("EncDir");//ì—”ì½”ë” ë°©í–¥ (Encoder Direction) ì†ì„± **EncDir**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->nEncType = ele->IntAttribute("EncType");//ì—”ì½”ë” íƒ€ìž… (Encoder Type) ì†ì„± **EncType**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->nMotorType = ele->IntAttribute("MotorType");//ëª¨í„° íƒ€ìž… (Motor Type) ì†ì„± **MotorType**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
+			MTAxis[nMotorNo + 1]->nSensorType = ele->IntAttribute("SensorType");//ì„¼ì„œ íƒ€ìž… (Sensor Type) ì†ì„± **SensorType**ì˜ ê°’ì„ ì„¤ì •í•©ë‹ˆë‹¤.
 		}
 	}
 }
@@ -101,7 +101,7 @@ void CSeqMain::InitMotor(void)
 		MTAxis[j]->fMotorPause = 0;
 		MTAxis[j]->InitSpeed = 100; //250;
 		MTAxis[j]->SetInitSpeed(MTAxis[j]->InitSpeed);
-		MTAxis[j]->SetMaxSpeed(80 * 10000);	// 20mm pitch, 3000rpm, 1turn=>8000 pulseÀÎ °æ¿ì 1mm=400pulse
+		MTAxis[j]->SetMaxSpeed(80 * 10000);	// 20mm pitch, 3000rpm, 1turn=>8000 pulseì¸ ê²½ìš° 1mm=400pulse
 		MTAxis[j]->SpeedDevide = 10;			// 50rps =>50*20mm/s => 1000mm/s => 1000*400 pps = 400kpps
 		MTAxis[j]->MinMovingTime = 150;
 		MTAxis[j]->omove = 0;
