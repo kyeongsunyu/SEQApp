@@ -1084,7 +1084,10 @@ BOOL CIni::__TrimString(LPTSTR lpString)
 
 LPTSTR CIni::__StrDupEx(LPCTSTR lpStart, LPCTSTR lpEnd)
 {
-	const DWORD LEN = ((DWORD)lpEnd - (DWORD)lpStart) / sizeof(TCHAR);
+	// Pointer subtraction on LPCTSTR already yields a TCHAR count, so there is
+	// no cast to truncate and no division to get wrong. The old form cast both
+	// pointers to DWORD, which drops the upper 32 bits of every x64 address.
+	const size_t LEN = (size_t)(lpEnd - lpStart);
 	LPTSTR psz = new TCHAR[LEN + 1];
 	_tcsncpy(psz, lpStart, LEN);
 	psz[LEN] = _T('\0');
