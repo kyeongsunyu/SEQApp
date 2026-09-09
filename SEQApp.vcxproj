@@ -131,9 +131,11 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PostBuildEvent>
-      <Message>Copy AXL runtime (32Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Message>Use installed AXL runtime (32Bit), never the repo copy</Message>
+      <Command>if exist "$(OutDir)AXL.dll" del /Q "$(OutDir)AXL.dll"
+if exist "$(OutDir)EzBasicAxl.dll" del /Q "$(OutDir)EzBasicAxl.dll"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -162,9 +164,11 @@ xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzB
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PostBuildEvent>
-      <Message>Copy AXL runtime (64Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Message>Use installed AXL runtime (64Bit), never the repo copy</Message>
+      <Command>if exist "$(OutDir)AXL.dll" del /Q "$(OutDir)AXL.dll"
+if exist "$(OutDir)EzBasicAxl.dll" del /Q "$(OutDir)EzBasicAxl.dll"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -195,9 +199,11 @@ xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzB
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PostBuildEvent>
-      <Message>Copy AXL runtime (32Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Message>Use installed AXL runtime (32Bit), never the repo copy</Message>
+      <Command>if exist "$(OutDir)AXL.dll" del /Q "$(OutDir)AXL.dll"
+if exist "$(OutDir)EzBasicAxl.dll" del /Q "$(OutDir)EzBasicAxl.dll"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\AXL.dll" "$(OutDir)"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -228,9 +234,11 @@ xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\32Bit\EzB
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PostBuildEvent>
-      <Message>Copy AXL runtime (64Bit) to $(OutDir)</Message>
-      <Command>xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
-xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)" || xcopy /D /Y "$(ProjectDir)Library\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
+      <Message>Use installed AXL runtime (64Bit), never the repo copy</Message>
+      <Command>if exist "$(OutDir)AXL.dll" del /Q "$(OutDir)AXL.dll"
+if exist "$(OutDir)EzBasicAxl.dll" del /Q "$(OutDir)EzBasicAxl.dll"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\AXL.dll" "$(OutDir)"
+if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" xcopy /D /Y "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasicAxl.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
