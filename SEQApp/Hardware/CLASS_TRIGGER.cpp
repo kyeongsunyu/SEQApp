@@ -276,9 +276,14 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	}
 
 	//< Encoder source : physical input, A/B phase 4x, count direction
+#if AXL_HAS_CNT_RECAT_TRIGGER_API
 	if (AXT_RT_SUCCESS != AxcTriggerSetEncoderInput(ch, cfg.dwEncoderInput)) {
 		return false;
 	}
+#else
+	// SIO-HPC4 ties each channel to its own encoder input; nothing to route.
+	(void)cfg.dwEncoderInput;
+#endif
 	if (AXT_RT_SUCCESS != AxcSignalSetEncInputMethod(ch, 0x03)) {
 		return false;
 	}
@@ -310,9 +315,14 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	}
 
 	//< Output port, pulse width [us], active level
+#if AXL_HAS_CNT_RECAT_TRIGGER_API
 	if (AXT_RT_SUCCESS != AxcTriggerSetTriggerOutport(ch, cfg.dwTriggerOutPort)) {
 		return false;
 	}
+#else
+	// SIO-HPC4 drives the trigger output that belongs to this channel.
+	(void)cfg.dwTriggerOutPort;
+#endif
 	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, cfg.dPulseWidthUS)) {
 		return false;
 	}
@@ -324,7 +334,9 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	// does not list it under SIO-HPC4, and periodic mode already emits exactly
 	// one pulse per period.
 
+#if AXL_HAS_CNT_RECAT_TRIGGER_API
 	AxcTriggerSetTriggerCountClear(ch);
+#endif
 
 	if (AXT_RT_SUCCESS != AxcTriggerSetEnable(ch, 1)) {
 		return false;
@@ -366,7 +378,13 @@ bool CAjinTrigger::ClearTriggerCount(long lChannelNo)
 	if (!IsChannelValid(lChannelNo)) {
 		return false;
 	}
+#if AXL_HAS_CNT_RECAT_TRIGGER_API
 	return (AXT_RT_SUCCESS == AxcTriggerSetTriggerCountClear(lChannelNo));
+#else
+	printf("[TRIGGER] trigger counters need a newer AXL"
+		   " (AXL_HAS_CNT_RECAT_TRIGGER_API); count the strobe line instead\n");
+	return false;
+#endif
 }
 
 bool CAjinTrigger::ReadTriggerCount(long lChannelNo, long* lpCount)
@@ -374,7 +392,12 @@ bool CAjinTrigger::ReadTriggerCount(long lChannelNo, long* lpCount)
 	if (!IsChannelValid(lChannelNo) || lpCount == nullptr) {
 		return false;
 	}
+#if AXL_HAS_CNT_RECAT_TRIGGER_API
 	return (AXT_RT_SUCCESS == AxcTriggerReadTriggerCount(lChannelNo, lpCount));
+#else
+	*lpCount = 0;
+	return false;
+#endif
 }
 
 double CAjinTrigger::CalcPitchError(double dTravel, long lTrigCount, double dPitch)

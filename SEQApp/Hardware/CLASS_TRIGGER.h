@@ -10,6 +10,20 @@
 
 #pragma once
 
+// The four routing / counting calls below live in the "For CNT_RECAT_SC_10"
+// section of AXC.h and are absent from AXL 4.2.0.2, the version shipped with
+// the EzSoftware installed on this machine:
+//
+//   AxcTriggerSetEncoderInput      AxcTriggerSetTriggerCountClear
+//   AxcTriggerSetTriggerOutport    AxcTriggerReadTriggerCount
+//
+// SIO-HPC4 does not need the first two - each counter channel is wired to its
+// own encoder input and trigger output, so there is nothing to route. Set this
+// to 1 only on a site running a newer AXL with a CNT_RECAT_SC_10 module.
+#ifndef AXL_HAS_CNT_RECAT_TRIGGER_API
+#define AXL_HAS_CNT_RECAT_TRIGGER_API 0
+#endif
+
 // Configuration for the position-period (periodic mode) line scan trigger.
 //
 // All distances use the unit established by dMoveUnitPerPulse, so passing
