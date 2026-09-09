@@ -1051,7 +1051,10 @@ BOOL CIni::__TrimString(LPTSTR lpString)
 	// '\n' and '\r' are actually not possible in this case, but anyway...
 	
 	// Trim right side
-	while (nLen >= 0
+	// nLen > 0, not >= 0: at nLen == 0 the condition below reads lpString[-1],
+	// one TCHAR before the buffer, and if that byte happens to be whitespace
+	// the body then writes lpString[-1] as well.
+	while (nLen > 0
 		&& (lpString[nLen - 1] == _T(' ')
 			|| lpString[nLen - 1] == _T('\t')
 			|| lpString[nLen - 1] == _T('\r')
@@ -1074,9 +1077,11 @@ BOOL CIni::__TrimString(LPTSTR lpString)
 
 	if (p != lpString)
 	{
-		LPTSTR psz = _tcsdup(p);
-		_tcscpy(lpString, psz);
-		delete [] psz;
+		// The old code duplicated with _tcsdup, which allocates through malloc,
+		// and released it with delete[] - a mismatched free, and undefined
+		// behaviour. No copy is needed: source and destination are two ranges of
+		// the same buffer, which is what memmove exists for.
+		memmove(lpString, p, (_tcslen(p) + 1) * sizeof(TCHAR));
 	}
 
 	return bTrimmed;
