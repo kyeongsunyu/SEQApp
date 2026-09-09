@@ -45,18 +45,25 @@ unsigned short int CAjinBase::Isct2dMode()
 	return bct2dMode;
 }
 
-void CAjinBase::InitBase()
-{
-	const long lIrqNo = 7;
 
-	// How the machine is built and whether the library came up are different
-	// questions. Deriving the hardware type from AxlOpen()'s result conflated
-	// them: a driver that never loaded looked exactly like a pulse system, and
-	// once the open started succeeding the same code would have called this an
-	// EtherCAT machine. So the type comes from configuration.
-	//
-	//   [HARDWARE] MotionType = 0  EtherCAT node network
-	//                         = 1  pulse train (ct2d)   <- default
+// ---------------------------------------------------------------------------
+// Motion hardware type, resolved once from Config.ini.
+//
+// CAjinBase is not the only class that needs to know how this machine is
+// built, and it is not always the first one constructed. Keeping the answer
+// here means every caller gets the same value no matter the construction
+// order, and the file is read once instead of once per class.
+// ---------------------------------------------------------------------------
+static BOOL g_bMotionTypeResolved = FALSE;
+static BOOL g_bPulseType          = TRUE;   // matches the MotionType=1 default
+static int  g_nMotionType         = 1;
+
+static void ResolveMotionType()
+{
+	if (g_bMotionTypeResolved) {
+		return;
+	}
+	g_bMotionTypeResolved = TRUE;
 
 	// WritePrivateProfileString() creates the file but never the directory it
 	// sits in, so on a machine without C:\WORK the first-run write failed and no
@@ -98,9 +105,33 @@ void CAjinBase::InitBase()
 				   nMotionType);
 		}
 	}
-	bct2dMode = (nMotionType != 0) ? TRUE : FALSE;
+
+	g_nMotionType = nMotionType;
+	g_bPulseType  = (nMotionType != 0) ? TRUE : FALSE;
 	printf("[AXL] hardware type : %s  ([HARDWARE] MotionType=%d)\n",
-		   bct2dMode ? "ct2d / pulse" : "EtherCAT", nMotionType);
+		   g_bPulseType ? "ct2d / pulse" : "EtherCAT", g_nMotionType);
+}
+
+BOOL AxlIsPulseTypeMachine()
+{
+	ResolveMotionType();
+	return g_bPulseType;
+}
+
+void CAjinBase::InitBase()
+{
+	const long lIrqNo = 7;
+
+	// How the machine is built and whether the library came up are different
+	// questions. Deriving the hardware type from AxlOpen()'s result conflated
+	// them: a driver that never loaded looked exactly like a pulse system, and
+	// once the open started succeeding the same code would have called this an
+	// EtherCAT machine. So the type comes from configuration.
+	//
+	//   [HARDWARE] MotionType = 0  EtherCAT node network
+	//                         = 1  pulse train (ct2d)   <- default
+
+	bct2dMode = AxlIsPulseTypeMachine();
 
 	// Which AXL.dll actually got loaded, and what version it is. Copies exist in
 	// the output folder, in System32 and in the installed SDK, so the loader's
@@ -297,7 +328,21 @@ void CAjinMotor::SetSWLimitMode(bool Enable)
 
 void CAjinMotor::SetInpositionMode(DWORD LogicLevel, DWORD Enable)
 {
-	AxmSignalSetInpos(AxisNO, Enable);	// 0:LOW, 1: HIGH, 2: disable
+	// AXM.h: AxmSignalSetInpos(lAxisNo, uUse) takes LOW(0), HIGH(1),
+	// UNUSED(2) or USED(3) - one argument that carries both the level and
+	// whether the signal is used at all.
+	//
+	// The old line passed Enable into that slot and threw LogicLevel away, so
+	// MotorConfig.xml's InpL never reached the board and InpE=0 asked for
+	// "in position, active low" instead of "do not use in position".
+	const DWORD IN_POS_UNUSED = 2;
+	DWORD uUse = (Enable != 0) ? ((LogicLevel != 0) ? 1u : 0u) : IN_POS_UNUSED;
+
+	DWORD dwCode = AxmSignalSetInpos(AxisNO, uUse);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmSignalSetInpos(%lu) failed, code %lu\n",
+			   (long)AxisNO, uUse, dwCode);
+	}
 }
 
 void CAjinMotor::SetAlarmEnable(int Enable)
@@ -317,19 +362,47 @@ void CAjinMotor::SetAlarmClearOff()
 
 void CAjinMotor::SetPulseMode(int mode)
 {
-	AxmMotSetPulseOutMethod(AxisNO, mode);
+	// AXM.h: uMethod 0..9. 0-3 are the one pulse (PULSE + DIR) forms, 4-7 the
+	// two pulse (CW/CCW) forms, 8-9 the two phase forms. A value outside that
+	// range is rejected by the library, and the axis then keeps whatever pulse
+	// form it had - which is how an axis ends up running backwards.
+	if (mode < 0 || mode > 9) {
+		printf("[AXM] axis %ld : pulse out method %d is outside the documented"
+			   " range 0..9, ignored\n", (long)AxisNO, mode);
+		return;
+	}
+
+	DWORD dwCode = AxmMotSetPulseOutMethod(AxisNO, (DWORD)mode);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmMotSetPulseOutMethod(%d) failed, code %lu\n",
+			   (long)AxisNO, mode, dwCode);
+	}
 }
 
 // Encoder �Է¹�� ����, Sqr4Mode=4ü�� 
 void CAjinMotor::SetEncoderInputMethos(unsigned char method)
 {
-	AxmMotSetEncInputMethod(AxisNO, method);	// encoder direction ����
+	// AXM.h: 0..3 obverse (1x/2x/4x), 4..7 reverse. Sets both the counting
+	// method and the direction in which the actual position increases.
+	DWORD dwCode = AxmMotSetEncInputMethod(AxisNO, method);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmMotSetEncInputMethod(%u) failed, code %lu\n",
+			   (long)AxisNO, (unsigned)method, dwCode);
+	}
 }
 
 // pulse ���� 
 void CAjinMotor::SetMoveRatio()
 {
-	AxmMotSetMoveUnitPerPulse(AxisNO, 1, 1);
+	// 1 unit per 1 pulse: every speed and position in this program is then in
+	// pulses. AXM.h documents the same call as the place to set a mechanical
+	// ratio, so if this ever fails the axis silently keeps the previous ratio
+	// and every distance afterwards is wrong by that factor.
+	DWORD dwCode = AxmMotSetMoveUnitPerPulse(AxisNO, 1.0, 1);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmMotSetMoveUnitPerPulse(1,1) failed, code %lu\n",
+			   (long)AxisNO, dwCode);
+	}
 }
 
 void CAjinMotor::SetServoOnLogic(DWORD LogicLevel)

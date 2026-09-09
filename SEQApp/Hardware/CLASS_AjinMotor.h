@@ -13,6 +13,16 @@
 
 
 //////////////////////////////////////////////////////////////////////////
+// How this machine drives its axes, read once from Config.ini
+// ([HARDWARE] MotionType: 0 = EtherCAT node network, 1 = pulse train / ct2d).
+//
+// A free function rather than a member so that every class gets the same
+// answer regardless of which object is constructed first. CAjinIO used to
+// decide this for itself from AxlIsOpened(), which mixed up "no board" with
+// "pulse machine" and let the two classes disagree.
+BOOL AxlIsPulseTypeMachine();
+
+//////////////////////////////////////////////////////////////////////////
 class  CAjinBase 
 {
 private:

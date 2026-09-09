@@ -12,7 +12,21 @@ void CSeqMain::Load_Motor_Parameter(void)
 	tinyxml2::XMLDocument doc;  //TinyXML-2의 핵심 클래스인 XMLDocument 객체를 생성합니다. 이 객체가 XML 파일 전체를 메모리에 로드하고 관리합니다 
 	doc.LoadFile("C:\\WORK\\CONFIG\\MotorConfig.xml");	//지정된 경로에서 "MotorConfig.xml" 파일을 읽어 들여 doc 객체에 파싱(parsing)합니다.
 
+	// A missing or malformed file leaves pRoot NULL, and the next line
+	// dereferences it. C:\WORK did not even exist on this machine until
+	// recently, so this was a live crash on a fresh install.
+	if (doc.Error()) {
+		printf("[MOTOR] MotorConfig.xml could not be read (%s). Axis parameters"
+			   " keep their built in defaults.\n", doc.ErrorStr());
+		return;
+	}
+
 	tinyxml2::XMLElement* pRoot = doc.RootElement(); //XML 문서의 **최상위 엘리먼트 (Root Element)**를 가져옵니다. 예를 들어, XML 파일이 <CONFIG>...</CONFIG>로 시작한다면, pRoot는 <CONFIG> 엘리먼트를 가리킵니다. 
+	if (pRoot == NULL) {
+		printf("[MOTOR] MotorConfig.xml has no root element. Axis parameters"
+			   " keep their built in defaults.\n");
+		return;
+	}
 	tinyxml2::XMLElement* cfg = pRoot->FirstChildElement("MOTOR");  //루트 엘리먼트의 자식 중에서 태그 이름이 "MOTOR"인 첫 번째 엘리먼트를 찾아서 cfg 포인터에 할당합니다. 이 코드는 일반적으로 모터 설정의 반복 시작점을 찾습니다.
 	for (tinyxml2::XMLElement* ele = cfg; ele != NULL; ele = ele->NextSiblingElement()) //반복 시작 (ele = cfg): 반복 변수 ele가 첫 번째 "MOTOR" 엘리먼트를 가리키며 시작합니다.
 
@@ -54,6 +68,27 @@ void CSeqMain::InitMotor(void)
 	Load_Motor_Parameter();
 
 	totalAxisCnt = 3;
+
+	// The axis count is fixed here while the board decides how many axes really
+	// exist. When the two disagree every AXM call on the surplus axes fails, and
+	// they fail quietly - the setters below discard their return codes. Say so
+	// once at startup instead of leaving it to be discovered on the machine.
+	long lBoardAxisCount = 0;
+	DWORD dwAxisCode = AxmInfoGetAxisCount(&lBoardAxisCount);
+	if (dwAxisCode != AXT_RT_SUCCESS) {
+		printf("[MOTOR] AxmInfoGetAxisCount() failed, code %lu - cannot check the"
+			   " configured axis count of %d\n", dwAxisCode, totalAxisCnt);
+	}
+	else if (lBoardAxisCount < totalAxisCnt) {
+		printf("[MOTOR] WARNING: %d axes are configured but the board reports"
+			   " %ld. Axes %ld..%d do not exist and every call on them will"
+			   " fail.\n",
+			   totalAxisCnt, lBoardAxisCount, lBoardAxisCount, totalAxisCnt - 1);
+	}
+	else {
+		printf("[MOTOR] %d axes configured, board reports %ld\n",
+			   totalAxisCnt, lBoardAxisCount);
+	}
 
 	Sleep(100);
 
@@ -166,7 +201,6 @@ void CSeqMain::InitMotor(void)
 void CSeqMain::InitIO(void)
 {
 	AjinIO = new CAjinIO;
-	bit.TestMode = AjinIO->Isct2dMode();
 
 	AjinAIO = new CAjinAIO;
 	AjinAIO->InitCard();
@@ -184,7 +218,13 @@ void CSeqMain::InitMotorBase(void)
 {
 	AjinBase = new CAjinBase;
 	AjinBase->InitBase();
-	bit.TestMode = AjinBase->Isct2dMode();
+
+	// bit.TestMode used to be assigned the ct2d flag here and again in InitIO().
+	// Both were dead: InitSequence() calls InitMemory() afterwards, which zeroes
+	// the whole bit structure, and then sets bit.TestMode = 0 explicitly. The
+	// hardware type never reached the MMI. Removed rather than moved - TestMode
+	// means "test mode", not "pulse machine". If the MMI needs the machine type,
+	// give it a bit of its own.
 }
 
 void CSeqMain::InitMemory(void)

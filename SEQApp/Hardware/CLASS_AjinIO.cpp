@@ -30,7 +30,9 @@ long	FLOAT_To_INT(double data);
 
 CAjinIO::~CAjinIO()
 {
-	if (Isct2dMode()) return;
+	// Turning the outputs off on the way out only makes sense if there is a
+	// module to turn off. Keyed on the module, not on the machine type.
+	if (!IsDioReady()) return;
 	if (AxlIsOpened()) {
 		for (int i = 0; i < uOutputCount; i++) {
 			uAddress = (uOutputStartAddress + i) / 2;
@@ -40,46 +42,73 @@ CAjinIO::~CAjinIO()
 	}
 }
 
-CAjinIO::CAjinIO():uInputCount(0),uMaxBaseBoard(0),uOutputCount(0),uOutputStartAddress(0),uct2dMode(0)
+// Members are listed in declaration order: initialisation follows that order
+// whatever the list says, so keeping the two in step avoids a false reading of
+// which value depends on which.
+CAjinIO::CAjinIO()
+	: uAddress(0), uOffset(0), uct2dMode(0), uDioReady(0)
+	, uMaxBaseBoard(0), uOutputStartAddress(0), uInputCount(0), uOutputCount(0)
 {
-	DWORD	uModuleID = 0;
 	long	lInModuleCnt = 0, lOutModuleCnt = 0;
-	DWORD   dwStatus;
-	uAddress = 0;
-	uOffset = 0;
-	if (AxlIsOpened()) {
-		AxdInfoIsDIOModule(&dwStatus);
-		if (dwStatus == STATUS_NOTEXIST) {
-			//	AxlClose();
-			printf("DIO is not founded\n");
-			uOutputStartAddress = 1;
-			uInputCount = 2;
-			uOutputCount = 2;
-		}
-		else if (dwStatus == STATUS_EXIST) {
-			AxdInfoGetInputModuleCount(&lInModuleCnt);
-			AxdInfoGetOutputModuleCount(&lOutModuleCnt);
+	DWORD   dwStatus = STATUS_NOTEXIST;
 
-			uOutputStartAddress = (unsigned short int)lInModuleCnt * 2;
+	// The machine type comes from the same configuration CAjinBase reads, so
+	// the two classes can no longer disagree about what this machine is. It was
+	// derived here from AxlIsOpened(), which reported "pulse machine" whenever
+	// the driver failed to load.
+	Setct2dMode(AxlIsPulseTypeMachine() ? 1 : 0);
 
-			uInputCount = uOutputStartAddress;
-			printf("\nDI32 Card Initialize Complete [%hu] CH.........", uOutputStartAddress);
-
-			uOutputCount = (unsigned short int)(lOutModuleCnt * 2);
-			printf("\nDO32 Card Initialize Complete [%hu] CH.........", uOutputCount);
-			Setct2dMode(FALSE);
-			uct2dMode = 0;
-		}
-	}
-	else {
-		Setct2dMode(TRUE);
-		uct2dMode = 1;
+	if (!AxlIsOpened()) {
+		printf("\n[INPUT/OUTPUT CARD] : AXL is not open, digital I/O disabled");
 		uDioCardCount = 4;
 		uOutputStartAddress = 2;
 		uInputCount = 2;
 		uOutputCount = 2;
-		printf("\n[INPUT/OUTPUT CARD] : INITIALIZE ct2d MODE!!!");
+		return;
 	}
+
+	DWORD dwCode = AxdInfoIsDIOModule(&dwStatus);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("\n[INPUT/OUTPUT CARD] : AxdInfoIsDIOModule() failed, code %lu -"
+			   " digital I/O disabled", dwCode);
+		uOutputStartAddress = 1;
+		uInputCount = 2;
+		uOutputCount = 2;
+		return;
+	}
+
+	if (dwStatus != STATUS_EXIST) {
+		// This branch used to leave uDioReady's predecessor untouched, so the
+		// guards never engaged and every read went to a module that is not
+		// there - returning whatever happened to be on the stack.
+		printf("\n[INPUT/OUTPUT CARD] : DIO module not found, digital I/O disabled");
+		uOutputStartAddress = 1;
+		uInputCount = 2;
+		uOutputCount = 2;
+		return;
+	}
+
+	AxdInfoGetInputModuleCount(&lInModuleCnt);
+	AxdInfoGetOutputModuleCount(&lOutModuleCnt);
+
+	uOutputStartAddress = (unsigned short int)lInModuleCnt * 2;
+	uInputCount = uOutputStartAddress;
+	uOutputCount = (unsigned short int)(lOutModuleCnt * 2);
+
+	uDioReady = 1;
+	printf("\nDI32 Card Initialize Complete [%hu] CH.........", uOutputStartAddress);
+	printf("\nDO32 Card Initialize Complete [%hu] CH.........", uOutputCount);
+}
+
+// A failing AXL call in the scan loop must not turn into a stream of console
+// output - printing at scan rate costs more than the failure does. Say it once
+// per call site and stay quiet afterwards.
+static void ReportOnce(bool& bReported, const char* pszWhat, long lModule, DWORD dwCode)
+{
+	if (bReported) return;
+	bReported = true;
+	printf("[DIO] %s(module %ld) failed, code %lu."
+		   " Further failures are not reported.\n", pszWhat, lModule, dwCode);
 }
 
 DWORD CAjinIO::READINPUT(unsigned short int moduleno)
@@ -87,9 +116,18 @@ DWORD CAjinIO::READINPUT(unsigned short int moduleno)
 	uAddress = moduleno;// CHNO / 2;
 	uOffset = 0;// CHNO % 2;
 
-	if (Isct2dMode()) return TRUE;
-	DWORD readval;
-	DWORD aa = AxdiReadInportWord(uAddress, uOffset, &readval);
+	// No module, no input. Return every bit low rather than the old TRUE, which
+	// set input bit 0 for no reason, and rather than the uninitialised local the
+	// failing path used to return.
+	if (!IsDioReady()) return 0;
+
+	DWORD readval = 0;
+	static bool bReported = false;
+	DWORD dwCode = AxdiReadInportWord(uAddress, uOffset, &readval);
+	if (dwCode != AXT_RT_SUCCESS) {
+		ReportOnce(bReported, "AxdiReadInportWord", (long)uAddress, dwCode);
+		return 0;
+	}
 
 	return readval;
 }
@@ -98,10 +136,15 @@ DWORD CAjinIO::READOUTPUT(unsigned short int moduleno)
 	uAddress = moduleno;// moduleno / 2;
 	uOffset = 0;// moduleno % 2;
 
-	if (Isct2dMode()) return TRUE;
+	if (!IsDioReady()) return 0;
 
-	DWORD outval;
-	AxdoReadOutportWord(uAddress, uOffset, &outval);
+	DWORD outval = 0;
+	static bool bReported = false;
+	DWORD dwCode = AxdoReadOutportWord(uAddress, uOffset, &outval);
+	if (dwCode != AXT_RT_SUCCESS) {
+		ReportOnce(bReported, "AxdoReadOutportWord", (long)uAddress, dwCode);
+		return 0;
+	}
 	return outval;
 }
 
@@ -110,22 +153,35 @@ bool CAjinIO::WRITE(unsigned short int moduleno, unsigned short int Value)
 	uAddress = moduleno;// CHNO / 2;
 	uOffset = 0;// CHNO % 2;
 
-	if(Isct2dMode()) return TRUE;
+	// Nothing to drive. Reported as success so the caller does not treat a
+	// machine built without DIO as a fault.
+	if (!IsDioReady()) return true;
 
-	AxdoWriteOutportWord(uAddress, uOffset, Value);
+	static bool bReported = false;
+	DWORD dwCode = AxdoWriteOutportWord(uAddress, uOffset, Value);
+	if (dwCode != AXT_RT_SUCCESS) {
+		ReportOnce(bReported, "AxdoWriteOutportWord", (long)uAddress, dwCode);
+		return false;
+	}
 
 	return true;
 }
 
 void CAjinIO::ReOpen()
 {
-	DWORD	uModuleID = 0;
 	long	lInModuleCnt = 0, lOutModuleCnt = 0;
-	DWORD   dwStatus;
+	DWORD   dwStatus = STATUS_NOTEXIST;
 	if (AxlIsOpened()) {
-		AxdInfoIsDIOModule(&dwStatus);
+		if (AxdInfoIsDIOModule(&dwStatus) != AXT_RT_SUCCESS) {
+			uDioReady = 0;
+			printf("[DIO] AxdInfoIsDIOModule() failed on reopen\n");
+			return;
+		}
 		if (dwStatus == STATUS_NOTEXIST) {
-			AxlClose();
+			// AxlClose() used to be called here. It closes the whole library,
+			// so a missing DIO module would have taken motion and the counter
+			// down with it. A missing module disables digital I/O, nothing else.
+			uDioReady = 0;
 			printf("DIO is not founded\n");
 		}
 		else if (dwStatus == STATUS_EXIST) {
@@ -139,8 +195,7 @@ void CAjinIO::ReOpen()
 
 			uOutputCount = (unsigned short int)(lOutModuleCnt * 2);
 			printf("\n DO32 Card Initialize Complete [%hu] CH.........", uOutputCount);
-			Setct2dMode(FALSE);
-
+			uDioReady = 1;
 		}
 	}
 }
