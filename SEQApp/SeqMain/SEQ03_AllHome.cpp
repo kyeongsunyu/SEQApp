@@ -69,31 +69,27 @@ void CSeqMain::AllHomeC(void)
 	//}
 
 	////////////////////////////////////////////////////
+	// imrs is the "this axis has found its origin" flag. Reaching the else
+	// below already means it is clear, so the home command belongs there
+	// unconditionally. The inner "if (imrs)" that used to sit there could
+	// never be true, and the home command was never issued from here.
 	// AXIS 01 MTStageX
 	if (!bMTAxisHomeFinished[0]) {
-		if (MTStageX->imrs) {
-			bMTAxisHomeFinished[0] = true;
-		}
-		else {
-			if (MTStageX->imrs ) {
-				MTStageXHomeM();
-			}
-		}
+		if (MTStageX->imrs) bMTAxisHomeFinished[0] = true;
+		else                MTStageXHomeM();
 	}
 	// AXIS 02 MTStageY
 	if (!bMTAxisHomeFinished[1]) {
-		if (MTStageY->imrs) {
-			bMTAxisHomeFinished[0] = true;
-		}
-		else {
-			if (MTStageY->imrs) {
-				MTStageYHomeM();
-			}
-		}
+		// This branch set index 0, not 1, so axis 2 never recorded its own
+		// completion and axis 1's flag could be set by the wrong axis.
+		if (MTStageY->imrs) bMTAxisHomeFinished[1] = true;
+		else                MTStageYHomeM();
 	}
 
+	// One flag per axis, so the loop runs to the axis count. It stopped at
+	// index 0, which let "all home" complete on the first axis alone.
 	bool allHomeDone = true;
-	for (int n = 0; n <1; n++)
+	for (int n = 0; n < (int)totalAxisCnt; n++)
 		allHomeDone &= bMTAxisHomeFinished[n];
 
 	//////////////////////////////

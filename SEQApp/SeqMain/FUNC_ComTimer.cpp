@@ -18,7 +18,9 @@ void CSeqMain::CommonTimer(void)
 #pragma endregion
 
 #pragma region MOTOR_TIMER
-	for (int i = 1; i < totalAxisCnt; i++) {
+	// Axes live at MTAxis[1..totalAxisCnt], as the two loops further down in
+	// this function already assume. This one stopped one short.
+	for (int i = 1; i <= (int)totalAxisCnt; i++) {
 		tmReady_MTAxis[i].TimerCondition(MTRDY(MTAxis[i]));
 	}
 
