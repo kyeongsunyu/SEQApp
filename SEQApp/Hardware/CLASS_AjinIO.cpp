@@ -59,7 +59,7 @@ CAjinIO::CAjinIO()
 	Setct2dMode(AxlIsPulseTypeMachine() ? 1 : 0);
 
 	if (!AxlIsOpened()) {
-		printf("\n[INPUT/OUTPUT CARD] : AXL is not open, digital I/O disabled");
+		printf("\n[INPUT/OUTPUT CARD] : AXL is not open, digital I/O disabled\n");
 		uDioCardCount = 4;
 		uOutputStartAddress = 2;
 		uInputCount = 2;
@@ -70,7 +70,7 @@ CAjinIO::CAjinIO()
 	DWORD dwCode = AxdInfoIsDIOModule(&dwStatus);
 	if (dwCode != AXT_RT_SUCCESS) {
 		printf("\n[INPUT/OUTPUT CARD] : AxdInfoIsDIOModule() failed, code %lu -"
-			   " digital I/O disabled", dwCode);
+			   " digital I/O disabled\n", dwCode);
 		uOutputStartAddress = 1;
 		uInputCount = 2;
 		uOutputCount = 2;
@@ -81,7 +81,7 @@ CAjinIO::CAjinIO()
 		// This branch used to leave uDioReady's predecessor untouched, so the
 		// guards never engaged and every read went to a module that is not
 		// there - returning whatever happened to be on the stack.
-		printf("\n[INPUT/OUTPUT CARD] : DIO module not found, digital I/O disabled");
+		printf("\n[INPUT/OUTPUT CARD] : DIO module not found, digital I/O disabled\n");
 		uOutputStartAddress = 1;
 		uInputCount = 2;
 		uOutputCount = 2;
@@ -96,8 +96,8 @@ CAjinIO::CAjinIO()
 	uOutputCount = (unsigned short int)(lOutModuleCnt * 2);
 
 	uDioReady = 1;
-	printf("\nDI32 Card Initialize Complete [%hu] CH.........", uOutputStartAddress);
-	printf("\nDO32 Card Initialize Complete [%hu] CH.........", uOutputCount);
+	printf("\nDI32 Card Initialize Complete [%hu] CH.........\n", uOutputStartAddress);
+	printf("DO32 Card Initialize Complete [%hu] CH.........\n", uOutputCount);
 }
 
 // A failing AXL call in the scan loop must not turn into a stream of console
@@ -478,6 +478,8 @@ void CAjinAIO::InitCard()
 				printf("[BD No:%d - MD No:%d] Unknown", IBoardNo, ModuleNo);
 				break;
 			}
+			// None of the cases above terminate their line.
+			printf("\n");
 		}
 	}
 }
