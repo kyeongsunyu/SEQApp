@@ -409,7 +409,21 @@ void CSeqMain::MMI_MessageCommunication(void)
 			}
 			case CMD_WRITE_TENKEYJOG:
 			{
-				tenkeyJogmtno = Mmi2Seq.Arg.TenKeyJog.uAxisNo;
+				// MTAxis[] holds 50 slots but only totalAxisCnt of them are built,
+				// so an axis number past the end reaches a null entry. Refusing it
+				// here keeps TenKeyJogMove() from dereferencing one. Axis 2 was the
+				// Z stage and is a number the MMI can still send.
+				const int nAxisNo = (int)Mmi2Seq.Arg.TenKeyJog.uAxisNo;
+				if (nAxisNo < 0 || nAxisNo >= (int)totalAxisCnt
+					|| MTAxis[nAxisNo + 1] == NULL) {
+					printf("Ten-Key Jog rejected: axis %d does not exist"
+						   " (%d axes configured)\n", nAxisNo, (int)totalAxisCnt);
+					bTenKeyJog = FALSE;
+					bit.TenkeyJogMove = 0;
+					break;
+				}
+
+				tenkeyJogmtno = nAxisNo;
 				bTenKeyJog = Mmi2Seq.Arg.TenKeyJog.bTenKeyJog;
 				bit.TenkeyJogMove = 0;
 				if (bTenKeyJog) {

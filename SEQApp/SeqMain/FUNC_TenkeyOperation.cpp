@@ -517,9 +517,16 @@ void CSeqMain::TenKeyJogMove(int dir)
 {
 	if (!bTenKeyJog)	return;
 
-	double dVel = dir * 10.0 * MTAxis[tenkeyJogmtno + 1]->MMI_PulseRate;
-	MTAxis[tenkeyJogmtno + 1]->imrs=0;
-	MTAxis[tenkeyJogmtno + 1]->Speed = dVel;
-	MTAxis[tenkeyJogmtno + 1]->Accel = fabs(dVel * 5);
-	MTAxis[tenkeyJogmtno + 1]->MTSCMove();
+	// Second line of defence: the axis number is validated when it arrives from
+	// the MMI, but this runs from the key handler and must not fault if it ever
+	// gets through.
+	CAjinMotor* pAxis = (tenkeyJogmtno >= 0 && tenkeyJogmtno < (int)totalAxisCnt)
+						? MTAxis[tenkeyJogmtno + 1] : NULL;
+	if (pAxis == NULL)	return;
+
+	double dVel = dir * 10.0 * pAxis->MMI_PulseRate;
+	pAxis->imrs=0;
+	pAxis->Speed = dVel;
+	pAxis->Accel = fabs(dVel * 5);
+	pAxis->MTSCMove();
 }

@@ -43,7 +43,6 @@ CAjinMotor* MTAxis[50];
 
 CAjinMotor* MTStageX;			   // Axis 01	//Stage X
 CAjinMotor* MTStageY;			   // Axis 02	//Stage Y
-CAjinMotor* MTStageZ;			   // Axis 03	//Stage Z
 
 //////////////////////////////////////////////////////
 CCommPacket Rs232Ionizer(_T("COM1"), 9600);	// Ionizer
@@ -401,8 +400,6 @@ CRtTimer tmMoving_MTStageX;
 CRtTimer tmReady_MTStageY;
 CRtTimer tmMoving_MTStageY;
 
-CRtTimer tmReady_MTStageZ;
-CRtTimer tmMoving_MTStageZ;
 
 #pragma endregion
 
