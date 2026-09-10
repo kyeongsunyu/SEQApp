@@ -137,17 +137,20 @@ void CSeqMain::JogMoveIndex(int axisno, int idx)
 #pragma region AXIS01 MTStageX
 void CSeqMain::MTStageXHomeM(void)
 {
-
-	if (MTRDY(MTStageX)) {
+	// MTHOMERDY, not MTRDY. MTRDY requires imrs, which only becomes 1 after a
+	// home completes, so the first home after power up could never be issued.
+	// Accepting a home needs the axis idle, drive ready and servo on - nothing
+	// about whether it has already found its origin.
+	if (MTHOMERDY(MTStageX)) {
 		MTStageX->imrs = 0;
 		MTStageX->NxtPos = 0;
 		MTStageX->omove = 1;
-
 	}
 }
 void CSeqMain::MTStageYHomeM(void)
 {
-	if (MTRDY(MTStageY)) {
+	// Same reason as MTStageXHomeM().
+	if (MTHOMERDY(MTStageY)) {
 		MTStageY->imrs = 0;
 		MTStageY->NxtPos = 0;
 		MTStageY->omove = 1;
