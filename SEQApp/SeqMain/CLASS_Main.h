@@ -214,10 +214,6 @@ public:
 	void MTStageYHomeM(void);
 	void MTStageYMoveM(void);
 #pragma endregion
-#pragma region AXIS 03 MTStageZ
-	void MTStageZHomeM(void);
-	void MTStageZMoveM(void);
-#pragma endregion
 
 	//////////////////////////////////////////////////////////////////////////
 //#pragma region	SEQ_02Pneumatic.cpp

@@ -58,16 +58,14 @@ void CSeqMain::InitMotor(void)
 {
 	MTStageX = new CAjinMotor(0, 0);
 	MTStageY = new CAjinMotor(1, 1);
-	MTStageZ = new CAjinMotor(2, 2);
 
 	MTAxis[1] = MTStageX;
 	MTAxis[2] = MTStageY;
-	MTAxis[3] = MTStageZ;
 
 	// Load Motor Config data
 	Load_Motor_Parameter();
 
-	totalAxisCnt = 3;
+	totalAxisCnt = 2;
 
 	// The axis count is fixed here while the board decides how many axes really
 	// exist. When the two disagree every AXM call on the surplus axes fails, and
@@ -169,7 +167,6 @@ void CSeqMain::InitMotor(void)
 	//AxmSignalSetLimit(0, SLOWDOWN_STOP, LOW, LOW);
 	MTStageX->DfltWorking = STAGE_X_WAIT;
 	MTStageY->DfltWorking = STAGE_Y_WAIT;
-	MTStageZ->DfltWorking = STAGE_Z_UP;
 	
 	//////////////////////////////////////////////////////////////////////////
 	int k;
@@ -319,7 +316,6 @@ void CSeqMain::ObjectDelete(void)
 {
 	delete MTStageX;
 	delete MTStageY;
-	delete MTStageZ;
 
 	if (curvePallet != NULL)	delete curvePallet;
 	if (AjinBase != NULL)		delete AjinBase;

@@ -24,11 +24,9 @@ void CSeqMain::CommonTimer(void)
 
 	tmReady_MTStageX				.TimerCondition(MTRDY(MTStageX));
 	tmReady_MTStageY				.TimerCondition(MTRDY(MTStageY));
-	tmReady_MTStageZ				.TimerCondition(MTRDY(MTStageZ));
 
 	tmMoving_MTStageX				.TimerCondition	(!MTStageX->IsStop);
 	tmMoving_MTStageY				.TimerCondition(!MTStageY->IsStop);
-	tmMoving_MTStageZ				.TimerCondition(!MTStageZ->IsStop);
 #pragma endregion
 
 #pragma region INPUT_TIMER

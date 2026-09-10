@@ -15,7 +15,7 @@ UINT CSeqMain::SEQ_Motion_Thread1(LPVOID param)
 
 	while (!seqMain->m_bSeqExit)
 	{
-		seqMain->AjinMotorStatus(1, 3);
+		seqMain->AjinMotorStatus(1, 2);
 		Sleep(1);
 //		WaitForSingleObject(pMain->m_pThread_SeqMotion1, 1);
 //		seqMain->Wait(1000);

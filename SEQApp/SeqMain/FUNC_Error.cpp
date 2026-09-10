@@ -344,25 +344,7 @@ int CSeqMain::ErrorProcedure(void)
 	else {
 		RESET_ERROR(ERROR_LIMIT_CW__STAGE_Y);
 	}
-	// AXIS 03 MTStageZ STROKE END
-	if (MTStageZ->IsHWLimitCCW && (MTStageZ->NxtPos != 0)) {
-		SET_MOTOR_ERROR(MTStageZ, ERROR_LIMIT_CCW_STAGE_Z);
-		bit.AllHome = 0;
-		bit.PAutoStop = 1;
-	}
-	else {
-		RESET_ERROR(ERROR_LIMIT_CCW_STAGE_Z);
-	}
 
-	if (MTStageZ->IsHWLimitCW && (MTStageZ->NxtPos != 0)) {
-		SET_MOTOR_ERROR(MTStageZ, ERROR_LIMIT_CW__STAGE_Z);
-		bit.AllHome = 0;
-		bit.PAutoStop = 1;
-	}
-	else {
-		RESET_ERROR(ERROR_LIMIT_CW__STAGE_Z);
-	}
-	// AXIS 01 MTStageX MOTOR HOME
 	if (!MTStageX->imrs) {
 		SET_MOTOR_ERROR(MTStageX, ERROR_NOT_INITIALIZED_STAGE_X);
 		bit.PAutoStop = 1;
@@ -379,15 +361,6 @@ int CSeqMain::ErrorProcedure(void)
 	else {
 		RESET_ERROR(ERROR_NOT_INITIALIZED_STAGE_Y);
 		ERRCLRIF0(ERROR_NOT_INITIALIZED_STAGE_Y);
-	}
-	// AXIS 03 MTLoadPkX MOTOR HOME
-	if (!MTStageZ->imrs) {
-		SET_MOTOR_ERROR(MTStageZ, ERROR_NOT_INITIALIZED_STAGE_Z);
-		bit.PAutoStop = 1;
-	}
-	else {
-		RESET_ERROR(ERROR_NOT_INITIALIZED_STAGE_Z);
-		ERRCLRIF0(ERROR_NOT_INITIALIZED_STAGE_Z);
 	}
 #pragma endregion
 

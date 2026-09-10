@@ -14,6 +14,5 @@ void CSeqMain::EmerOffProcess(void)
 
 	MTEMEROFF(MTStageX);
 	MTEMEROFF(MTStageY);
-	MTEMEROFF(MTStageZ);
 
 }

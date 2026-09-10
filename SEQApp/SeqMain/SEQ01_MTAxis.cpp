@@ -134,86 +134,55 @@ void CSeqMain::JogMoveIndex(int axisno, int idx)
 }
 
 //////////////////////////////////////////////////////////////////////////
-#pragma region AXIS01 MTStageZ
+#pragma region AXIS01 MTStageX
 void CSeqMain::MTStageXHomeM(void)
 {
 
-	if (MTRDY(MTStageZ)) {
-		if (MTRDY(MTStageX)) {
-			MTStageX->imrs = 0;
-			MTStageX->NxtPos = 0;
-			MTStageX->omove = 1;
+	if (MTRDY(MTStageX)) {
+		MTStageX->imrs = 0;
+		MTStageX->NxtPos = 0;
+		MTStageX->omove = 1;
 
-		}
 	}
 }
 void CSeqMain::MTStageYHomeM(void)
 {
-	if (MTRDY(MTStageZ)) {
-		if (MTRDY(MTStageY)) {
-			MTStageY->imrs = 0;
-			MTStageY->NxtPos = 0;
-			MTStageY->omove = 1;
-		}
-	}
-}
-
-void CSeqMain::MTStageZHomeM(void)
-{
-
-	if (MTRDY(MTStageZ)) {
-		MTStageZ->imrs = 0;
-		MTStageZ->NxtPos = 0;
-		MTStageZ->omove = 1;
+	if (MTRDY(MTStageY)) {
+		MTStageY->imrs = 0;
+		MTStageY->NxtPos = 0;
+		MTStageY->omove = 1;
 	}
 }
 
 
 void CSeqMain::MTStageXMoveM(void)
 {
-	if(MTRDY(MTStageZ)){
-		if (MTRDY(MTStageX)) {
-			if (MTCEP(MTStageX, STAGE_X_WAIT)) {
-				MTMOVE(MTStageX, STAGE_X_PRE_WORK, AUTOSPEED);
-			}
-			else if (MTCEP(MTStageX, STAGE_X_PRE_WORK)) {
-				MTMOVE(MTStageX, STAGE_X_WORK, AUTOSPEED);
-			}
-			else if (MTCEP(MTStageX, STAGE_X_WORK)) {
-				MTMOVE(MTStageX, STAGE_X_WAIT, AUTOSPEED);
-			}
+	if (MTRDY(MTStageX)) {
+		if (MTCEP(MTStageX, STAGE_X_WAIT)) {
+			MTMOVE(MTStageX, STAGE_X_PRE_WORK, AUTOSPEED);
+		}
+		else if (MTCEP(MTStageX, STAGE_X_PRE_WORK)) {
+			MTMOVE(MTStageX, STAGE_X_WORK, AUTOSPEED);
+		}
+		else if (MTCEP(MTStageX, STAGE_X_WORK)) {
+			MTMOVE(MTStageX, STAGE_X_WAIT, AUTOSPEED);
 		}
 	}
 }
 void CSeqMain::MTStageYMoveM(void)
 {
-	if (MTRDY(MTStageZ)) {
-		if (MTRDY(MTStageY)) {
-			if (MTCEP(MTStageY, STAGE_Y_WAIT)) {
-				MTMOVE(MTStageY, STAGE_Y_PRE_WORK, AUTOSPEED);
-			}
-			else if (MTCEP(MTStageY, STAGE_Y_PRE_WORK)) {
-				MTMOVE(MTStageY, STAGE_Y_WORK, AUTOSPEED);
-			}
-			else if (MTCEP(MTStageY, STAGE_Y_WORK)) {
-				MTMOVE(MTStageY, STAGE_Y_WAIT, AUTOSPEED);
-			}
+	if (MTRDY(MTStageY)) {
+		if (MTCEP(MTStageY, STAGE_Y_WAIT)) {
+			MTMOVE(MTStageY, STAGE_Y_PRE_WORK, AUTOSPEED);
+		}
+		else if (MTCEP(MTStageY, STAGE_Y_PRE_WORK)) {
+			MTMOVE(MTStageY, STAGE_Y_WORK, AUTOSPEED);
+		}
+		else if (MTCEP(MTStageY, STAGE_Y_WORK)) {
+			MTMOVE(MTStageY, STAGE_Y_WAIT, AUTOSPEED);
 		}
 	}
 }
-void CSeqMain::MTStageZMoveM(void)
-{
-	if (MTRDY(MTStageZ)) {
-		if (MTCEP(MTStageZ, STAGE_Z_UP)) {
-			MTMOVE(MTStageZ, STAGE_Z_PRE_AUTOFOCUS, AUTOSPEED);
-		}
-		else if (MTCEP(MTStageZ, STAGE_Z_PRE_AUTOFOCUS)) {
-			MTMOVE(MTStageZ, STAGE_Z_AUTOFOCUS, AUTOSPEED);
-		}
-		else if (MTCEP(MTStageZ, STAGE_Z_AUTOFOCUS)) {
-			MTMOVE(MTStageZ, STAGE_Z_UP, AUTOSPEED);
-		}
-	}
-}
+
 #pragma endregion
 

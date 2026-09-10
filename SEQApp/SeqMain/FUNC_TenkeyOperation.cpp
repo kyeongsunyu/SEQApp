@@ -27,7 +27,6 @@ void CSeqMain::ManualTenkeyOperation(void)
 		MTStageYMoveM();	// Axis 02
 		break;
 	case 3:
-		MTStageZMoveM();	// Axis 03
 		break;
 	case 4:
 		break;
@@ -70,7 +69,6 @@ void CSeqMain::ManualTenkeyOperation(void)
 		MTStageYHomeM();	// Axis 02
 		break;
 	case 23:
-		MTStageZHomeM();	// Axis 03
 		break;
 	case 24:
 		break;

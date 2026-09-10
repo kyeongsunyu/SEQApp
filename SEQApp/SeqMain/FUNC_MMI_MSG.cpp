@@ -943,9 +943,6 @@ void CSeqMain::MMI_MessageMotorCmdHomeFunc(unsigned int cmdNo, int mtNo)
 			else if (MTAxis[mtNo + 1] == MTStageY) {
 				MTStageYHomeM();
 			}
-			else if (MTAxis[mtNo + 1] == MTStageZ) {
-				MTStageZHomeM();
-			}
 			break;
 		}
 		default:

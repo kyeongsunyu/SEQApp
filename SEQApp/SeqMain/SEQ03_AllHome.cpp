@@ -91,17 +91,6 @@ void CSeqMain::AllHomeC(void)
 			}
 		}
 	}
-	// AXIS 03 MTStageZ
-	if (!bMTAxisHomeFinished[2]) {
-		if (MTStageZ->imrs) {
-			bMTAxisHomeFinished[0] = true;
-		}
-		else {
-			if (MTStageZ->imrs) {
-				MTStageZHomeM();
-			}
-		}
-	}
 
 	bool allHomeDone = true;
 	for (int n = 0; n <1; n++)
@@ -110,7 +99,6 @@ void CSeqMain::AllHomeC(void)
 	//////////////////////////////
 	if (allHomeDone) {
 		bit.AllHome = 0;
-		AjinCounter->SetActualPos(0, MTStageZ->ActualPosition);
 		SendCopyDataToMMI(WM_SEQ_TO_MMI_ALLHOME_COMPLETE, 0, NULL);
 		sprintf(strFileLog, "%s", "All Home Finish");
 		LOG_TRACE(strFileLog);
@@ -123,7 +111,6 @@ void CSeqMain::AllHomeM(void)
 
 	MTStageXHomeM();
 	MTStageYHomeM();	
-	MTStageZHomeM();	
 	//NOTIFY_MSG notify_msg;
 	//if (AINOFF(iGoodElev1Door) && tm_iGoodElev1Door_Off.TimeOvermS(200)) {
 	//	memset(&notify_msg, 0x00, sizeof(NOTIFY_MSG));

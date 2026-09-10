@@ -43,7 +43,6 @@ extern CAjinMotor* MTAxis[50];
 
 extern CAjinMotor* MTStageX;			// Axis 01	// MTStageX,	STEP
 extern CAjinMotor* MTStageY;			// Axis 02	// MTStageY,	STEP
-extern CAjinMotor* MTStageZ;			// Axis 03	// MTStageZ,	STEP
 
 //////////////////////////////////////////////////////
 extern CCommPacket Rs232Ionizer;	// Barcode Reader
@@ -409,8 +408,6 @@ extern CRtTimer tmMoving_MTStageX;
 extern CRtTimer tmReady_MTStageY;
 extern CRtTimer tmMoving_MTStageY;
 
-extern CRtTimer tmReady_MTStageZ;
-extern CRtTimer tmMoving_MTStageZ;
 #pragma endregion
 
 #pragma region INPUT_TIMER
