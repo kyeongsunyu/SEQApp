@@ -282,7 +282,14 @@ long CAjinMotor::GetTotalAxisCount()
 
 void CAjinMotor::SetCommandPosition(int Position)
 {
-	AxmStatusSetPosMatch(AxisNO, (double)Position);
+	// AxmStatusSetPosMatch() is marked "Only RTEX use" in AXM.h. This machine
+	// is a pulse (ct2d) system, so that call could not set anything and the
+	// counter was never cleared at the end of a home.
+	DWORD dwCode = AxmStatusSetCmdPos(AxisNO, (double)Position);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmStatusSetCmdPos(%d) failed, code %lu\n",
+			   (long)AxisNO, Position, dwCode);
+	}
 }
 
 int CAjinMotor::GetCommandPosition()
@@ -295,11 +302,23 @@ int CAjinMotor::GetCommandPosition()
 
 void CAjinMotor::SetActualPosition(int Position)
 {
-	AxmStatusSetPosMatch(AxisNO, (double)Position);
+	// Same reason as SetCommandPosition().
+	DWORD dwCode = AxmStatusSetActPos(AxisNO, (double)Position);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmStatusSetActPos(%d) failed, code %lu\n",
+			   (long)AxisNO, Position, dwCode);
+	}
 }
 
 int CAjinMotor::GetActualPosition()
 {
+	if (!EncoderType) {
+		// No encoder - see GetMotorStatus(). Keep ActualPosition in step too,
+		// since callers read the member as well as the return value.
+		ActualPosition = GetCommandPosition();
+		return ActualPosition;
+	}
+
 	double d_ActualPosition = 0;
 	AxmStatusGetActPos(AxisNO, &d_ActualPosition);
 	ActualPosition = (int)d_ActualPosition;
@@ -500,6 +519,15 @@ void CAjinMotor::GetMotorStatus()
 
 	ActualPosition = (int)MS.dActPos;
 	CommandPosition = (int)MS.dCmdPos;
+
+	// The actual-position counter counts encoder input. On an axis built
+	// without an encoder it never moves, so it is not a position at all - the
+	// only count the board has is the command counter, which follows the pulses
+	// actually sent. Mirror it so every reader, the MMI included, sees a
+	// position that moves. [EncType = 0] in MotorConfig.xml selects this.
+	if (!EncoderType) {
+		ActualPosition = CommandPosition;
+	}
 
 	io_status = (unsigned short int)MS.dwMechSig;
 	in_user = (unsigned short int)MS.dwInput;
