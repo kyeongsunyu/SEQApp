@@ -360,6 +360,78 @@ using _rearpkcenteroffset = struct
 };
 
 //-------------------------------//
+//-------------------------------//
+// Why a recipe was refused. Mirrors on the MMI side by number, so append only.
+enum SCANTRIGGER_VALIDATE
+{
+	SCANTRIGGER_VALIDATE_OK            = 0,
+	SCANTRIGGER_VALIDATE_AXIS          = 1,   // axis number out of range, or not built
+	SCANTRIGGER_VALIDATE_RANGE         = 2,   // end is not beyond start
+	SCANTRIGGER_VALIDATE_PITCH         = 3,   // pitch is not positive
+	SCANTRIGGER_VALIDATE_LINERATE      = 4,   // line rate is not positive
+	SCANTRIGGER_VALIDATE_PITCH_FRACTION= 5,   // pitch is not a whole number of counts
+	SCANTRIGGER_VALIDATE_SPEED         = 6,   // derived speed exceeds the axis maximum
+	SCANTRIGGER_VALIDATE_LINECOUNT     = 7,   // no lines, or more than the cap
+	SCANTRIGGER_VALIDATE_NO_COUNTER    = 8,   // no counter channel to trigger from
+	SCANTRIGGER_VALIDATE_PULSERATE     = 9,   // axis pulse rate unset, mm cannot convert
+	SCANTRIGGER_VALIDATE_NOT_HOMED     = 10,  // axis has not found its origin
+};
+//-------------------------------//
+// Cycle progress, reported in _scantriggerdisplay.nState.
+enum SCANTRIGGER_STATE
+{
+	SCANTRIGGER_IDLE        = 0,
+	SCANTRIGGER_GOTO_START  = 1,   // moving to the trigger start position
+	SCANTRIGGER_WAIT_START  = 2,   // waiting for the axis to settle there
+	SCANTRIGGER_ARM         = 3,   // aligning the counter and enabling the trigger
+	SCANTRIGGER_RUN         = 4,   // constant velocity run through the block
+	SCANTRIGGER_WAIT_END    = 5,   // waiting for the axis to stop
+	SCANTRIGGER_DISARM      = 6,   // disabling the trigger, reading the count
+	SCANTRIGGER_DONE        = 7,
+	SCANTRIGGER_ABORTED     = 8,
+};
+//-------------------------------//
+// Line scan trigger recipe. Positions are absolute machine coordinates in mm.
+//
+// The operator enters four values; the stage speed is derived, not entered,
+// because speed, line rate and pitch are one relation:
+//     speed [mm/s] = pitch [mm] x line rate [Hz]
+// Entering speed as well would over-specify it and let the pitch land on a
+// fraction of an encoder count, which the hardware comparator then rounds.
+using _scantriggerrecipe = struct
+{
+	unsigned int uAxisNo;        // 0 based, same numbering the MMI uses elsewhere
+	double dTrigStart;           // mm, absolute
+	double dTrigEnd;             // mm, absolute
+	double dPitch;               // mm   (5 um = 0.005)
+	double dLineRate;            // Hz
+
+	// Reserved. The cycle runs at constant velocity through the trigger block,
+	// so these are carried but not used yet. Present now so that adding the
+	// approach profile later does not change the union layout.
+	double dAccel;               // mm/s^2
+	double dDecel;               // mm/s^2
+	int    nDirection;           // +1 / -1
+	unsigned int uReserved[8];
+};
+//-------------------------------//
+// Everything SEQ computes from the recipe. Kept on one side only so the two
+// programs cannot disagree about what a recipe means.
+using _scantriggerdisplay = struct
+{
+	double dSpeed;               // mm/s  = pitch x line rate
+	double dLineRate;            // Hz    echoed back after validation
+	int    nLineCount;           // lines = (end - start) / pitch
+	double dScanTime;            // s     = (end - start) / speed
+	double dMotionStart;         // mm    where the move actually begins
+	double dMotionEnd;           // mm    where it ends
+
+	double dPitchCounts;         // pitch expressed in encoder counts
+	bool   bPitchIsInteger;      // false means the comparator will round
+	int    nValidateCode;        // 0 = accepted, see SCANTRIGGER_VALIDATE_*
+	int    nState;               // current cycle state, SCANTRIGGER_STATE
+	int    nTriggerCount;        // triggers counted, -1 when unavailable
+};
 using _arg = union
 {
     BYTE		Buffer[12000];
@@ -404,6 +476,8 @@ using _arg = union
 	_pkcentermove PkCenterMove;
 	_frontpkcenteroffset FrontPkCenterOffset;
 	_rearpkcenteroffset RearPkCenterOffset;
+	_scantriggerrecipe  ScanTriggerRecipe;
+	_scantriggerdisplay ScanTriggerDisplay;
 };
 
 //-------------------------------//
@@ -491,6 +565,11 @@ enum TCmdType {
 	CMD_READ_FRONT_PK_CENTER_OFFSET,
 	CMD_READ_REAR_PK_CENTER_OFFSET,
 	CMD_WRITE_PK_CENTER_AUTO_CAL,
+	CMD_WRITE_SCANTRIGGER_RECIPE,
+	CMD_READ_SCANTRIGGER_DISPLAY,
+	CMD_WRITE_SCANTRIGGER_START,
+	CMD_WRITE_SCANTRIGGER_STOP,
+
 	CMD_PROGRAMEXIT	= 199,
 };
 //-------------------------------//

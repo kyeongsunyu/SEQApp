@@ -11,6 +11,7 @@ void CSeqMain::CommonCycle(void)
 	TowerLamp_CycleC();
 	Buzzer_CycleC();
 	AllHomeC();
+	ScanTriggerC();
 
 #pragma region CYCLE
 #pragma endregion

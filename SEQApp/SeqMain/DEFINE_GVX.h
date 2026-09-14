@@ -136,6 +136,9 @@ extern WORD NoofWfInUlMz;
 extern WORD DeviceSize;
 extern WORD n_TestStep;
 
+extern _scantriggerrecipe  ScanTriggerRecipe;
+extern _scantriggerdisplay ScanTriggerDisplay;
+
 extern bool bTenKeyJog;
 extern bool bMTAxisHomeFinished[50];
 extern bool bAlarmCheck[1000];

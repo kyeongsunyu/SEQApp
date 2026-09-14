@@ -135,6 +135,11 @@ WORD NoofWfInUlMz;
 WORD DeviceSize;
 WORD n_TestStep;
 
+// Line scan trigger. The recipe comes from the MMI, the display values are
+// computed by ScanTriggerValidate() and read back by the MMI.
+_scantriggerrecipe  ScanTriggerRecipe;
+_scantriggerdisplay ScanTriggerDisplay;
+
 bool bTenKeyJog;
 bool bMTAxisHomeFinished[50];
 bool bAlarmCheck[1000];

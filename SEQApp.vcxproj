@@ -324,6 +324,7 @@ if exist "C:\Program Files (x86)\EzSoftware UC\AXL(Library)\Library\64Bit\EzBasi
     <ClCompile Include="SEQApp\SeqMain\SEQ01_MTAxis.cpp" />
     <ClCompile Include="SEQApp\SeqMain\SEQ02_Pneumatic.cpp" />
     <ClCompile Include="SEQApp\SeqMain\SEQ03_AllHome.cpp" />
+    <ClCompile Include="SEQApp\SeqMain\SEQ04_ScanTrigger.cpp" />
     <ClCompile Include="SEQApp\SeqThread\THREAD_Main.cpp" />
     <ClCompile Include="SEQApp\SeqThread\THREAD_MMI.cpp" />
     <ClCompile Include="SEQApp\SeqThread\THREAD_Motion.cpp" />

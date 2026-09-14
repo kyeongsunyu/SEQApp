@@ -508,6 +508,17 @@ public:
 #pragma region SEQ03_AllHome.cpp
 	void AllHomeC(void);
 	void AllHomeM(void);
+
+	// ---- line scan trigger ------------------------------------------------
+	// Same shape as AllHomeM / AllHomeC: the M function arms the cycle by
+	// setting bit.ScanTriggerRun, the C function runs while that bit is set.
+	void ScanTriggerM(void);
+	void ScanTriggerC(void);
+	// Recomputes ScanTriggerDisplay from ScanTriggerRecipe. Returns
+	// SCANTRIGGER_VALIDATE_OK when the
+	// recipe can be run. Safe to call whenever the MMI changes a value.
+	int  ScanTriggerValidate(void);
+	void ScanTriggerAbort(const char* pszWhy);
 #pragma endregion
 
 	//////////////////////////////////////////////////////////////////////////

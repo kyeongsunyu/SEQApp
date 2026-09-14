@@ -434,6 +434,38 @@ void CSeqMain::MMI_MessageCommunication(void)
 				}
 				break;
 			}
+			case CMD_WRITE_SCANTRIGGER_RECIPE:
+			{
+				// Refuse a change while a scan is running: the cycle reads the
+				// recipe every pass, so swapping it mid-scan changes the target
+				if (bit.ScanTriggerRun) {
+					printf("[SCANTRIGGER] recipe ignored, a scan is running\n");
+					break;
+				}
+				ScanTriggerRecipe = Mmi2Seq.Arg.ScanTriggerRecipe;
+				ScanTriggerValidate();
+				break;
+			}
+			case CMD_READ_SCANTRIGGER_DISPLAY:
+			{
+				// Recompute rather than return a cached copy, so the numbers
+				// always match the recipe that is loaded right now.
+				ScanTriggerValidate();
+				Mmi2Seq.Arg.ScanTriggerDisplay = ScanTriggerDisplay;
+				break;
+			}
+			case CMD_WRITE_SCANTRIGGER_START:
+			{
+				ScanTriggerM();
+				break;
+			}
+			case CMD_WRITE_SCANTRIGGER_STOP:
+			{
+				if (bit.ScanTriggerRun) {
+					ScanTriggerAbort("stopped from the MMI");
+				}
+				break;
+			}
 			case CMD_WRITE_LOAD_CNT_CLEAR:
 			{
 				MachineStatus.UnitInCnt = 0;

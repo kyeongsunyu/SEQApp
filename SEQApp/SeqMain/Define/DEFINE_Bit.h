@@ -43,7 +43,7 @@ typedef struct {
 	BITTYPE Comm2PacketReceived : 1;			   	// 0115								
 
 	//0200																					
-	BITTYPE dummy0200 : 1;								// 0200								
+	BITTYPE ScanTriggerRun : 1;							// 0200   line scan trigger cycle								
 	BITTYPE VisionDataReceived : 1;					// 0201								
 	BITTYPE dummy0202 : 1;								// 0202								
 	BITTYPE dummy0203 : 1;							   	// 0203								
