@@ -237,6 +237,9 @@
     <ClCompile Include="SEQApp\SeqMain\SEQ03_AllHome.cpp">
       <Filter>SeqMain</Filter>
     </ClCompile>
+    <ClCompile Include="SEQApp\SeqMain\SEQ04_ScanTrigger.cpp">
+      <Filter>SeqMain</Filter>
+    </ClCompile>
     <ClCompile Include="SEQApp\SeqThread\THREAD_Main.cpp">
       <Filter>SeqThread</Filter>
     </ClCompile>
