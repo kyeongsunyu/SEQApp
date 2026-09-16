@@ -1,4 +1,4 @@
-#include "..\pch.h"
+﻿#include "..\pch.h"
 #include "CLASS_AjinMotor.h"
 #include "..\SeqMain\DEFINE_GVX.h"
 #include "..\Tools\CLASS_INI.h"
@@ -366,7 +366,25 @@ void CAjinMotor::SetInpositionMode(DWORD LogicLevel, DWORD Enable)
 
 void CAjinMotor::SetAlarmEnable(int Enable)
 {
-	AxmSignalSetServoAlarm(AxisNO, Enable);	// 0: LOW, 1: HIGH, 2: disable
+	// AXM.h: AxmSignalSetServoAlarm(lAxisNo, uUse) takes LOW(0), HIGH(1),
+	// UNUSED(2) or USED(3) - one argument carrying both the active level and
+	// whether an alarm stops the axis at all. MotorConfig.xml's AlmL is written
+	// straight into it, so AlmL=2 is how a drive with no usable alarm output is
+	// told to stop asserting one.
+	const DWORD ALARM_UNUSED = 2;
+	DWORD uUse = (DWORD)Enable;
+
+	if (uUse > 3) {
+		printf("[AXM] axis %ld : AlmL=%d is outside LOW(0)/HIGH(1)/UNUSED(2)/"
+			   "USED(3); the alarm is left unused\n", (long)AxisNO, Enable);
+		uUse = ALARM_UNUSED;
+	}
+
+	DWORD dwCode = AxmSignalSetServoAlarm(AxisNO, uUse);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmSignalSetServoAlarm(%lu) failed, code %lu\n",
+			   (long)AxisNO, uUse, dwCode);
+	}
 }
 
 void CAjinMotor::SetAlarmClearOn()

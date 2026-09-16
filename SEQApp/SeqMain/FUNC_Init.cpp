@@ -115,7 +115,10 @@ void CSeqMain::InitMotor(void)
 		MTAxis[j]->SetInpositionMode(MTAxis[j]->bInpLevel, MTAxis[j]->bInpEnable);
 		//		MTAxis[j]->SetCommandPosition(0); // internal program encoder count
 		//		MTAxis[j]->SetActualPosition(0);  // actual program encoder count
-		//		MTAxis[j]->SetAlarmEnable(MTAxis[j]->bAlarmLevel);
+		// AlmL was parsed into bAlarmLevel and then never sent anywhere, so the
+		// board kept its own default alarm level and changing AlmL in
+		// MotorConfig.xml did nothing at all.
+		MTAxis[j]->SetAlarmEnable(MTAxis[j]->bAlarmLevel);
 		Sleep(10);
 
 		MTAxis[j]->SetSignalStop(EMERGENCY_STOP, UNUSED);
