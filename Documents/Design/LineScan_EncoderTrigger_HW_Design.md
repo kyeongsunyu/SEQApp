@@ -13,6 +13,7 @@
 > **개정 이력**
 > - Rev.1 : 초안 (FASTECH Ez-ML 유지, 드라이버 계열 미확정)
 > - **Rev.2 : 실물 확인 반영. FASTECH Ez-ML-PE-PAN 제거, X4를 아진 커넥터로 직결하는 구성으로 전면 변경**
+> - **Rev.3 : 실장 UPP는 0.1 µm가 아니라 1 µm. 아래 §4.2의 0.1 µm는 설계 권장값이며, 현재 장비는 그 값으로 만들어져 있지 않습니다. §4.2 말미의 "실장 현황" 참조**
 
 ---
 
@@ -114,6 +115,7 @@ MBDLT25SM 자체는 모델코드의 `S`가 가리키는 대로 **평범한 A6S �
 
 | UPP | 5 µm의 카운트 | 피치 조정 스텝 | f_A @300 mm/s | @500 mm/s | @800 mm/s |
 |---|---|---|---|---|---|
+| 1.0 µm (실장) | 5 | 20 % | 75 kHz | 125 kHz | 200 kHz |
 | 0.5 µm | 10 | 10 % | 150 kHz | 250 kHz | 400 kHz |
 | 0.25 µm | 20 | 5 % | 300 kHz | 500 kHz | 800 kHz |
 | **0.1 µm** | **50** | **2 %** | 750 kHz | **1.25 MHz** | 2.0 MHz |
@@ -123,6 +125,29 @@ MBDLT25SM 자체는 모델코드의 `S`가 가리키는 대로 **평범한 A6S �
 **권장: UPP = 0.1 µm** (피치 = 정확히 50 카운트, 500 mm/s에서 4 Mpps 대비 여유 3.2배)
 
 치수 측정을 병행하면 UPP 0.025 µm(ε 0.5 %)로 올리되 **최고속이 300 mm/s로 제한**됩니다.
+
+#### 실장 현황 (2026-09)
+
+현재 장비는 **UPP = 1 µm**로 구성되어 있습니다. EzManager의 CounterAgent가 채널 0에
+`Count Unit/Pulse 0.001`을 표시하고, `AxcMotSetMoveUnitPerPulse(0, 0.0010)`으로 쓰고
+있는 것이 EzSpy 트레이스로 확인되었습니다. `SEQ04_ScanTrigger.cpp`의
+`SCANTRIGGER_ENC_UNIT_MM`도 이 값에 맞추었습니다.
+
+그 결과 **트리거 피치는 1 µm 단위로만 지정할 수 있습니다.** 위 표의 "피치 조정 스텝"
+20 %가 그 의미이며, 실제로 걸리는 제약은 다음과 같습니다.
+
+| 원하는 픽셀 분해능 | 1 µm 격자에서 | 결과 |
+|---|---|---|
+| 5.0 µm | 5 카운트 | 정확 |
+| 10.0 µm | 10 카운트 | 정확 |
+| **18.1 µm** | 18.1 카운트 | **불가** — 18 µm(−0.55 %) 또는 19 µm(+4.97 %) |
+
+`ScanTriggerValidate()`는 정수가 아닌 피치를 `SCANTRIGGER_VALIDATE_PITCH_FRACTION`
+("PITCH FRAC")으로 거부하고, MMI의 카운트 칸에 `18.10 !`처럼 표시합니다. 보드가 조용히
+반올림해서 스캔 전체에 걸쳐 누적 오차를 만드는 것보다 낫다는 판단입니다.
+
+18.1 µm를 그대로 쓰려면 §4.2의 권장대로 드라이버 분주 출력(`Pr0.11`)을 조정해
+UPP를 0.1 µm로 낮추어야 합니다. 그러면 18.1 µm = 181 카운트로 정확히 떨어집니다.
 
 ### 4.3 지령측 — P_cmd 후보
 
@@ -286,7 +311,7 @@ AXL 단일 라이브러리로 통합 제어합니다.
 > `AjinTrigger->StartPeriodicTrigger(cfg)` 한 번으로 끝납니다.
 >
 > ```cpp
-> PERIODIC_TRIG_CFG cfg;              // 기본값: UPP 0.1um, 피치 5um, 폭 2us, High active
+> PERIODIC_TRIG_CFG cfg;              // 기본값: UPP 1um, 피치 5um, 폭 2us, High active
 > cfg.lChannelNo = 0;
 > cfg.dScanStart = 0.0;
 > cfg.dScanEnd   = 200.0;             // -> 40,000 트리거
@@ -305,8 +330,12 @@ AxcSignalSetEncInputMethod(ch, 0x03);       // A/B상 4체배
 AxcSignalSetEncSource     (ch, 0x00);       // A/B상 신호
 AxcSignalSetEncReverse    (ch, bReverse);   // 진행 방향
 
-AxcMotSetMoveUnitPerPulse (ch, 0.0001);     // UPP = 0.1 um = 0.0001 mm
+AxcMotSetMoveUnitPerPulse (ch, 0.0010);     // UPP = 1 um = 0.001 mm (실장값)
 AxcTriggerSetFunction     (ch, 0x03);       // ★ periodic mode (위치 주기)
+
+WORD w;                                     // ★ 이 두 줄이 없으면 출력이 나오지 않음
+AxcKeGetCommandData16     (ch, 22,  &w);    //   채널 레지스터 0x16 읽기
+AxcKeSetCommandData16     (ch, 150, w | 2); //   150 = 0x96 = 0x16 | 0x80 (쓰기 별칭), 비트 1 set
 AxcTriggerSetBlock        (ch, start, end, 0.005);  // 구간 + 피치 5 um
 AxcTriggerSetDirectionCheck(ch, 0x01);      // 증가 방향에서만
 
@@ -321,6 +350,12 @@ AxcTriggerSetEnable           (ch, 1);      // 활성화
 
 - 스캔 원점: `AxcStatusSetActPos(ch, 0.0)`
 - 정지: `AxcTriggerSetEnable(ch, 0)`
+
+> **`AxcKe*CommandData16` 한 쌍에 대하여** — `AXDev.h`에 선언만 있고 레지스터도 비트도
+> 문서화되어 있지 않습니다. 그러나 EzManager의 CounterAgent가 "Apply"할 때 EzSpy에
+> 정확히 이 두 호출이 찍히고, **이 두 줄이 빠지면 나머지 설정이 모두 성공을 반환해도
+> 트리거 핀이 전혀 동작하지 않습니다.** 같은 시퀀스가 이 프로젝트의
+> `CLASS_AjinCounter::SetTriggerPosition()`(절대위치 모드)에도 이미 들어 있습니다.
 
 카메라측: `Trigger Mode` = On · `Trigger Source` = External · `Trigger Activation` = **Rising Edge**
 (High active + push-pull이므로 논리 반전 없음)

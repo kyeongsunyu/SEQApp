@@ -38,7 +38,7 @@ struct PERIODIC_TRIG_CFG
 	long   lChannelNo;			// counter channel, 0 .. (channel count - 1)
 	DWORD  dwEncoderInput;		// which of the 4 encoder inputs feeds this channel
 	DWORD  dwTriggerOutPort;	// output port bitmask, bit0 = Trigger Out 0
-	double dMoveUnitPerPulse;	// distance per encoder count   (0.0001 = 0.1 um)
+	double dMoveUnitPerPulse;	// distance per encoder count   (0.001  = 1.0 um)
 	double dPitch;				// trigger pitch                (0.005   = 5.0 um)
 	double dScanStart;			// trigger block lower position
 	double dScanEnd;			// trigger block upper position
@@ -51,8 +51,8 @@ struct PERIODIC_TRIG_CFG
 		: lChannelNo(0)
 		, dwEncoderInput(0)
 		, dwTriggerOutPort(0x1)
-		, dMoveUnitPerPulse(0.0001)		// 0.1 um per count
-		, dPitch(0.005)					// 5.0 um  -> 50 counts
+		, dMoveUnitPerPulse(0.001)		// 1.0 um per count
+		, dPitch(0.005)					// 5.0 um  -> 5 counts
 		, dScanStart(0.0)
 		, dScanEnd(0.0)
 		, dPulseWidthUS(2.0)

@@ -17,7 +17,19 @@
 // Distance one encoder count represents, in mm. Machine constant: it is the
 // counter channel's unit, set through AxcMotSetMoveUnitPerPulse, and is what
 // makes dPitch land on a whole number of counts.
-static const double SCANTRIGGER_ENC_UNIT_MM = 0.0001;      // 0.1 um
+//
+// 1 um, confirmed against the linear encoder on this machine and against
+// EzManager's CounterAgent, which shows Count Unit/Pulse 0.001 for channel 0.
+// It was 0.0001 here, which claimed ten times the resolution the counter
+// actually has: every block position and every pitch would have been written
+// to the board ten times too small.
+//
+// Consequence for the recipe: the comparator can only place a trigger on a
+// whole micrometre. A pixel resolution of 18.1 um is not reachable - the
+// nearest pitches are 18 um and 19 um - and ScanTriggerValidate() below
+// refuses it with SCANTRIGGER_VALIDATE_PITCH_FRACTION rather than letting the
+// board round it silently.
+static const double SCANTRIGGER_ENC_UNIT_MM = 0.001;       // 1 um
 
 // Counter channel and trigger output the camera is wired to.
 static const long   SCANTRIGGER_CHANNEL = 0;
