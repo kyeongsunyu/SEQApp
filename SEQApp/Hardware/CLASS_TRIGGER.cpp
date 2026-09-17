@@ -300,10 +300,39 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 		return false;
 	}
 
-	//< Position period mode, then block range and pitch in a single call
+	//< Position period mode
 	if (AXT_RT_SUCCESS != AxcTriggerSetFunction(ch, 0x03)) {
 		return false;
 	}
+
+	//< The step this driver was missing, and the reason the trigger pin stayed
+	//  quiet while every call above returned success.
+	//
+	//  An EzSpy trace of EzManager's own CounterAgent shows it reading channel
+	//  register 0x16 back and writing it straight out again through the write
+	//  alias 0x96 (150 = 0x16 | 0x80) - between disabling the trigger and
+	//  writing the period and block - and the output only pulses when those
+	//  two calls are in the sequence. CLASS_AjinCounter::SetTriggerPosition()
+	//  in this same project already carries the identical pair for absolute
+	//  mode, so this is Ajinextek's sequence rather than a guess. AXDev.h
+	//  declares the accessors but documents neither the register nor bit 1.
+	WORD  wTrigReg  = 0;
+	DWORD dwRegCode = AxcKeGetCommandData16(ch, 22, &wTrigReg);
+	if (dwRegCode != AXT_RT_SUCCESS) {
+		printf("StartPeriodicTrigger: AxcKeGetCommandData16(ch%ld, 22) failed, code 0x%lx\n",
+			   ch, dwRegCode);
+		return false;
+	}
+	dwRegCode = AxcKeSetCommandData16(ch, 150, (WORD)(wTrigReg | 0x0002));
+	if (dwRegCode != AXT_RT_SUCCESS) {
+		printf("StartPeriodicTrigger: AxcKeSetCommandData16(ch%ld, 150, 0x%04X) failed, code 0x%lx\n",
+			   ch, (unsigned int)(wTrigReg | 0x0002), dwRegCode);
+		return false;
+	}
+	printf("[TRIGGER] ch%ld trigger register 0x16 : 0x%04X -> 0x%04X\n",
+		   ch, (unsigned int)wTrigReg, (unsigned int)(wTrigReg | 0x0002));
+
+	//< Block range and pitch in a single call
 	if (AXT_RT_SUCCESS != AxcTriggerSetBlock(ch, cfg.dScanStart, cfg.dScanEnd, cfg.dPitch)) {
 		return false;
 	}

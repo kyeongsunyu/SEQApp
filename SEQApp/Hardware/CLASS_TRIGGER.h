@@ -6,6 +6,7 @@
 #include "..\..\Library\AXL(Library)\C, C++\AXL.h"
 #include "..\..\Library\AXL(Library)\C, C++\AXC.h"
 #include "..\..\Library\AXL(Library)\C, C++\AXHS.h"
+#include "..\..\Library\AXL(Library)\C, C++\AXDev.h"	// AxcKe*CommandData16, used by the periodic trigger
 
 
 #pragma once
