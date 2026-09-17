@@ -110,7 +110,11 @@ void CSeqMain::InitMotor(void)
 		MTAxis[j]->SetPulseMode(MTAxis[j]->nPulseOutM);
 		Sleep(10);
 		MTAxis[j]->SetMoveRatio();
-		//		MTAxis[j]->SetServoOnLogic(MTAxis[j]->bServoOnLevel);
+		// SONL had the same problem AlmL did: parsed into bServoOnLevel and then
+		// never sent to the board. Unlike the alarm level this one decides how
+		// servo on reaches the drive, so SetServoOnLogic reports on the console
+		// when the file disagrees with what the board was already using.
+		MTAxis[j]->SetServoOnLogic(MTAxis[j]->bServoOnLevel);
 		Sleep(10);
 		MTAxis[j]->SetInpositionMode(MTAxis[j]->bInpLevel, MTAxis[j]->bInpEnable);
 		//		MTAxis[j]->SetCommandPosition(0); // internal program encoder count

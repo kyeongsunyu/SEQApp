@@ -444,7 +444,41 @@ void CAjinMotor::SetMoveRatio()
 
 void CAjinMotor::SetServoOnLogic(DWORD LogicLevel)
 {
-	AxmSignalSetServoOnLevel(AxisNO, LogicLevel);
+	// AXM.h: AxmSignalSetServoOnLevel(lAxisNo, uLevel) takes LOW(0) or HIGH(1)
+	// and nothing else - it decides which physical output level means "servo
+	// on". ServoOn()/ServoOff() carry the logical state; this decides how that
+	// state reaches the drive.
+	if (LogicLevel > 1) {
+		printf("[AXM] axis %ld : SONL=%lu is neither LOW(0) nor HIGH(1);"
+			   " the servo on level is left as it is\n", (long)AxisNO, LogicLevel);
+		return;
+	}
+
+	// Read the board first. This call was commented out for a long time, so
+	// every axis has been running on the board's own default and the configured
+	// value has never reached it. On an axis that already works, applying it is
+	// exactly what would invert servo on and off, so say when the file and the
+	// board disagree rather than changing the polarity in silence.
+	DWORD uPrev = 0;
+	DWORD dwGet = AxmSignalGetServoOnLevel(AxisNO, &uPrev);
+
+	DWORD dwCode = AxmSignalSetServoOnLevel(AxisNO, LogicLevel);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : AxmSignalSetServoOnLevel(%lu) failed, code %lu\n",
+			   (long)AxisNO, LogicLevel, dwCode);
+		return;
+	}
+
+	if (dwGet != AXT_RT_SUCCESS) {
+		printf("[AXM] axis %ld : servo on level set to %lu, previous value unknown"
+			   " (AxmSignalGetServoOnLevel failed, code %lu)\n",
+			   (long)AxisNO, LogicLevel, dwGet);
+	}
+	else if (uPrev != LogicLevel) {
+		printf("[AXM] axis %ld : servo on level CHANGED %lu -> %lu"
+			   " (SONL in MotorConfig.xml). Verify servo on/off before moving.\n",
+			   (long)AxisNO, uPrev, LogicLevel);
+	}
 }
 
 void CAjinMotor::ServoOn()
