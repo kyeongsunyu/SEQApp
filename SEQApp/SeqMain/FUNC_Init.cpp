@@ -65,7 +65,13 @@ void CSeqMain::InitMotor(void)
 	// Load Motor Config data
 	Load_Motor_Parameter();
 
-	totalAxisCnt = 2;
+	// Axis 1 is built but not wired: the board has two axes and MTStageY exists
+	// as an object, yet no drive hangs off it. totalAxisCnt is what every
+	// per-axis loop and check runs on, so keeping it at 1 leaves MTStageY
+	// allocated - no null dereference anywhere that names it - while stopping it
+	// taking part in homing, error checks and initialisation. Raise it back to 2
+	// when the second drive is connected.
+	totalAxisCnt = 1;
 
 	// The axis count is fixed here while the board decides how many axes really
 	// exist. When the two disagree every AXM call on the surplus axes fails, and

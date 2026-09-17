@@ -326,8 +326,9 @@ int CSeqMain::ErrorProcedure(void)
 	else {
 		RESET_ERROR(ERROR_LIMIT_CW__STAGE_X);
 	}
-	// AXIS 02 MTStageZ STROKE END
-	if (MTStageY->IsHWLimitCCW && (MTStageY->NxtPos != 0)) {
+	// AXIS 02 MTStageY STROKE END. Guarded by the axis count: with no drive on
+	// that axis its signals mean nothing and the error would stand forever.
+	if (totalAxisCnt >= 2 && MTStageY->IsHWLimitCCW && (MTStageY->NxtPos != 0)) {
 		SET_MOTOR_ERROR(MTStageY, ERROR_LIMIT_CCW_STAGE_Y);
 		bit.AllHome = 0;
 		bit.PAutoStop = 1;
@@ -336,7 +337,7 @@ int CSeqMain::ErrorProcedure(void)
 		RESET_ERROR(ERROR_LIMIT_CCW_STAGE_Y);
 	}
 
-	if (MTStageY->IsHWLimitCW && (MTStageY->NxtPos != 0)) {
+	if (totalAxisCnt >= 2 && MTStageY->IsHWLimitCW && (MTStageY->NxtPos != 0)) {
 		SET_MOTOR_ERROR(MTStageY, ERROR_LIMIT_CW__STAGE_Y);
 		bit.AllHome = 0;
 		bit.PAutoStop = 1;
@@ -353,8 +354,10 @@ int CSeqMain::ErrorProcedure(void)
 		RESET_ERROR(ERROR_NOT_INITIALIZED_STAGE_X);
 		ERRCLRIF0(ERROR_NOT_INITIALIZED_STAGE_X);
 	}
-	// AXIS 02 MTStageY MOTOR HOME
-	if (!MTStageY->imrs) {
+	// AXIS 02 MTStageY MOTOR HOME. An axis that is not built never homes, so
+	// without the count this raised NOT_INITIALIZED every cycle and held
+	// PAutoStop on, which blocks auto run.
+	if (totalAxisCnt >= 2 && !MTStageY->imrs) {
 		SET_MOTOR_ERROR(MTStageY, ERROR_NOT_INITIALIZED_STAGE_Y);
 		bit.PAutoStop = 1;
 	}

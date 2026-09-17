@@ -1,4 +1,4 @@
-#include "..\pch.h"
+﻿#include "..\pch.h"
 #include "CLASS_Main.h"
 #include "Define\DEFINE_MotorPosition.h"
 
@@ -78,8 +78,9 @@ void CSeqMain::AllHomeC(void)
 		if (MTStageX->imrs) bMTAxisHomeFinished[0] = true;
 		else                MTStageXHomeM();
 	}
-	// AXIS 02 MTStageY
-	if (!bMTAxisHomeFinished[1]) {
+	// AXIS 02 MTStageY - only while that axis is built. With no drive on it the
+	// home command can never finish, and allHomeDone below would wait forever.
+	if (totalAxisCnt >= 2 && !bMTAxisHomeFinished[1]) {
 		// This branch set index 0, not 1, so axis 2 never recorded its own
 		// completion and axis 1's flag could be set by the wrong axis.
 		if (MTStageY->imrs) bMTAxisHomeFinished[1] = true;
@@ -106,7 +107,7 @@ void CSeqMain::AllHomeM(void)
 	if (bit.AllHome)	return;
 
 	MTStageXHomeM();
-	MTStageYHomeM();	
+	if (totalAxisCnt >= 2) MTStageYHomeM();
 	//NOTIFY_MSG notify_msg;
 	//if (AINOFF(iGoodElev1Door) && tm_iGoodElev1Door_Off.TimeOvermS(200)) {
 	//	memset(&notify_msg, 0x00, sizeof(NOTIFY_MSG));

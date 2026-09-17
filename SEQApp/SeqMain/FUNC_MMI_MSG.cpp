@@ -1,4 +1,4 @@
-#include "..\pch.h"
+﻿#include "..\pch.h"
 #include "CLASS_Main.h"
 #include "DEFINE_GVX.h"
 
@@ -806,6 +806,18 @@ void CSeqMain::MMI_MessageCommunication(void)
 //------------------------------------------------------------------------
 void CSeqMain::MMI_MessageMotorCommand(unsigned int cmdNo, int mtNo)
 {
+	// The MMI motor list is longer than the axes this machine builds, and every
+	// case below reaches straight into MTAxis[mtNo + 1]. Only one of them
+	// checked for NULL, so picking an axis that was never constructed called a
+	// member function on a null pointer and took the program down with an
+	// access violation - which is how removing an axis used to crash SEQ.
+	const int nAxisIdx = mtNo + 1;
+	if (mtNo < 0 || nAxisIdx >= (int)(sizeof(MTAxis) / sizeof(MTAxis[0])) ||
+		MTAxis[nAxisIdx] == NULL) {
+		printf("[MMI] motor command %u for axis %d, which does not exist\n", cmdNo, mtNo);
+		return;
+	}
+
 	/////////////////////////////////////////////
 	switch (cmdNo)
 	{
