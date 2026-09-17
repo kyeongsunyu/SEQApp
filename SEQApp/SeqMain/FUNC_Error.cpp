@@ -235,77 +235,62 @@ int CSeqMain::ErrorProcedure(void)
 #pragma endregion
 
 #pragma region MOTOR_DRIVER_ALARM
-	//// AXIS 01 MTStageX DRIVE ALARM
-	//if (MTStageX->idrvalm) {
-	//	SET_MOTOR_ERROR(MTStageX, ERROR_DRIVER_ALARM_STAGE_X);
-	//	MTEMEROFF(MTStageX);
-	//	AllCycleStop();
-	//	bit.AllHome = 0;
-	//	bit.PAutoStop = 1;
-	//}
-	//else {
-	//	RESET_ERROR(ERROR_DRIVER_ALARM_STAGE_X);
-	//}
-	//// AXIS 02 MTStageY DRIVE ALARM
-	//if (MTStageY->idrvalm) {
-	//	SET_MOTOR_ERROR(MTStageY, ERROR_DRIVER_ALARM_STAGE_Y);
-	//	MTEMEROFF(MTStageY);
-	//	AllCycleStop();
-	//	bit.AllHome = 0;
-	//	bit.PAutoStop = 1;
-	//}
-	//else {
-	//	RESET_ERROR(ERROR_DRIVER_ALARM_STAGE_Y);
-	//}
-	//// AXIS 03 MTStageZ DRIVE ALARM
-	//if (MTStageZ->idrvalm) {
-	//	SET_MOTOR_ERROR(MTStageZ, ERROR_DRIVER_ALARM_STAGE_Z);
-	//	MTEMEROFF(MTStageZ);
-	//	AllCycleStop();
-	//	bit.AllHome = 0;
-	//	bit.PAutoStop = 1;
-	//}
-	//else {
-	//	RESET_ERROR(ERROR_DRIVER_ALARM_STAGE_Z);
-	//}
+	// AXIS 01 MTStageX DRIVE ALARM
+	if (MTStageX->idrvalm) {
+		SET_MOTOR_ERROR(MTStageX, ERROR_DRIVER_ALARM_STAGE_X);
+		MTEMEROFF(MTStageX);
+		AllCycleStop();
+		bit.AllHome = 0;
+		bit.PAutoStop = 1;
+	}
+	else {
+		RESET_ERROR(ERROR_DRIVER_ALARM_STAGE_X);
+	}
+	// AXIS 02 MTStageY DRIVE ALARM
+	if (totalAxisCnt >= 2 && MTStageY->idrvalm) {
+		SET_MOTOR_ERROR(MTStageY, ERROR_DRIVER_ALARM_STAGE_Y);
+		MTEMEROFF(MTStageY);
+		AllCycleStop();
+		bit.AllHome = 0;
+		bit.PAutoStop = 1;
+	}
+	else {
+		RESET_ERROR(ERROR_DRIVER_ALARM_STAGE_Y);
+	}
+	// AXIS 03 MTStageZ is gone - the object was removed with that axis, so its
+	// check cannot be brought back with the other two. ERROR_DRIVER_ALARM_STAGE_Z
+	// stays defined in DEFINE_ErrorCode.h and nothing raises it.
 #pragma endregion
 
 #pragma region MOTOR_SERVO_OFF
-	//// AXIS 01 MTStageX SERVO OFF
-	//if (!MTStageX->IsServoOn) {
-	//	SET_MOTOR_ERROR(MTStageX, ERROR_SERVO_OFF_STAGE_X);
-	//	MTEMEROFF(MTStageX);
-	//	//AllCycleStop();
-	//	bit.AllHome = 0;
-	//	bit.PAutoStop = 1;
-	//}
-	//else {
-	//	RESET_ERROR(ERROR_SERVO_OFF_STAGE_X);
-	//}
-	//// AXIS 02 MTLoadPkX SERVO OFF
-	//if (!MTStageY->IsServoOn) {
-	//	SET_MOTOR_ERROR(MTStageY, ERROR_SERVO_OFF_STAGE_Y);
-	//	MTEMEROFF(MTStageY);
-	//	//AllCycleStop();
-	//	bit.AllHome = 0;
-	//	bit.PAutoStop = 1;
-	//}
-	//else {
-	//	RESET_ERROR(ERROR_SERVO_OFF_STAGE_Y);
-	//}
-	//// AXIS 03 MTLoadPkX SERVO OFF
-	//if (!MTStageZ->IsServoOn) {
-	//	SET_MOTOR_ERROR(MTStageZ, ERROR_SERVO_OFF_STAGE_Z);
-	//	MTEMEROFF(MTStageZ);
-	//	//AllCycleStop();
-	//	bit.AllHome = 0;
-	//	bit.PAutoStop = 1;
-	//}
-	//else {
-	//	RESET_ERROR(ERROR_SERVO_OFF_STAGE_Z);
-	//}
-
+	// A servo that is off during a cycle is a fault. It is also what the operator
+	// asks for from the MMI servo toggle, so expect this to raise the moment an
+	// axis is switched off by hand - that is the point of it, not a bug.
+	// AXIS 01 MTStageX SERVO OFF
+	if (!MTStageX->IsServoOn) {
+		SET_MOTOR_ERROR(MTStageX, ERROR_SERVO_OFF_STAGE_X);
+		MTEMEROFF(MTStageX);
+		//AllCycleStop();
+		bit.AllHome = 0;
+		bit.PAutoStop = 1;
+	}
+	else {
+		RESET_ERROR(ERROR_SERVO_OFF_STAGE_X);
+	}
+	// AXIS 02 MTStageY SERVO OFF
+	if (totalAxisCnt >= 2 && !MTStageY->IsServoOn) {
+		SET_MOTOR_ERROR(MTStageY, ERROR_SERVO_OFF_STAGE_Y);
+		MTEMEROFF(MTStageY);
+		//AllCycleStop();
+		bit.AllHome = 0;
+		bit.PAutoStop = 1;
+	}
+	else {
+		RESET_ERROR(ERROR_SERVO_OFF_STAGE_Y);
+	}
+	// AXIS 03 MTStageZ is gone, as above.
 #pragma endregion
+
 
 #pragma region STROKE_END
 	// AXIS 01 MTStageZ STROKE END
