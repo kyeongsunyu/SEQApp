@@ -53,7 +53,8 @@ struct PERIODIC_TRIG_CFG
 	double dPitch;				// trigger pitch                (0.005   = 5.0 um)
 	double dScanStart;			// trigger block lower position
 	double dScanEnd;			// trigger block upper position
-	double dPulseWidthUS;		// pulse width [us], camera minimum is 1.0
+	double dPulseWidthUS;		// pulse width [us] FLOOR, camera minimum is 1.0
+	double dLineRateHz;			// expected line rate, only used to size the pulse
 	DWORD  dwTriggerLevel;		// 0 = low active, 1 = high active
 	DWORD  dwDirectionCheck;	// 0 = both directions, 1 = count up only, 2 = count down only
 	bool   bEncReverse;			// reverse the encoder count direction
@@ -67,6 +68,7 @@ struct PERIODIC_TRIG_CFG
 		, dScanStart(0.0)
 		, dScanEnd(0.0)
 		, dPulseWidthUS(2.0)
+		, dLineRateHz(0.0)
 		, dwTriggerLevel(1)
 		, dwDirectionCheck(1)
 		, bEncReverse(false)
@@ -151,6 +153,13 @@ public:
 	// Does not sleep: hold each level long enough to see by calling it from a
 	// cycle that already has a timer, not by blocking a communication thread.
 	bool ForceOutput(long lChannelNo, bool bOn);
+
+	// A burst of real trigger pulses - the configured width and level, straight
+	// from the board's own pulse generator - with the stage standing still.
+	// It separates "the pulse generator works" from "the comparator never
+	// fires", which a scan alone cannot tell apart. Periodic mode is restored
+	// afterwards. False when this AXL has no AxcTriggerPatternShot.
+	bool PulseBurst(long lChannelNo, long lCount, DWORD dwFreqHz);
 
 	// ForceOutput only reaches the pin while the trigger output is enabled -
 	// AxcTriggerSetEnable is the final gate in front of the output stage.

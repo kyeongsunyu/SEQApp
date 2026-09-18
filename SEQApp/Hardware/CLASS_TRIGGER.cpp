@@ -9,7 +9,12 @@
 //  them here degrades to a log line instead.
 //==========================================================================
 
+// Pulse width to aim for, in us. CounterAgent used 10 us and that train was
+// seen on a scope; 2 us was not, at the time base the scan was watched with.
+static const double SUGGESTED_PULSE_US = 10.0;
+
 typedef DWORD (__stdcall *PFN_AXC_CH_DW)  (long, DWORD);
+typedef DWORD (__stdcall *PFN_AXC_PATTERN)(long, long, DWORD);
 typedef DWORD (__stdcall *PFN_AXC_CH_DWP) (long, DWORD*);
 typedef DWORD (__stdcall *PFN_AXC_CH)     (long);
 typedef DWORD (__stdcall *PFN_AXC_CH_LP)  (long, long*);
@@ -19,6 +24,7 @@ static PFN_AXC_CH_DWP g_pfnGetOutport    = NULL;
 static PFN_AXC_CH_DW  g_pfnSetEncInput   = NULL;
 static PFN_AXC_CH     g_pfnCountClear    = NULL;
 static PFN_AXC_CH_LP  g_pfnReadCount     = NULL;
+static PFN_AXC_PATTERN g_pfnPatternShot   = NULL;
 static bool           g_bOptionalChecked = false;
 
 static void ResolveOptionalAxc(void)
@@ -44,6 +50,7 @@ static void ResolveOptionalAxc(void)
 	g_pfnSetEncInput = (PFN_AXC_CH_DW) GetProcAddress(hAxl, "AxcTriggerSetEncoderInput");
 	g_pfnCountClear  = (PFN_AXC_CH)    GetProcAddress(hAxl, "AxcTriggerSetTriggerCountClear");
 	g_pfnReadCount   = (PFN_AXC_CH_LP) GetProcAddress(hAxl, "AxcTriggerReadTriggerCount");
+	g_pfnPatternShot = (PFN_AXC_PATTERN)GetProcAddress(hAxl, "AxcTriggerPatternShot");
 
 	char szVer[128];
 	memset(szVer, 0, sizeof(szVer));
@@ -52,12 +59,13 @@ static void ResolveOptionalAxc(void)
 	}
 
 	printf("[TRIGGER] optional AXC calls : SetTriggerOutport %s, GetTriggerOutport %s,"
-		   " SetEncoderInput %s, SetTriggerCountClear %s, ReadTriggerCount %s\n",
+		   " SetEncoderInput %s, SetTriggerCountClear %s, ReadTriggerCount %s, PatternShot %s\n",
 		   (g_pfnSetOutport  != NULL) ? "yes" : "NO",
 		   (g_pfnGetOutport  != NULL) ? "yes" : "NO",
 		   (g_pfnSetEncInput != NULL) ? "yes" : "NO",
 		   (g_pfnCountClear  != NULL) ? "yes" : "NO",
-		   (g_pfnReadCount   != NULL) ? "yes" : "NO");
+		   (g_pfnReadCount   != NULL) ? "yes" : "NO",
+		   (g_pfnPatternShot != NULL) ? "yes" : "NO");
 }
 
 bool CAjinTrigger::HasOutportApi(void)
@@ -390,6 +398,27 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	const double dUpperCnt = cfg.dScanEnd   * dCountsPerMM;
 	const double dPitchCnt = floor(cfg.dPitch * dCountsPerMM + 0.5);
 
+	// Pulse width. cfg.dPulseWidthUS is the floor, not the answer: a 2 us pulse
+	// is a twentieth of a division at 40 us/div and is easy to miss on a scope
+	// entirely, which is not a property you want in the signal you are trying
+	// to confirm. CounterAgent used 10 us here and that train was seen, so aim
+	// for the same, capped at 40 % of the trigger period so a fast line rate
+	// cannot end up with the output high more than it is low.
+	double dPulseUS = cfg.dPulseWidthUS;
+	if (cfg.dLineRateHz > 0.0) {
+		const double dPeriodUS = 1.0e6 / cfg.dLineRateHz;
+		double dWant = SUGGESTED_PULSE_US;
+		if (dWant > dPeriodUS * 0.4) {
+			dWant = dPeriodUS * 0.4;
+		}
+		if (dWant > dPulseUS) {
+			dPulseUS = dWant;
+		}
+		printf("[TRIGGER] ch%ld pulse %.2f us every %.1f us (%.0f Hz)."
+			   " On a scope: rising edge, NORMAL sweep, 20 us/div or faster.\n",
+			   ch, dPulseUS, dPeriodUS, cfg.dLineRateHz);
+	}
+
 	//< Position period mode
 	if (AXT_RT_SUCCESS != AxcTriggerSetFunction(ch, 0x03)) {
 		return false;
@@ -422,8 +451,33 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	printf("[TRIGGER] ch%ld trigger register 0x16 : 0x%04X -> 0x%04X\n",
 		   ch, (unsigned int)wTrigReg, (unsigned int)(wTrigReg | 0x0002));
 
-	//< Block range and pitch in a single call, in counts
-	if (AXT_RT_SUCCESS != AxcTriggerSetBlock(ch, dLowerCnt, dUpperCnt, dPitchCnt)) {
+	//< Period, pulse width, then upper and lower - one call each, in exactly the
+	//  order EzSpy caught EzManager's CounterAgent using:
+	//
+	//      AxcTriggerSetPosPeriod / AxcTriggerSetTime
+	//      AxcTriggerSetBlockUpperPos / AxcTriggerSetBlockLowerPos
+	//
+	//  This driver used AxcTriggerSetBlock(lower, upper, pitch) instead, which
+	//  writes the same three values in one call. CounterAgent is now the only
+	//  thing on this machine known to have produced a pulse train, so stop
+	//  differing from it on a detail that cannot be checked from here.
+	if (AXT_RT_SUCCESS != AxcTriggerSetPosPeriod(ch, dPitchCnt)) {
+		printf("StartPeriodicTrigger: AxcTriggerSetPosPeriod(ch%ld, %.0f) failed\n",
+			   ch, dPitchCnt);
+		return false;
+	}
+	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, dPulseUS)) {
+		printf("StartPeriodicTrigger: AxcTriggerSetTime(ch%ld, %.3f) failed\n", ch, dPulseUS);
+		return false;
+	}
+	if (AXT_RT_SUCCESS != AxcTriggerSetBlockUpperPos(ch, dUpperCnt)) {
+		printf("StartPeriodicTrigger: AxcTriggerSetBlockUpperPos(ch%ld, %.0f) failed\n",
+			   ch, dUpperCnt);
+		return false;
+	}
+	if (AXT_RT_SUCCESS != AxcTriggerSetBlockLowerPos(ch, dLowerCnt)) {
+		printf("StartPeriodicTrigger: AxcTriggerSetBlockLowerPos(ch%ld, %.0f) failed\n",
+			   ch, dLowerCnt);
 		return false;
 	}
 
@@ -468,9 +522,6 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 		printf("[TRIGGER] ch%ld : AxcTriggerSetTriggerOutport missing, the trigger output"
 			   " port mask cannot be set from here\n", ch);
 	}
-	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, cfg.dPulseWidthUS)) {
-		return false;
-	}
 	if (AXT_RT_SUCCESS != AxcTriggerSetLevel(ch, cfg.dwTriggerLevel)) {
 		return false;
 	}
@@ -490,7 +541,7 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	printf("Periodic trigger ch%ld : pitch %.5f mm = %.0f counts, block %.3f..%.3f mm"
 		   " = %.0f..%.0f counts, %.1f us, expect %.0f triggers\n",
 		   ch, cfg.dPitch, dPitchCnt, cfg.dScanStart, cfg.dScanEnd,
-		   dLowerCnt, dUpperCnt, cfg.dPulseWidthUS,
+		   dLowerCnt, dUpperCnt, dPulseUS,
 		   (cfg.dScanEnd - cfg.dScanStart) / cfg.dPitch);
 
 	// Every call above returned success, which is exactly what it did while no
@@ -607,6 +658,35 @@ bool CAjinTrigger::ForceOutput(long lChannelNo, bool bOn)
 //  Enabling is safe here because the stage does not move during the test, and
 //  periodic mode only fires on encoder movement.
 //==========================================================================
+bool CAjinTrigger::PulseBurst(long lChannelNo, long lCount, DWORD dwFreqHz)
+{
+	if (!IsChannelValid(lChannelNo) || lCount <= 0 || dwFreqHz == 0) {
+		return false;
+	}
+	if (g_pfnPatternShot == NULL) {
+		printf("[TRIGGER] this AXL has no AxcTriggerPatternShot, cannot fire a"
+			   " burst without moving the stage\n");
+		return false;
+	}
+
+	// AXC.h: pattern shot enables the trigger itself if it is disabled, and
+	// switches the channel into pattern mode. Put periodic mode back after.
+	const DWORD dwCode = g_pfnPatternShot(lChannelNo, lCount, dwFreqHz);
+	AxcTriggerSetFunction(lChannelNo, 0x03);
+
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AxcTriggerPatternShot(ch%ld, %ld, %lu Hz) failed, code 0x%lx\n",
+			   lChannelNo, lCount, dwFreqHz, dwCode);
+		return false;
+	}
+	printf("[TRIGGER] ch%ld fired %ld pulses at %lu Hz from the board's own pulse\n"
+		   "          generator, at the configured width and level, with nothing moving.\n"
+		   "          Seen on a scope, the output stage and the pulse generator are both\n"
+		   "          good and only the position comparator is left.\n",
+		   lChannelNo, lCount, dwFreqHz);
+	return true;
+}
+
 bool CAjinTrigger::BeginOutputTest(long lChannelNo)
 {
 	if (!IsChannelValid(lChannelNo)) {

@@ -56,6 +56,11 @@ static const LONGLONG SCANTRIGGER_LOG_MS = 200;
 static const int      SCANTRIGGER_TEST_PULSES  = 20;
 static const LONGLONG SCANTRIGGER_TEST_HALF_MS = 250;
 
+// ...and then one burst of real trigger pulses, at the width and level a scan
+// uses, from the board's own pulse generator. 1 kHz for a quarter of a second.
+static const long     SCANTRIGGER_TEST_BURST_PULSES = 250;
+static const DWORD    SCANTRIGGER_TEST_BURST_HZ     = 1000;
+
 static int       g_nScanTriggerState = SCANTRIGGER_IDLE;
 static CRtTimer  g_tmScanTriggerSettle;
 static CRtTimer  g_tmScanTriggerLog;
@@ -320,6 +325,14 @@ void CSeqMain::ScanTriggerC(void)
 		g_tmScanTriggerTest.SetTime();
 
 		if (g_nScanTriggerTestStep >= SCANTRIGGER_TEST_PULSES * 2) {
+			// One burst of real trigger pulses before standing down: same
+			// width and level the scan uses, straight from the board's pulse
+			// generator, with nothing moving. Seeing these but not seeing a
+			// scan means only the position comparator is left to explain.
+			AjinTrigger->PulseBurst(SCANTRIGGER_CHANNEL,
+									SCANTRIGGER_TEST_BURST_PULSES,
+									SCANTRIGGER_TEST_BURST_HZ);
+
 			AjinTrigger->EndOutputTest(SCANTRIGGER_CHANNEL);
 			printf("[SCANTRIGGER] output self test finished, %d pulses driven.\n",
 				   SCANTRIGGER_TEST_PULSES);
@@ -415,6 +428,7 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dScanStart       = ScanTriggerRecipe.dTrigStart;
 		cfg.dScanEnd         = ScanTriggerRecipe.dTrigEnd;
 		cfg.dPulseWidthUS    = SCANTRIGGER_PULSE_US;
+		cfg.dLineRateHz      = ScanTriggerRecipe.dLineRate;
 		cfg.dwTriggerLevel   = 1;
 		cfg.dwDirectionCheck = 1;          // count up only, the scan direction
 		cfg.bEncReverse      = false;
