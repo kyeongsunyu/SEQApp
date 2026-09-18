@@ -31,8 +31,15 @@
 
 // Configuration for the position-period (periodic mode) line scan trigger.
 //
-// All distances use the unit established by dMoveUnitPerPulse, so passing
-// dMoveUnitPerPulse in mm per encoder count makes every other distance mm.
+// Distances here are in mm. StartPeriodicTrigger() converts them to raw
+// encoder counts with dMoveUnitPerPulse and writes counts to the board.
+//
+// It does NOT leave that conversion to the library: AxcMotSetMoveUnitPerPulse
+// is headed "API for SIO-CN2CH only" in AXC.h, and on the SIO-HPC4L here it
+// returns success and changes nothing. Writing mm and expecting the library to
+// scale them placed the trigger block a factor of 1/unit beyond anywhere the
+// counter ever reached, so the stage never entered the block and not one
+// trigger fired.
 //
 // dPitch must land on a whole number of encoder counts. The hardware
 // comparator works in integer counts, so a fractional pitch is rounded and
@@ -109,8 +116,10 @@ public:
 
 	// Zero (or preset) the counter before a scan so the block positions in
 	// PERIODIC_TRIG_CFG are relative to the scan origin.
+	// dPos is in RAW ENCODER COUNTS, as is everything the board reports.
 	bool ResetScanOrigin(long lChannelNo, double dPos = 0.0);
 
+	// Counter position, in raw encoder counts.
 	bool GetActPos(long lChannelNo, double* dpPos);
 
 	// ---- commissioning helpers ------------------------------------------
@@ -142,6 +151,12 @@ public:
 	// Does not sleep: hold each level long enough to see by calling it from a
 	// cycle that already has a timer, not by blocking a communication thread.
 	bool ForceOutput(long lChannelNo, bool bOn);
+
+	// ForceOutput only reaches the pin while the trigger output is enabled -
+	// AxcTriggerSetEnable is the final gate in front of the output stage.
+	// Call these around a run of ForceOutput(), with the stage standing still.
+	bool BeginOutputTest(long lChannelNo);
+	bool EndOutputTest(long lChannelNo);
 
 	// Relative pitch error from a measured scan: clear the count, travel
 	// dTravel, read the count back. Returns (measured - configured) / configured.

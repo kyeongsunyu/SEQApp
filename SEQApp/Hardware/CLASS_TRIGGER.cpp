@@ -45,6 +45,12 @@ static void ResolveOptionalAxc(void)
 	g_pfnCountClear  = (PFN_AXC_CH)    GetProcAddress(hAxl, "AxcTriggerSetTriggerCountClear");
 	g_pfnReadCount   = (PFN_AXC_CH_LP) GetProcAddress(hAxl, "AxcTriggerReadTriggerCount");
 
+	char szVer[128];
+	memset(szVer, 0, sizeof(szVer));
+	if (AxlGetLibVersion(szVer) == AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AXL library version %s\n", szVer);
+	}
+
 	printf("[TRIGGER] optional AXC calls : SetTriggerOutport %s, GetTriggerOutport %s,"
 		   " SetEncoderInput %s, SetTriggerCountClear %s, ReadTriggerCount %s\n",
 		   (g_pfnSetOutport  != NULL) ? "yes" : "NO",
@@ -365,11 +371,24 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 		return false;
 	}
 
-	//< One encoder count equals dMoveUnitPerPulse. Every position below is
-	//  expressed in that unit.
-	if (AXT_RT_SUCCESS != AxcMotSetMoveUnitPerPulse(ch, cfg.dMoveUnitPerPulse)) {
-		return false;
-	}
+	//< Everything below this line is in RAW ENCODER COUNTS, not mm.
+	//
+	//  AxcMotSetMoveUnitPerPulse is headed "API for SIO-CN2CH only" in AXC.h,
+	//  and this is an SIO-HPC4L. Setting it returned success and changed
+	//  nothing: the board read the unit back as 1.000000 while the block read
+	//  back as raw counts. Writing mm and trusting the library to scale them
+	//  put the block a factor of 1/unit away from where the counter actually
+	//  runs, so the stage never entered it and not one trigger could fire.
+	//
+	//  Ask for 1.0 anyway, so that a board which does honour the call is left
+	//  in the same counts-are-counts state as this one, and do the mm to count
+	//  conversion here where it can be printed and checked.
+	AxcMotSetMoveUnitPerPulse(ch, 1.0);
+
+	const double dCountsPerMM = 1.0 / cfg.dMoveUnitPerPulse;
+	const double dLowerCnt = cfg.dScanStart * dCountsPerMM;
+	const double dUpperCnt = cfg.dScanEnd   * dCountsPerMM;
+	const double dPitchCnt = floor(cfg.dPitch * dCountsPerMM + 0.5);
 
 	//< Position period mode
 	if (AXT_RT_SUCCESS != AxcTriggerSetFunction(ch, 0x03)) {
@@ -403,9 +422,25 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	printf("[TRIGGER] ch%ld trigger register 0x16 : 0x%04X -> 0x%04X\n",
 		   ch, (unsigned int)wTrigReg, (unsigned int)(wTrigReg | 0x0002));
 
-	//< Block range and pitch in a single call
-	if (AXT_RT_SUCCESS != AxcTriggerSetBlock(ch, cfg.dScanStart, cfg.dScanEnd, cfg.dPitch)) {
+	//< Block range and pitch in a single call, in counts
+	if (AXT_RT_SUCCESS != AxcTriggerSetBlock(ch, dLowerCnt, dUpperCnt, dPitchCnt)) {
 		return false;
+	}
+
+	//< Read it straight back. This is the check that would have caught the unit
+	//  problem on the first run instead of the fifth.
+	double dGotLower = 0.0, dGotUpper = 0.0, dGotPitch = 0.0;
+	if (AXT_RT_SUCCESS == AxcTriggerGetBlock(ch, &dGotLower, &dGotUpper, &dGotPitch)) {
+		if (fabs(dGotLower - dLowerCnt) > 1.0 ||
+			fabs(dGotUpper - dUpperCnt) > 1.0 ||
+			fabs(dGotPitch - dPitchCnt) > 1.0) {
+			printf("StartPeriodicTrigger: the board did not take the block.\n"
+				   "  wrote %.0f .. %.0f counts, pitch %.0f\n"
+				   "  read  %.0f .. %.0f counts, pitch %.0f\n"
+				   "  The counter is not being programmed in the unit this code assumes.\n",
+				   dLowerCnt, dUpperCnt, dPitchCnt, dGotLower, dGotUpper, dGotPitch);
+			return false;
+		}
 	}
 
 	//< Restrict to the scanning direction so vibration at rest cannot dither
@@ -452,9 +487,10 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 		return false;
 	}
 
-	printf("Periodic trigger ch%ld : pitch %.5f (%.0f counts), block %.3f..%.3f, "
-		   "%.1fus, expect %.0f triggers\n",
-		   ch, cfg.dPitch, dCounts, cfg.dScanStart, cfg.dScanEnd, cfg.dPulseWidthUS,
+	printf("Periodic trigger ch%ld : pitch %.5f mm = %.0f counts, block %.3f..%.3f mm"
+		   " = %.0f..%.0f counts, %.1f us, expect %.0f triggers\n",
+		   ch, cfg.dPitch, dPitchCnt, cfg.dScanStart, cfg.dScanEnd,
+		   dLowerCnt, dUpperCnt, cfg.dPulseWidthUS,
 		   (cfg.dScanEnd - cfg.dScanStart) / cfg.dPitch);
 
 	// Every call above returned success, which is exactly what it did while no
@@ -537,7 +573,57 @@ bool CAjinTrigger::ForceOutput(long lChannelNo, bool bOn)
 	if (!IsChannelValid(lChannelNo)) {
 		return false;
 	}
-	return (AXT_RT_SUCCESS == AxcTriggerSetOutput(lChannelNo, bOn ? 0x01 : 0x00));
+	const DWORD dwCode = AxcTriggerSetOutput(lChannelNo, bOn ? 0x01 : 0x00);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AxcTriggerSetOutput(ch%ld, %d) failed, code 0x%lx\n",
+			   lChannelNo, bOn ? 1 : 0, dwCode);
+		return false;
+	}
+	return true;
+}
+
+//==========================================================================
+//  The output stage is gated by AxcTriggerSetEnable.
+//
+//  AXC.h on AxcTriggerSetEnable: "Sets whether the trigger output will be
+//  finally output according to the currently set function." The first output
+//  test disabled the trigger before forcing the line, which is exactly the
+//  switch that stops anything reaching the pin - a flat scope proved nothing.
+//
+//  Enabling is safe here because the stage does not move during the test, and
+//  periodic mode only fires on encoder movement.
+//==========================================================================
+bool CAjinTrigger::BeginOutputTest(long lChannelNo)
+{
+	if (!IsChannelValid(lChannelNo)) {
+		return false;
+	}
+
+	DWORD dwCode = AxcTriggerSetLevel(lChannelNo, 1);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AxcTriggerSetLevel(ch%ld, 1) failed, code 0x%lx\n",
+			   lChannelNo, dwCode);
+	}
+
+	dwCode = AxcTriggerSetEnable(lChannelNo, 1);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AxcTriggerSetEnable(ch%ld, 1) failed, code 0x%lx"
+			   " - the output stage stays gated off and the test cannot drive the pin\n",
+			   lChannelNo, dwCode);
+		return false;
+	}
+
+	ForceOutput(lChannelNo, false);
+	return true;
+}
+
+bool CAjinTrigger::EndOutputTest(long lChannelNo)
+{
+	if (!IsChannelValid(lChannelNo)) {
+		return false;
+	}
+	ForceOutput(lChannelNo, false);
+	return (AXT_RT_SUCCESS == AxcTriggerSetEnable(lChannelNo, 0));
 }
 
 //==========================================================================
@@ -575,16 +661,17 @@ void CAjinTrigger::ReportChannelConfig(long lChannelNo, const char* pszWhen)
 	AxcTriggerGetLevel         (lChannelNo, &dwLevel);
 	AxcTriggerGetEnable        (lChannelNo, &dwEnable);
 	AxcStatusGetActPos         (lChannelNo, &dPos);
-	AxcStatusGetChannel        (lChannelNo, &dwStatus);
 	AxcKeGetCommandData16      (lChannelNo, 22, &wReg);
 
 	printf("[TRIGGER] ===== channel %ld, read back from the board (%s) =====\n",
 		   lChannelNo, (pszWhen != NULL) ? pszWhen : "");
-	printf("[TRIGGER]  unit/count  %.6f mm            want 0.001000\n", dUnit);
+	// 1.0 is correct here: AxcMotSetMoveUnitPerPulse is CN2CH-only, so this
+	// board counts in raw encoder counts and every distance below is a count.
+	printf("[TRIGGER]  unit/count  %.6f                 want 1.000000 (counts)\n", dUnit);
 	printf("[TRIGGER]  enc method  %-4lu source %-4lu reverse %lu   want 3 / 0 / 0\n",
 		   dwMethod, dwSource, dwReverse);
 	printf("[TRIGGER]  function    %-4lu                       want 3 (periodic)\n", dwFunc);
-	printf("[TRIGGER]  block       %.4f .. %.4f  pitch %.6f  period %.6f\n",
+	printf("[TRIGGER]  block       %.0f .. %.0f counts  pitch %.0f  period %.0f\n",
 		   dLower, dUpper, dPitch, dPeriod);
 	printf("[TRIGGER]  dir check   %-4lu pulse %.3f us  level %lu   want 1 / >=1 / 1\n",
 		   dwDir, dTime, dwLevel);
@@ -601,10 +688,20 @@ void CAjinTrigger::ReportChannelConfig(long lChannelNo, const char* pszWhen)
 		printf("[TRIGGER]  out port    not readable on this AXL\n");
 	}
 
-	printf("[TRIGGER]  enc pos     %.4f\n", dPos);
-	printf("[TRIGGER]  status 0x%lX : carry %d  borrow %d  TRIGGER OUT %d  latch %d\n",
-		   dwStatus, (int)(dwStatus & 0x01), (int)((dwStatus >> 1) & 0x01),
-		   (int)((dwStatus >> 2) & 0x01), (int)((dwStatus >> 3) & 0x01));
+	printf("[TRIGGER]  enc pos     %.0f counts%s\n", dPos,
+		   (dPos < dLower || dPos > dUpper)
+			   ? "   <-- OUTSIDE THE BLOCK, no trigger can fire here" : "");
+
+	const DWORD dwStatCode = AxcStatusGetChannel(lChannelNo, &dwStatus);
+	if (dwStatCode == AXT_RT_SUCCESS) {
+		printf("[TRIGGER]  status 0x%lX : carry %d  borrow %d  TRIGGER OUT %d  latch %d\n",
+			   dwStatus, (int)(dwStatus & 0x01), (int)((dwStatus >> 1) & 0x01),
+			   (int)((dwStatus >> 2) & 0x01), (int)((dwStatus >> 3) & 0x01));
+	}
+	else {
+		printf("[TRIGGER]  status      AxcStatusGetChannel refused, code 0x%lx"
+			   " - the output line cannot be read back on this board\n", dwStatCode);
+	}
 
 	if (g_pfnReadCount != NULL && g_pfnReadCount(lChannelNo, &lCount) == AXT_RT_SUCCESS) {
 		printf("[TRIGGER]  triggers emitted so far %ld\n", lCount);

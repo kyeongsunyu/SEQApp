@@ -103,9 +103,9 @@ static void ScanTriggerLogCounter(const char* pszWhen)
 		strcpy(szCount, "n/a");
 	}
 
-	printf("[SCANTRIGGER] %-8s enc %.4f%s  triggers %s  out %s\n",
+	printf("[SCANTRIGGER] %-8s enc %.0f counts = %.4f mm%s  triggers %s  out %s\n",
 		   (pszWhen != NULL) ? pszWhen : "",
-		   dPos, bPos ? "" : " (read failed)",
+		   dPos, dPos * SCANTRIGGER_ENC_UNIT_MM, bPos ? "" : " (read failed)",
 		   szCount,
 		   bOutOk ? (bOut ? "HIGH" : "low") : "n/a");
 }
@@ -264,7 +264,9 @@ void CSeqMain::ScanTriggerM(void)
 // If even this is flat, no trigger setting will ever help.
 void CSeqMain::ScanTriggerOutputTestM(void)
 {
-	if (bit.ScanTriggerRun) {
+	// A second press during a test restarts it rather than being refused - the
+	// operator is at the scope and pressing it again means "do that again".
+	if (bit.ScanTriggerRun && g_nScanTriggerState != SCANTRIGGER_OUTPUT_TEST) {
 		printf("[SCANTRIGGER] output test refused, a scan is running\n");
 		return;
 	}
@@ -274,13 +276,19 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 		return;
 	}
 
-	// The comparator would fight the forced level.
-	AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
-	AjinTrigger->ReportChannelConfig(SCANTRIGGER_CHANNEL, "before output test");
+	// AxcTriggerSetEnable is the final gate in front of the output stage, so the
+	// line has to be ENABLED for a forced level to reach the pin. The first
+	// version of this test disabled it first and the flat scope it produced
+	// said nothing about the wiring. Nothing moves during the test, and
+	// periodic mode only fires on encoder movement, so enabling is safe.
+	if (!AjinTrigger->BeginOutputTest(SCANTRIGGER_CHANNEL)) {
+		printf("[SCANTRIGGER] output test refused, the output stage could not be enabled\n");
+		return;
+	}
+	AjinTrigger->ReportChannelConfig(SCANTRIGGER_CHANNEL, "output test, line enabled");
 
 	g_nScanTriggerTestStep = 0;
 	g_bScanTriggerTestHigh = false;
-	AjinTrigger->ForceOutput(SCANTRIGGER_CHANNEL, false);
 	g_tmScanTriggerTest.SetTime();
 
 	g_nScanTriggerState = SCANTRIGGER_OUTPUT_TEST;
@@ -312,7 +320,7 @@ void CSeqMain::ScanTriggerC(void)
 		g_tmScanTriggerTest.SetTime();
 
 		if (g_nScanTriggerTestStep >= SCANTRIGGER_TEST_PULSES * 2) {
-			AjinTrigger->ForceOutput(SCANTRIGGER_CHANNEL, false);
+			AjinTrigger->EndOutputTest(SCANTRIGGER_CHANNEL);
 			printf("[SCANTRIGGER] output self test finished, %d pulses driven.\n",
 				   SCANTRIGGER_TEST_PULSES);
 			printf("[SCANTRIGGER]  scope showed them -> output stage and wiring are good,"
@@ -389,7 +397,10 @@ void CSeqMain::ScanTriggerC(void)
 		// Tie the counter to machine coordinates. The recipe is in absolute
 		// positions, so the counter has to read the same scale before the
 		// block limits mean anything.
-		if (!AjinTrigger->ResetScanOrigin(SCANTRIGGER_CHANNEL, ScanTriggerRecipe.dTrigStart)) {
+		// The counter works in raw encoder counts - AxcMotSetMoveUnitPerPulse is
+		// CN2CH-only and does nothing on this board - so the preset is in counts.
+		if (!AjinTrigger->ResetScanOrigin(SCANTRIGGER_CHANNEL,
+										  ScanTriggerRecipe.dTrigStart / SCANTRIGGER_ENC_UNIT_MM)) {
 			ScanTriggerAbort("could not preset the counter position");
 			break;
 		}
@@ -461,7 +472,7 @@ void CSeqMain::ScanTriggerC(void)
 
 		double dEncEnd = 0.0;
 		if (AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dEncEnd)) {
-			const double dEncTravel = dEncEnd - g_dScanTriggerEncArm;
+			const double dEncTravel = (dEncEnd - g_dScanTriggerEncArm) * SCANTRIGGER_ENC_UNIT_MM;
 			const double dCmdTravel = ScanTriggerRecipe.dTrigEnd - ScanTriggerRecipe.dTrigStart;
 
 			printf("[SCANTRIGGER] counter travelled %.4f mm, the stage was told to travel"
