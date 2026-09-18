@@ -43,6 +43,11 @@ static const int    SCANTRIGGER_MAX_LINES = 2000000;
 // against arming while the stage is still ringing down.
 static const LONGLONG SCANTRIGGER_SETTLE_MS = 200;
 
+// How long the scan move has to get going before it is called a failure. The
+// axis reads stopped for the first few passes after the move command, so the
+// end of the move cannot be tested until it has been seen moving.
+static const LONGLONG SCANTRIGGER_MOVE_START_MS = 1000;
+
 // How often the running scan reports what the counter is doing. The trigger
 // itself is hardware, so this is the only window into whether the encoder is
 // moving, which way, and whether pulses are actually coming out.
@@ -64,6 +69,10 @@ static const DWORD    SCANTRIGGER_TEST_BURST_HZ     = 1000;
 static int       g_nScanTriggerState = SCANTRIGGER_IDLE;
 static CRtTimer  g_tmScanTriggerSettle;
 static CRtTimer  g_tmScanTriggerLog;
+
+// Set once the axis has actually been seen moving in SCANTRIGGER_WAIT_END.
+static bool      g_bScanTriggerMoving = false;
+static CRtTimer  g_tmScanTriggerMoveStart;
 
 // Counter position when the block was armed, so the travel the counter saw can
 // be compared against the travel that was commanded.
@@ -458,10 +467,35 @@ void CSeqMain::ScanTriggerC(void)
 		pAxis->Accel = fabs(pAxis->Speed * 5);
 		pAxis->Decel = pAxis->Accel;
 		pAxis->MTSAMove((int)(ScanTriggerRecipe.dTrigEnd * dRate + 0.5));
+
+		g_bScanTriggerMoving = false;
+		g_tmScanTriggerMoveStart.SetTime();
 		g_nScanTriggerState = SCANTRIGGER_WAIT_END;
 		break;
 
 	case SCANTRIGGER_WAIT_END:
+		// IsStop is still true for the first few passes after MTSAMove: the
+		// command has gone out but the status poll has not caught up. Testing
+		// it straight away read "already stopped" and disarmed the trigger
+		// before the stage had moved a single count - the scan then ran its
+		// whole 500 mm with the trigger switched off, which is exactly what
+		// the counter showed afterwards: armed at 100000, ended at 100000.
+		//
+		// So wait for the axis to be seen moving before the end of the move
+		// means anything. WAIT_START has the same race and is already covered,
+		// by its settle timer.
+		if (!g_bScanTriggerMoving) {
+			if (!pAxis->IsStop) {
+				g_bScanTriggerMoving = true;
+				g_tmScanTriggerLog.SetTime();
+				ScanTriggerLogCounter("moving");
+			}
+			else if (g_tmScanTriggerMoveStart.TimeOvermS(SCANTRIGGER_MOVE_START_MS)) {
+				ScanTriggerAbort("the axis never started moving");
+			}
+			break;
+		}
+
 		// The trigger runs in hardware, so this loop cannot miss a pulse by
 		// running late. What it can do is say whether any are coming out.
 		if (g_tmScanTriggerLog.TimeOvermS(SCANTRIGGER_LOG_MS)) {
