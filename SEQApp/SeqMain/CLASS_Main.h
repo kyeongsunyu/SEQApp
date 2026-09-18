@@ -519,6 +519,9 @@ public:
 	// recipe can be run. Safe to call whenever the MMI changes a value.
 	int  ScanTriggerValidate(void);
 	void ScanTriggerAbort(const char* pszWhy);
+	// Commissioning only: drives the trigger output pin directly so it can be
+	// probed, with no encoder, no comparator and no stage motion involved.
+	void ScanTriggerOutputTestM(void);
 #pragma endregion
 
 	//////////////////////////////////////////////////////////////////////////

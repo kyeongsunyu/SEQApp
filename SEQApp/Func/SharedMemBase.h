@@ -389,6 +389,7 @@ enum SCANTRIGGER_STATE
 	SCANTRIGGER_DISARM      = 6,   // disabling the trigger, reading the count
 	SCANTRIGGER_DONE        = 7,
 	SCANTRIGGER_ABORTED     = 8,
+	SCANTRIGGER_OUTPUT_TEST = 9,   // driving the trigger pin directly, for a scope
 };
 //-------------------------------//
 // Line scan trigger recipe. Positions are absolute machine coordinates in mm.
@@ -569,6 +570,7 @@ enum TCmdType {
 	CMD_READ_SCANTRIGGER_DISPLAY,
 	CMD_WRITE_SCANTRIGGER_START,
 	CMD_WRITE_SCANTRIGGER_STOP,
+	CMD_WRITE_SCANTRIGGER_TEST,
 
 	CMD_PROGRAMEXIT	= 199,
 };

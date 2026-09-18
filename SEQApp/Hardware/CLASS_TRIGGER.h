@@ -11,19 +11,23 @@
 
 #pragma once
 
-// The four routing / counting calls below live in the "For CNT_RECAT_SC_10"
-// section of AXC.h and are absent from AXL 4.2.0.2, the version shipped with
-// the EzSoftware installed on this machine:
+// These five live in the "For CNT_RECAT_SC_10" section of AXC.h:
 //
 //   AxcTriggerSetEncoderInput      AxcTriggerSetTriggerCountClear
 //   AxcTriggerSetTriggerOutport    AxcTriggerReadTriggerCount
+//   AxcTriggerGetTriggerOutport
 //
-// SIO-HPC4 does not need the first two - each counter channel is wired to its
-// own encoder input and trigger output, so there is nothing to route. Set this
-// to 1 only on a site running a newer AXL with a CNT_RECAT_SC_10 module.
-#ifndef AXL_HAS_CNT_RECAT_TRIGGER_API
-#define AXL_HAS_CNT_RECAT_TRIGGER_API 0
-#endif
+// They used to be compiled out behind AXL_HAS_CNT_RECAT_TRIGGER_API, on the
+// assumption that the installed AXL did not have them. It does: the AXL.dll
+// and AXL.lib under Library/ both export all five. Compiling them out meant
+// AxcTriggerSetTriggerOutport was never called, so no channel ever routed its
+// trigger to a physical output pin, and AxcTriggerReadTriggerCount - the one
+// way to ask the board how many pulses it actually emitted - was unavailable.
+//
+// They are now resolved from the loaded AXL.dll at construction instead of
+// being linked. A site with an older AXL loses these calls and says so in the
+// log, rather than failing to start at all, which is what implicit linking to
+// a missing export would do.
 
 // Configuration for the position-period (periodic mode) line scan trigger.
 //
@@ -112,6 +116,32 @@ public:
 	// ---- commissioning helpers ------------------------------------------
 	bool ClearTriggerCount(long lChannelNo);
 	bool ReadTriggerCount(long lChannelNo, long* lpCount);
+
+	// Which of the optional calls this AXL turned out to have. Resolved once,
+	// at construction, and reported in the log there.
+	static bool HasOutportApi();
+	static bool HasTriggerCountApi();
+
+	// Route this channel's trigger to output port(s). dwMask bit 0 is Trigger
+	// Out 0. Returns false when the call is missing from this AXL.
+	bool SetTriggerOutPortMask(long lChannelNo, DWORD dwMask);
+
+	// Print what the board holds, read back from the board rather than from
+	// the struct that was written to it. The two disagreeing is the whole
+	// point: a call can return success and leave the register unchanged.
+	void ReportChannelConfig(long lChannelNo, const char* pszWhen);
+
+	// Bit 2 of AxcStatusGetChannel - the trigger output line as the board
+	// sees it, which is the closest thing to an oscilloscope in software.
+	bool ReadOutputState(long lChannelNo, bool* pbOn);
+
+	// Drive the trigger output directly, ignoring the encoder entirely. This
+	// identifies the pin on a scope and proves the output stage on its own,
+	// separately from every encoder and comparator setting.
+	//
+	// Does not sleep: hold each level long enough to see by calling it from a
+	// cycle that already has a timer, not by blocking a communication thread.
+	bool ForceOutput(long lChannelNo, bool bOn);
 
 	// Relative pitch error from a measured scan: clear the count, travel
 	// dTravel, read the count back. Returns (measured - configured) / configured.

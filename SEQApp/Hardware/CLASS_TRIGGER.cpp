@@ -1,8 +1,75 @@
 ﻿#include "CLASS_TRIGGER.h"
 #include <math.h>
 
+//==========================================================================
+//  Optional AXC calls, resolved from the loaded AXL.dll
+//
+//  See the note in CLASS_TRIGGER.h. Linking these implicitly would make the
+//  whole application fail to load on a site whose AXL lacks them; resolving
+//  them here degrades to a log line instead.
+//==========================================================================
+
+typedef DWORD (__stdcall *PFN_AXC_CH_DW)  (long, DWORD);
+typedef DWORD (__stdcall *PFN_AXC_CH_DWP) (long, DWORD*);
+typedef DWORD (__stdcall *PFN_AXC_CH)     (long);
+typedef DWORD (__stdcall *PFN_AXC_CH_LP)  (long, long*);
+
+static PFN_AXC_CH_DW  g_pfnSetOutport    = NULL;
+static PFN_AXC_CH_DWP g_pfnGetOutport    = NULL;
+static PFN_AXC_CH_DW  g_pfnSetEncInput   = NULL;
+static PFN_AXC_CH     g_pfnCountClear    = NULL;
+static PFN_AXC_CH_LP  g_pfnReadCount     = NULL;
+static bool           g_bOptionalChecked = false;
+
+static void ResolveOptionalAxc(void)
+{
+	if (g_bOptionalChecked) {
+		return;
+	}
+	g_bOptionalChecked = true;
+
+	// AXL is linked in, so it is already mapped. Ask for that instance rather
+	// than loading a second copy which might not be the one AXL calls go to.
+	HMODULE hAxl = GetModuleHandleA("AXL.dll");
+	if (hAxl == NULL) {
+		hAxl = LoadLibraryA("AXL.dll");
+	}
+	if (hAxl == NULL) {
+		printf("[TRIGGER] AXL.dll handle unavailable - optional counter calls disabled\n");
+		return;
+	}
+
+	g_pfnSetOutport  = (PFN_AXC_CH_DW) GetProcAddress(hAxl, "AxcTriggerSetTriggerOutport");
+	g_pfnGetOutport  = (PFN_AXC_CH_DWP)GetProcAddress(hAxl, "AxcTriggerGetTriggerOutport");
+	g_pfnSetEncInput = (PFN_AXC_CH_DW) GetProcAddress(hAxl, "AxcTriggerSetEncoderInput");
+	g_pfnCountClear  = (PFN_AXC_CH)    GetProcAddress(hAxl, "AxcTriggerSetTriggerCountClear");
+	g_pfnReadCount   = (PFN_AXC_CH_LP) GetProcAddress(hAxl, "AxcTriggerReadTriggerCount");
+
+	printf("[TRIGGER] optional AXC calls : SetTriggerOutport %s, GetTriggerOutport %s,"
+		   " SetEncoderInput %s, SetTriggerCountClear %s, ReadTriggerCount %s\n",
+		   (g_pfnSetOutport  != NULL) ? "yes" : "NO",
+		   (g_pfnGetOutport  != NULL) ? "yes" : "NO",
+		   (g_pfnSetEncInput != NULL) ? "yes" : "NO",
+		   (g_pfnCountClear  != NULL) ? "yes" : "NO",
+		   (g_pfnReadCount   != NULL) ? "yes" : "NO");
+}
+
+bool CAjinTrigger::HasOutportApi(void)
+{
+	ResolveOptionalAxc();
+	return (g_pfnSetOutport != NULL);
+}
+
+bool CAjinTrigger::HasTriggerCountApi(void)
+{
+	ResolveOptionalAxc();
+	return (g_pfnReadCount != NULL);
+}
+
 CAjinTrigger::CAjinTrigger()
 {
+	ResolveOptionalAxc();
+
 	// Stays zero unless a counter module actually reports channels, so every
 	// periodic mode call refuses instead of driving a channel that is not there.
 	lCntChannelCounts = 0;
@@ -276,14 +343,18 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	}
 
 	//< Encoder source : physical input, A/B phase 4x, count direction
-#if AXL_HAS_CNT_RECAT_TRIGGER_API
-	if (AXT_RT_SUCCESS != AxcTriggerSetEncoderInput(ch, cfg.dwEncoderInput)) {
-		return false;
+	if (g_pfnSetEncInput != NULL) {
+		DWORD dwEncCode = g_pfnSetEncInput(ch, cfg.dwEncoderInput);
+		if (dwEncCode != AXT_RT_SUCCESS) {
+			printf("StartPeriodicTrigger: AxcTriggerSetEncoderInput(ch%ld, %lu) failed, code 0x%lx\n",
+				   ch, cfg.dwEncoderInput, dwEncCode);
+			return false;
+		}
 	}
-#else
-	// SIO-HPC4 ties each channel to its own encoder input; nothing to route.
-	(void)cfg.dwEncoderInput;
-#endif
+	else {
+		printf("[TRIGGER] ch%ld : AxcTriggerSetEncoderInput missing, relying on the"
+			   " channel's own encoder input\n", ch);
+	}
 	if (AXT_RT_SUCCESS != AxcSignalSetEncInputMethod(ch, 0x03)) {
 		return false;
 	}
@@ -344,14 +415,24 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	}
 
 	//< Output port, pulse width [us], active level
-#if AXL_HAS_CNT_RECAT_TRIGGER_API
-	if (AXT_RT_SUCCESS != AxcTriggerSetTriggerOutport(ch, cfg.dwTriggerOutPort)) {
-		return false;
+	//
+	//  The port mask is what connects the comparator to a pin. It was being
+	//  skipped, on the assumption that a channel always drives its own output;
+	//  that assumption is what this call existing contradicts, and a mask left
+	//  at zero produces exactly the symptom seen here - every setting accepted,
+	//  nothing on the connector.
+	if (g_pfnSetOutport != NULL) {
+		DWORD dwPortCode = g_pfnSetOutport(ch, cfg.dwTriggerOutPort);
+		if (dwPortCode != AXT_RT_SUCCESS) {
+			printf("StartPeriodicTrigger: AxcTriggerSetTriggerOutport(ch%ld, 0x%lX) failed,"
+				   " code 0x%lx\n", ch, cfg.dwTriggerOutPort, dwPortCode);
+			return false;
+		}
 	}
-#else
-	// SIO-HPC4 drives the trigger output that belongs to this channel.
-	(void)cfg.dwTriggerOutPort;
-#endif
+	else {
+		printf("[TRIGGER] ch%ld : AxcTriggerSetTriggerOutport missing, the trigger output"
+			   " port mask cannot be set from here\n", ch);
+	}
 	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, cfg.dPulseWidthUS)) {
 		return false;
 	}
@@ -363,9 +444,9 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	// does not list it under SIO-HPC4, and periodic mode already emits exactly
 	// one pulse per period.
 
-#if AXL_HAS_CNT_RECAT_TRIGGER_API
-	AxcTriggerSetTriggerCountClear(ch);
-#endif
+	if (g_pfnCountClear != NULL) {
+		g_pfnCountClear(ch);
+	}
 
 	if (AXT_RT_SUCCESS != AxcTriggerSetEnable(ch, 1)) {
 		return false;
@@ -375,6 +456,10 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 		   "%.1fus, expect %.0f triggers\n",
 		   ch, cfg.dPitch, dCounts, cfg.dScanStart, cfg.dScanEnd, cfg.dPulseWidthUS,
 		   (cfg.dScanEnd - cfg.dScanStart) / cfg.dPitch);
+
+	// Every call above returned success, which is exactly what it did while no
+	// pulse ever reached the connector. Print what the board holds instead.
+	ReportChannelConfig(ch, "armed");
 	return true;
 }
 
@@ -407,13 +492,10 @@ bool CAjinTrigger::ClearTriggerCount(long lChannelNo)
 	if (!IsChannelValid(lChannelNo)) {
 		return false;
 	}
-#if AXL_HAS_CNT_RECAT_TRIGGER_API
-	return (AXT_RT_SUCCESS == AxcTriggerSetTriggerCountClear(lChannelNo));
-#else
-	printf("[TRIGGER] trigger counters need a newer AXL"
-		   " (AXL_HAS_CNT_RECAT_TRIGGER_API); count the strobe line instead\n");
-	return false;
-#endif
+	if (g_pfnCountClear == NULL) {
+		return false;
+	}
+	return (AXT_RT_SUCCESS == g_pfnCountClear(lChannelNo));
 }
 
 bool CAjinTrigger::ReadTriggerCount(long lChannelNo, long* lpCount)
@@ -421,12 +503,116 @@ bool CAjinTrigger::ReadTriggerCount(long lChannelNo, long* lpCount)
 	if (!IsChannelValid(lChannelNo) || lpCount == nullptr) {
 		return false;
 	}
-#if AXL_HAS_CNT_RECAT_TRIGGER_API
-	return (AXT_RT_SUCCESS == AxcTriggerReadTriggerCount(lChannelNo, lpCount));
-#else
 	*lpCount = 0;
-	return false;
-#endif
+	if (g_pfnReadCount == NULL) {
+		return false;
+	}
+	return (AXT_RT_SUCCESS == g_pfnReadCount(lChannelNo, lpCount));
+}
+
+bool CAjinTrigger::SetTriggerOutPortMask(long lChannelNo, DWORD dwMask)
+{
+	if (!IsChannelValid(lChannelNo) || g_pfnSetOutport == NULL) {
+		return false;
+	}
+	return (AXT_RT_SUCCESS == g_pfnSetOutport(lChannelNo, dwMask));
+}
+
+bool CAjinTrigger::ReadOutputState(long lChannelNo, bool* pbOn)
+{
+	if (!IsChannelValid(lChannelNo) || pbOn == NULL) {
+		return false;
+	}
+	DWORD dwStatus = 0;
+	if (AXT_RT_SUCCESS != AxcStatusGetChannel(lChannelNo, &dwStatus)) {
+		return false;
+	}
+	// AXC.h, AxcStatusGetChannel : bit 2 is the trigger output status.
+	*pbOn = ((dwStatus & 0x04) != 0);
+	return true;
+}
+
+bool CAjinTrigger::ForceOutput(long lChannelNo, bool bOn)
+{
+	if (!IsChannelValid(lChannelNo)) {
+		return false;
+	}
+	return (AXT_RT_SUCCESS == AxcTriggerSetOutput(lChannelNo, bOn ? 0x01 : 0x00));
+}
+
+//==========================================================================
+//  What the board holds, read back from the board.
+//
+//  Written values and held values are not the same thing: the pulse train
+//  stayed absent while every setter returned AXT_RT_SUCCESS. Each line below
+//  carries the value that means "correct" so a wrong one is visible without
+//  opening the header.
+//==========================================================================
+void CAjinTrigger::ReportChannelConfig(long lChannelNo, const char* pszWhen)
+{
+	if (!IsChannelValid(lChannelNo)) {
+		printf("[TRIGGER] channel %ld out of range (0..%ld)\n",
+			   lChannelNo, lCntChannelCounts - 1);
+		return;
+	}
+
+	double dUnit  = 0.0, dLower = 0.0, dUpper = 0.0, dPitch = 0.0;
+	double dPeriod = 0.0, dTime = 0.0, dPos = 0.0;
+	DWORD  dwMethod = 0, dwSource = 0, dwReverse = 0, dwFunc = 0;
+	DWORD  dwDir = 0, dwLevel = 0, dwEnable = 0, dwOutport = 0, dwStatus = 0;
+	WORD   wReg = 0;
+	long   lCount = 0;
+
+	AxcMotGetMoveUnitPerPulse  (lChannelNo, &dUnit);
+	AxcSignalGetEncInputMethod (lChannelNo, &dwMethod);
+	AxcSignalGetEncSource      (lChannelNo, &dwSource);
+	AxcSignalGetEncReverse     (lChannelNo, &dwReverse);
+	AxcTriggerGetFunction      (lChannelNo, &dwFunc);
+	AxcTriggerGetBlock         (lChannelNo, &dLower, &dUpper, &dPitch);
+	AxcTriggerGetPosPeriod     (lChannelNo, &dPeriod);
+	AxcTriggerGetDirectionCheck(lChannelNo, &dwDir);
+	AxcTriggerGetTime          (lChannelNo, &dTime);
+	AxcTriggerGetLevel         (lChannelNo, &dwLevel);
+	AxcTriggerGetEnable        (lChannelNo, &dwEnable);
+	AxcStatusGetActPos         (lChannelNo, &dPos);
+	AxcStatusGetChannel        (lChannelNo, &dwStatus);
+	AxcKeGetCommandData16      (lChannelNo, 22, &wReg);
+
+	printf("[TRIGGER] ===== channel %ld, read back from the board (%s) =====\n",
+		   lChannelNo, (pszWhen != NULL) ? pszWhen : "");
+	printf("[TRIGGER]  unit/count  %.6f mm            want 0.001000\n", dUnit);
+	printf("[TRIGGER]  enc method  %-4lu source %-4lu reverse %lu   want 3 / 0 / 0\n",
+		   dwMethod, dwSource, dwReverse);
+	printf("[TRIGGER]  function    %-4lu                       want 3 (periodic)\n", dwFunc);
+	printf("[TRIGGER]  block       %.4f .. %.4f  pitch %.6f  period %.6f\n",
+		   dLower, dUpper, dPitch, dPeriod);
+	printf("[TRIGGER]  dir check   %-4lu pulse %.3f us  level %lu   want 1 / >=1 / 1\n",
+		   dwDir, dTime, dwLevel);
+	printf("[TRIGGER]  enable      %-4lu register 0x16 0x%04X       want 1 / bit1 set\n",
+		   dwEnable, (unsigned int)wReg);
+
+	if (g_pfnGetOutport != NULL && g_pfnGetOutport(lChannelNo, &dwOutport) == AXT_RT_SUCCESS) {
+		// A mask of 0 routes the comparator to no pin at all, which looks
+		// identical to a dead board on a scope.
+		printf("[TRIGGER]  out port    0x%lX%s\n",
+			   dwOutport, (dwOutport == 0) ? "   <-- NO OUTPUT PORT SELECTED" : "");
+	}
+	else {
+		printf("[TRIGGER]  out port    not readable on this AXL\n");
+	}
+
+	printf("[TRIGGER]  enc pos     %.4f\n", dPos);
+	printf("[TRIGGER]  status 0x%lX : carry %d  borrow %d  TRIGGER OUT %d  latch %d\n",
+		   dwStatus, (int)(dwStatus & 0x01), (int)((dwStatus >> 1) & 0x01),
+		   (int)((dwStatus >> 2) & 0x01), (int)((dwStatus >> 3) & 0x01));
+
+	if (g_pfnReadCount != NULL && g_pfnReadCount(lChannelNo, &lCount) == AXT_RT_SUCCESS) {
+		printf("[TRIGGER]  triggers emitted so far %ld\n", lCount);
+	}
+	else {
+		printf("[TRIGGER]  triggers emitted so far : not readable on this AXL\n");
+	}
+	printf("[TRIGGER] =================================================\n");
 }
 
 double CAjinTrigger::CalcPitchError(double dTravel, long lTrigCount, double dPitch)
