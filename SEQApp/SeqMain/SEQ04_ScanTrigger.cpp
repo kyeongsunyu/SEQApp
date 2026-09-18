@@ -31,6 +31,24 @@
 // board round it silently.
 static const double SCANTRIGGER_ENC_UNIT_MM = 0.001;       // 1 um
 
+// Reverse the counter input, so the counter agrees with the machine.
+//
+// Measured: the stage was commanded from 100 mm to 600 mm and the counter ran
+// from +100000 to -399998. The magnitude is right to four decimal places -
+// 500.0040 mm against 500.0000 commanded - so the scale, the wiring and the
+// 1 um resolution are all correct and only the sign is inverted: the linear
+// scale's A and B are swapped with respect to the motor's positive direction.
+//
+// With the counter running down, a block armed for the up direction rejects
+// every position and the comparator never fires. Reversing it here makes the
+// counter count up over the same move, which is also what every position in
+// the recipe already assumes.
+static const bool   SCANTRIGGER_ENC_REVERSE = true;
+
+// How far the counter may run the wrong way before the scan is called off,
+// in counts. Large enough not to trip on a count of dither at the start.
+static const double SCANTRIGGER_WRONG_WAY_COUNTS = 200.0;
+
 // Counter channel and trigger output the camera is wired to.
 static const long   SCANTRIGGER_CHANNEL = 0;
 static const DWORD  SCANTRIGGER_OUTPORT = 0x1;
@@ -440,7 +458,7 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dLineRateHz      = ScanTriggerRecipe.dLineRate;
 		cfg.dwTriggerLevel   = 1;
 		cfg.dwDirectionCheck = 1;          // count up only, the scan direction
-		cfg.bEncReverse      = false;
+		cfg.bEncReverse      = SCANTRIGGER_ENC_REVERSE;
 
 		if (!AjinTrigger->StartPeriodicTrigger(cfg)) {
 			ScanTriggerAbort("StartPeriodicTrigger refused the configuration");
@@ -502,6 +520,19 @@ void CSeqMain::ScanTriggerC(void)
 			g_tmScanTriggerLog.SetTime();
 			ScanTriggerLogCounter("running");
 		}
+
+		// A counter running away from the block will never produce a trigger,
+		// so say so now rather than after the whole scan has been made.
+		{
+			double dNow = 0.0;
+			if (AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dNow) &&
+				(dNow - g_dScanTriggerEncArm) < -SCANTRIGGER_WRONG_WAY_COUNTS) {
+				ScanTriggerAbort("the counter is running away from the block;"
+								 " the encoder direction is inverted");
+				break;
+			}
+		}
+
 		if (pAxis->IsStop) {
 			g_nScanTriggerState = SCANTRIGGER_DISARM;
 		}
