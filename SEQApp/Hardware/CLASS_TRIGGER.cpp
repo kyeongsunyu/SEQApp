@@ -573,13 +573,27 @@ bool CAjinTrigger::ForceOutput(long lChannelNo, bool bOn)
 	if (!IsChannelValid(lChannelNo)) {
 		return false;
 	}
-	const DWORD dwCode = AxcTriggerSetOutput(lChannelNo, bOn ? 0x01 : 0x00);
-	if (dwCode != AXT_RT_SUCCESS) {
-		printf("[TRIGGER] AxcTriggerSetOutput(ch%ld, %d) failed, code 0x%lx\n",
-			   lChannelNo, bOn ? 1 : 0, dwCode);
-		return false;
+	// Two ways to move the line, because only one of them is proven on this
+	// board. Changing the active level in EzManager's CounterAgent visibly
+	// swings the pin between 0 V and 5 V on a scope, so AxcTriggerSetLevel
+	// reaches the output stage for certain. AxcTriggerSetOutput is the call
+	// meant for this, but the first test drove it with the trigger disabled
+	// and produced nothing, so it has not been shown to work here.
+	//
+	// Drive both. Either one moving the pin answers the question the test is
+	// asking, and the log says which call refused.
+	const DWORD dwLevel = AxcTriggerSetLevel (lChannelNo, bOn ? 0x01 : 0x00);
+	const DWORD dwOut   = AxcTriggerSetOutput(lChannelNo, bOn ? 0x01 : 0x00);
+
+	if (dwLevel != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AxcTriggerSetLevel(ch%ld, %d) failed, code 0x%lx\n",
+			   lChannelNo, bOn ? 1 : 0, dwLevel);
 	}
-	return true;
+	if (dwOut != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] AxcTriggerSetOutput(ch%ld, %d) failed, code 0x%lx\n",
+			   lChannelNo, bOn ? 1 : 0, dwOut);
+	}
+	return (dwLevel == AXT_RT_SUCCESS || dwOut == AXT_RT_SUCCESS);
 }
 
 //==========================================================================
@@ -599,13 +613,7 @@ bool CAjinTrigger::BeginOutputTest(long lChannelNo)
 		return false;
 	}
 
-	DWORD dwCode = AxcTriggerSetLevel(lChannelNo, 1);
-	if (dwCode != AXT_RT_SUCCESS) {
-		printf("[TRIGGER] AxcTriggerSetLevel(ch%ld, 1) failed, code 0x%lx\n",
-			   lChannelNo, dwCode);
-	}
-
-	dwCode = AxcTriggerSetEnable(lChannelNo, 1);
+	const DWORD dwCode = AxcTriggerSetEnable(lChannelNo, 1);
 	if (dwCode != AXT_RT_SUCCESS) {
 		printf("[TRIGGER] AxcTriggerSetEnable(ch%ld, 1) failed, code 0x%lx"
 			   " - the output stage stays gated off and the test cannot drive the pin\n",
@@ -622,7 +630,11 @@ bool CAjinTrigger::EndOutputTest(long lChannelNo)
 	if (!IsChannelValid(lChannelNo)) {
 		return false;
 	}
-	ForceOutput(lChannelNo, false);
+	AxcTriggerSetOutput(lChannelNo, 0x00);
+
+	// The test moved the active level, so put the scanning polarity back.
+	// Leaving it inverted would hand the camera the wrong edge.
+	AxcTriggerSetLevel(lChannelNo, 1);
 	return (AXT_RT_SUCCESS == AxcTriggerSetEnable(lChannelNo, 0));
 }
 

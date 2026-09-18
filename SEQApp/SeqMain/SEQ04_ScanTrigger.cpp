@@ -327,6 +327,7 @@ void CSeqMain::ScanTriggerC(void)
 				   " the fault is in the encoder or the comparator.\n");
 			printf("[SCANTRIGGER]  scope flat        -> wrong pin, wrong channel, or the"
 				   " output stage. No trigger setting can fix that.\n");
+			printf("[SCANTRIGGER]  the trigger polarity was restored to active high.\n");
 
 			// DONE rather than IDLE: the MMI stops following the panel on DONE,
 			// and clearing the run bit means the switch below never sees this

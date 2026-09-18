@@ -351,6 +351,20 @@ AxcTriggerSetEnable           (ch, 1);      // 활성화
 - 스캔 원점: `AxcStatusSetActPos(ch, 0.0)`
 - 정지: `AxcTriggerSetEnable(ch, 0)`
 
+> **SIO-HPC4L은 mm 단위를 받지 않습니다.** `AxcMotSetMoveUnitPerPulse`는 `AXC.h`에
+> `// API for SIO-CN2CH only`로 명시되어 있고, 이 보드에서는 **성공을 반환하고 아무것도
+> 하지 않습니다.** CounterAgent의 `Count Unit/Pulse`도 `Setting`을 눌러도 1.000에
+> 머뭅니다. 따라서 `AxcTriggerSetBlock` / `AxcTriggerSetPosPeriod` /
+> `AxcStatusSetActPos`에 넣는 값은 전부 **raw 엔코더 카운트**여야 합니다.
+> mm를 그대로 넣으면 블록이 카운터가 도달하지 못하는 곳(1/UPP 배 먼 곳)에 놓이고,
+> 스테이지가 블록에 들어가지 못해 트리거가 한 발도 나오지 않습니다.
+>
+> 확인된 사실 (2026-09, 오실로스코프 + CounterAgent):
+> - 트리거 출력은 CON1 1-2번에 나옵니다. Active Level을 바꾸면 0 V ↔ 5 V로 바뀝니다.
+> - 즉 배선·핀·출력단은 정상이며, 문제는 항상 컴퍼레이터가 발화하지 않은 것이었습니다.
+> - `AxcTriggerSetEnable`은 출력단 최종 게이트입니다. Disable 상태에서는 강제 출력도
+>   핀에 도달하지 않습니다.
+>
 > **`AxcKe*CommandData16` 한 쌍에 대하여** — `AXDev.h`에 선언만 있고 레지스터도 비트도
 > 문서화되어 있지 않습니다. 그러나 EzManager의 CounterAgent가 "Apply"할 때 EzSpy에
 > 정확히 이 두 호출이 찍히고, **이 두 줄이 빠지면 나머지 설정이 모두 성공을 반환해도
