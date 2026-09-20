@@ -137,9 +137,10 @@ void CSeqMain::JogMoveIndex(int axisno, int idx)
 #pragma region AXIS01 MTStageZ
 void CSeqMain::MTStageXHomeM(void)
 {
-
+	// MTRDY() on the axis itself means "already homed", a not yet homed axis
+	// could never be homed with it. The home interlock on Z stays.
 	if (MTRDY(MTStageZ)) {
-		if (MTRDY(MTStageX)) {
+		if (MTHOMERDY(MTStageX)) {
 			MTStageX->imrs = 0;
 			MTStageX->NxtPos = 0;
 			MTStageX->omove = 1;
@@ -150,7 +151,7 @@ void CSeqMain::MTStageXHomeM(void)
 void CSeqMain::MTStageYHomeM(void)
 {
 	if (MTRDY(MTStageZ)) {
-		if (MTRDY(MTStageY)) {
+		if (MTHOMERDY(MTStageY)) {
 			MTStageY->imrs = 0;
 			MTStageY->NxtPos = 0;
 			MTStageY->omove = 1;
@@ -161,7 +162,7 @@ void CSeqMain::MTStageYHomeM(void)
 void CSeqMain::MTStageZHomeM(void)
 {
 
-	if (MTRDY(MTStageZ)) {
+	if (MTHOMERDY(MTStageZ)) {
 		MTStageZ->imrs = 0;
 		MTStageZ->NxtPos = 0;
 		MTStageZ->omove = 1;

@@ -96,6 +96,9 @@ CAjinMotor::CAjinMotor(unsigned short int axs_no, unsigned short int logical_no)
 	AxisNO = axs_no;
 	AxisLogicNO = logical_no;
 	bOverRide = false;
+	nOriginSetRetry = 0;
+	fMoveCmdFailed = 0;
+	fHomeFailed = 0;
 }
 
 // Destructor Function
@@ -113,7 +116,16 @@ long CAjinMotor::GetTotalAxisCount()
 
 void CAjinMotor::SetCommandPosition(int Position)
 {
-	AxmStatusSetPosMatch(AxisNO, (double)Position);
+	// AxmStatusSetPosMatch() is "Only RTEX use" (see AXM.h). On an EtherCAT
+	// network it is refused, so the command position used to keep its pre home
+	// value and the first absolute move after homing ran the whole stale offset.
+	DWORD dwRet = AxmStatusSetCmdPos(AxisNO, (double)Position);
+	if (dwRet != AXT_RT_SUCCESS) {
+		dwRet = AxmStatusSetPosMatch(AxisNO, (double)Position);		// RTEX
+	}
+	if (dwRet == AXT_RT_SUCCESS) {
+		CommandPosition = Position;
+	}
 }
 
 int CAjinMotor::GetCommandPosition()
@@ -126,7 +138,29 @@ int CAjinMotor::GetCommandPosition()
 
 void CAjinMotor::SetActualPosition(int Position)
 {
-	AxmStatusSetPosMatch(AxisNO, (double)Position);
+	DWORD dwRet = AxmStatusSetActPos(AxisNO, (double)Position);
+	if (dwRet != AXT_RT_SUCCESS) {
+		dwRet = AxmStatusSetPosMatch(AxisNO, (double)Position);		// RTEX
+	}
+	if (dwRet == AXT_RT_SUCCESS) {
+		ActualPosition = Position;
+	}
+}
+
+// Move the origin of the axis and verify it by reading both counters back.
+// Returns false when the motion board did not take the new origin : the caller
+// must not start an absolute move then, the axis would run to a target that is
+// expressed in the old coordinate system.
+bool CAjinMotor::SetOrigin(int Position, int Tolerance)
+{
+	SetCommandPosition(Position);
+	SetActualPosition(Position);
+
+	GetCommandPosition();
+	GetActualPosition();
+
+	return ((abs(CommandPosition - Position) <= Tolerance) &&
+			(abs(ActualPosition - Position) <= Tolerance));
 }
 
 int CAjinMotor::GetActualPosition()
@@ -223,7 +257,7 @@ void CAjinMotor::SetMaxSpeed(int maxspeed)
 }
 
 // Relative S Curve Move
-void CAjinMotor::MTSRMove(int Position)
+DWORD CAjinMotor::MTSRMove(int Position)
 {
 	GetActualPosition();
 
@@ -235,10 +269,10 @@ void CAjinMotor::MTSRMove(int Position)
 	}
 
 	AxmMotSetAbsRelMode(AxisNO, POS_REL_MODE);
-	AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
+	return AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
 }
 // Absolute S Curve Move
-void CAjinMotor::MTSAMove(int Position)
+DWORD CAjinMotor::MTSAMove(int Position)
 {
 	GetActualPosition();
 
@@ -260,24 +294,28 @@ void CAjinMotor::MTSAMove(int Position)
 	fMotorPause = 0;*/
 	AxmMotSetAbsRelMode(AxisNO, POS_ABS_MODE);
 
+	DWORD dwRet;
 	if (bOverRide) {
-		AxmOverrideAccelVelDecelAtPos(AxisNO,
+		dwRet = AxmOverrideAccelVelDecelAtPos(AxisNO,
 		NxtArrpos, Speed, Accel, Decel,
 		OverRidePos, Speed * OverRideRatio, Accel * OverRideRatio, Decel * OverRideRatio, 0);
 		bOverRide = false;
 	}
 	else {
 		AxmMotSetAbsRelMode(AxisNO, POS_ABS_MODE);
-		AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
+		dwRet = AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
 	}
 	fMotorPause = 0;
+
+	return dwRet;
 }
 
 // Continue S_Curve move
-void CAjinMotor::MTSCMove()
+DWORD CAjinMotor::MTSCMove()
 {
-	int ret = AxmMoveVel(AxisNO, Speed, Accel, Decel);
+	DWORD ret = AxmMoveVel(AxisNO, Speed, Accel, Decel);
 	//	printf("(%d)AxmMoveVel(%d,%ld,%ld,%ld)\n",ret,AxisNO,Speed,Accel,Decel);
+	return ret;
 }
 void CAjinMotor::GetMotorStatus()
 {
