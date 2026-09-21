@@ -409,6 +409,10 @@ void CSeqMain::MMI_MessageCommunication(void)
 			}
 			case CMD_WRITE_TENKEYJOG:
 			{
+				if (!bValidMotorNo((int)Mmi2Seq.Arg.TenKeyJog.uAxisNo)) {
+					bTenKeyJog = FALSE;
+					break;
+				}
 				tenkeyJogmtno = Mmi2Seq.Arg.TenKeyJog.uAxisNo;
 				bTenKeyJog = Mmi2Seq.Arg.TenKeyJog.bTenKeyJog;
 				bit.TenkeyJogMove = 0;
@@ -760,6 +764,17 @@ void CSeqMain::MMI_MessageCommunication(void)
 //------------------------------------------------------------------------
 void CSeqMain::MMI_MessageMotorCommand(unsigned int cmdNo, int mtNo)
 {
+	if (!bValidMotorNo(mtNo)) {
+		// The answer travels back in the same union the request arrived in. Clear
+		// the status, otherwise the MMI displays the uninitialised content of its
+		// own request buffer (0xCDCDCDCD as index, INT_MIN as position).
+		if (cmdNo == CMD_READ_MOTORSTATUS) {
+			memset(&Mmi2Seq.Arg.MotorStatus, 0x00, sizeof(Mmi2Seq.Arg.MotorStatus));
+			Mmi2Seq.Arg.MotorStatus.MotorNum = mtNo;
+		}
+		return;
+	}
+
 	/////////////////////////////////////////////
 	switch (cmdNo)
 	{
@@ -789,6 +804,8 @@ void CSeqMain::MMI_MessageMotorCommand(unsigned int cmdNo, int mtNo)
 		{
 			if (MTAxis[mtNo + 1] != NULL)
 			{
+				memset(&Mmi2Seq.Arg.MotorStatus, 0x00, sizeof(Mmi2Seq.Arg.MotorStatus));
+				Mmi2Seq.Arg.MotorStatus.MotorNum = mtNo;
 				Mmi2Seq.Arg.MotorStatus.Org = MTAxis[mtNo + 1]->IsORG;
 				Mmi2Seq.Arg.MotorStatus.CW = MTAxis[mtNo + 1]->IsHWLimitCW;
 				Mmi2Seq.Arg.MotorStatus.CCW = MTAxis[mtNo + 1]->IsHWLimitCCW;
@@ -931,6 +948,7 @@ void CSeqMain::MMI_MessageMotorCommand(unsigned int cmdNo, int mtNo)
 //------------------------------------------------------------------------
 void CSeqMain::MMI_MessageMotorCmdHomeFunc(unsigned int cmdNo, int mtNo)
 {
+	if (!bValidMotorNo(mtNo)) return;
 	if (!MTAxis[mtNo + 1]->IsServoOn || bTenKeyJog) return;
 
 	switch (cmdNo)

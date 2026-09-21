@@ -268,7 +268,7 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 
 			if (Axis->fIMRS) {
 				Axis->imrs = 1;
-				if (Axis->DfltWorking) {
+				if (Axis->DfltWorking && Axis->IsValidPosIndex((int)Axis->DfltWorking)) {
 					Axis->NxtPos = Axis->DfltWorking;
 					Axis->SpeedDevide = FAST;
 					Axis->NxtArrpos = Axis->PositionArray[Axis->DfltWorking];//+PULSE10_1MM*30;
@@ -298,7 +298,14 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 					}
 					else {
 						if (Axis->NxtPos != 99) {
-							if (Axis->NxtPos > 100) {
+							// NxtPos is either a position table index (0~99) or a
+							// special command (>100). Anything else would read past
+							// SpeedArray[]/AccelArray[] and send a garbage target to
+							// the board, so refuse it here as well as at the source.
+							if ((Axis->NxtPos < 0) || (Axis->NxtPos == 100)) {
+								dwMoveRet = AXT_RT_MOTION_INVALID_POSITION;
+							}
+							else if (Axis->NxtPos > 100) {
 								Axis->Speed = Axis->SpeedArray[0];
 								Axis->Accel = Axis->AccelArray[0] * 10;
 								Axis->Decel = Axis->Accel;
@@ -319,44 +326,46 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 									Axis->Decel = Axis->Accel;
 								}
 							}
-							Axis->fDriving = 1;
+							if (dwMoveRet == AXT_RT_SUCCESS) {
+								Axis->fDriving = 1;
 
-							if (Axis->bCamType) {
-								Axis->NxtArrpos = (int)(Axis->NxtArrpos * (8000. / 360.));
-							}
+								if (Axis->bCamType) {
+									Axis->NxtArrpos = (int)(Axis->NxtArrpos * (8000. / 360.));
+								}
 
-							/*if ((Axis == MTFrontPkZ1) || (Axis == MTFrontPkZ2) ||
-								(Axis == MTFrontPkZ3) || (Axis == MTFrontPkZ4) ||
-								(Axis == MTRearPkZ1) || (Axis == MTRearPkZ2) ||
-								(Axis == MTRearPkZ3) || (Axis == MTRearPkZ4)) {
-								Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
-								Axis->Accel = 5.0 * 9800 * MTFrontPkZ1->MMI_PulseRate;
-								Axis->Decel = Axis->Accel;
-							}
-							else if ((Axis == MTFrontPkX) || (Axis == MTRearPkX)) {
-								Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
-								Axis->Accel = 2.0 * 9800 * MTFrontPkX->MMI_PulseRate;
-								Axis->Decel = Axis->Accel;
-							}
-							else if ((Axis == MTGoodTrayY1) || (Axis == MTGoodTrayY2) ||
-									 (Axis == MTRewTrayY) || (Axis == MTNGTrayY)) {
-								Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
-								Axis->Accel = 1.0 * 9800 * MTGoodTrayY1->MMI_PulseRate;
-								Axis->Decel = Axis->Accel;
-							}
-							else {
+								/*if ((Axis == MTFrontPkZ1) || (Axis == MTFrontPkZ2) ||
+									(Axis == MTFrontPkZ3) || (Axis == MTFrontPkZ4) ||
+									(Axis == MTRearPkZ1) || (Axis == MTRearPkZ2) ||
+									(Axis == MTRearPkZ3) || (Axis == MTRearPkZ4)) {
+									Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
+									Axis->Accel = 5.0 * 9800 * MTFrontPkZ1->MMI_PulseRate;
+									Axis->Decel = Axis->Accel;
+								}
+								else if ((Axis == MTFrontPkX) || (Axis == MTRearPkX)) {
+									Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
+									Axis->Accel = 2.0 * 9800 * MTFrontPkX->MMI_PulseRate;
+									Axis->Decel = Axis->Accel;
+								}
+								else if ((Axis == MTGoodTrayY1) || (Axis == MTGoodTrayY2) ||
+										 (Axis == MTRewTrayY) || (Axis == MTNGTrayY)) {
+									Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
+									Axis->Accel = 1.0 * 9800 * MTGoodTrayY1->MMI_PulseRate;
+									Axis->Decel = Axis->Accel;
+								}
+								else {
+									Make_Parameter1(Axis);
+								}*/
+								/*if (Axis == MTFrontPkZ3) {
+									printf("====MTFrontPkZ3->CurPos=%d, MTFrontPkZ3->NxtPos=%d\n", MTFrontPkZ3->CurPos, MTFrontPkZ3->NxtPos);
+								}*/
 								Make_Parameter1(Axis);
-							}*/
-							/*if (Axis == MTFrontPkZ3) {
-								printf("====MTFrontPkZ3->CurPos=%d, MTFrontPkZ3->NxtPos=%d\n", MTFrontPkZ3->CurPos, MTFrontPkZ3->NxtPos);
-							}*/
-							Make_Parameter1(Axis);
-							Axis->relative = 0;
-							if (Axis->relative) {
-								dwMoveRet = Axis->MTSRMove((int)Axis->NxtArrpos);
-							}
-							else {
-								dwMoveRet = Axis->MTSAMove((int)Axis->NxtArrpos);
+								Axis->relative = 0;
+								if (Axis->relative) {
+									dwMoveRet = Axis->MTSRMove((int)Axis->NxtArrpos);
+								}
+								else {
+									dwMoveRet = Axis->MTSAMove((int)Axis->NxtArrpos);
+								}
 							}
 						}
 					}

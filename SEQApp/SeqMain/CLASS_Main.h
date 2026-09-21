@@ -199,6 +199,7 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 #pragma region	SEQ01_MTAxis.cpp
+	bool bValidMotorNo(int axisno);
 	bool bJogCondition(int axisno);
 	bool bJogIndexCondition(int axisno);
 

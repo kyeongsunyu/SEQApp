@@ -518,6 +518,7 @@ void CSeqMain::ManualTenkeyOperation(void)
 void CSeqMain::TenKeyJogMove(int dir)
 {
 	if (!bTenKeyJog)	return;
+	if (!bValidMotorNo(tenkeyJogmtno))	return;
 
 	double dVel = dir * 10.0 * MTAxis[tenkeyJogmtno + 1]->MMI_PulseRate;
 	MTAxis[tenkeyJogmtno + 1]->imrs=0;

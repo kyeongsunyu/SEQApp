@@ -2,10 +2,23 @@
 #include "CLASS_Main.h"
 
 //////////////////////////////////////////////////////////////////////////
+// MTAxis[] holds totalAxisCnt motors at index 1..totalAxisCnt, every other slot
+// is NULL. A motor number that comes from outside (MMI, ten key) must be checked
+// before it is used as an index, otherwise a wrong or uninitialised number
+// dereferences a NULL pointer.
+bool CSeqMain::bValidMotorNo(int axisno)
+{
+	if ((axisno < 0) || (axisno >= (int)totalAxisCnt) || (MTAxis[axisno + 1] == NULL)) {
+		printf("Invalid axis number [%d]\n", axisno);
+		return false;
+	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
 bool CSeqMain::bJogCondition(int axisno)
 {
-	if (axisno < 0 || axisno > totalAxisCnt) {
-		printf("Invalid axis number\n");
+	if (!bValidMotorNo(axisno)) {
 		return false;
 	}
 
@@ -41,8 +54,7 @@ bool CSeqMain::bJogCondition(int axisno)
 }
 bool CSeqMain::bJogIndexCondition(int axisno)
 {
-	if (axisno < 0 || axisno > totalAxisCnt) {
-		printf("Invalid axis number\n");
+	if (!bValidMotorNo(axisno)) {
 		return false;
 	}
 
@@ -127,6 +139,15 @@ void CSeqMain::JogMoveIndex(int axisno, int idx)
 {
 	// index move 사용시 주의 필요, 반드시 condition check
 	if (!bJogIndexCondition(axisno)) {
+		return;
+	}
+
+	// The index comes from the MMI. An index outside the position table would be
+	// written into NxtPos and used to read PositionArray[] out of its bounds, so
+	// the axis would be started towards a garbage target.
+	if (!MTAxis[axisno + 1]->IsValidPosIndex(idx) || (idx == 0)) {
+		printf("Invalid position index [%d] for MTAxis[%d]\n", idx, axisno + 1);
+		LOG_ERROR("AXIS[%d] INVALID INDEX MOVE. Index = %d", axisno + 1, idx);
 		return;
 	}
 

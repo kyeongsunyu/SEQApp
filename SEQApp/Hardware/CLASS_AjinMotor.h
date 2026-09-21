@@ -168,10 +168,14 @@ public:
 	double NxtArrpos;
 	int Direction;
 
-	double PositionArray[100];			// device dependent positions of motor
-	double SpeedArray[100];			// speed of positions of motor
-	double AccelArray[100];
-	double DecelArray[100];
+	enum { POSITION_COUNT = 100 };		// number of entries of the position tables
+	// A position index is only usable when it really addresses the tables below.
+	bool IsValidPosIndex(int idx) const { return ((idx >= 0) && (idx < POSITION_COUNT)); }
+
+	double PositionArray[POSITION_COUNT];	// device dependent positions of motor
+	double SpeedArray[POSITION_COUNT];		// speed of positions of motor
+	double AccelArray[POSITION_COUNT];
+	double DecelArray[POSITION_COUNT];
 
 	/* Motor Config Data from Data File */
 	DWORD	bCwLimitLevel;
