@@ -163,6 +163,10 @@ public:
 	unsigned short int canmovejog : 1;
 	unsigned short int ostart : 1;
 
+	// Set once AxmStatusReadMotionInfo() has failed, so the reason is printed
+	// once rather than a thousand times a second.
+	unsigned short int bStatusReadFailed : 1;
+
 	double* ZPhaseSpeed;         // speed that after touch org sensor
 	double* HomeSpeed;
 	double MovingDistance;

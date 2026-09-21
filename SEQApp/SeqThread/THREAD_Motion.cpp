@@ -15,7 +15,10 @@ UINT CSeqMain::SEQ_Motion_Thread1(LPVOID param)
 
 	while (!seqMain->m_bSeqExit)
 	{
-		seqMain->AjinMotorStatus(1, 2);
+		// Was a hardcoded (1, 2). MTAxis[2] exists as an object but this machine
+		// builds one axis, so InitMotor() never configures it and polling it
+		// only produced status for hardware that is not there.
+		seqMain->AjinMotorStatus(1, (int)totalAxisCnt);
 		Sleep(1);
 //		WaitForSingleObject(pMain->m_pThread_SeqMotion1, 1);
 //		seqMain->Wait(1000);

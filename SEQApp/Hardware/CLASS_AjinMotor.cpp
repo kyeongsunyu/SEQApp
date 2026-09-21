@@ -262,9 +262,92 @@ void CAjinBase::WriteECATPdoOutput(DWORD dwBitOffset, DWORD dwDataBitLength, BYT
 
 CAjinMotor::CAjinMotor(unsigned short int axs_no, unsigned short int logical_no)
 {
-	AxisNO = axs_no;
-	AxisLogicNO = logical_no;
-	bOverRide = false;
+	// Everything below used to be left as whatever was on the heap: this
+	// constructor set three members out of eighty, and the rest were filled in
+	// by InitMotor(). That works only for an axis InitMotor() reaches, and it
+	// loops j = 1..totalAxisCnt. An axis built as an object but left out of
+	// that count - the second one on this machine - kept its indeterminate
+	// state for the whole run.
+	//
+	// GetMotorStatus() then reads it every millisecond:
+	//
+	//     if (err || fMotorPause || fDriving) IsDriving = true;
+	//
+	// and fDriving coming up non-zero pins IsDriving on regardless of what the
+	// board says. IsDriving is what the MMI shows as MOVING, which is why the
+	// second axis came up moving and stayed that way.
+
+	memset(&MS, 0, sizeof(MS));
+
+	SensorType = 0;
+	MotorType  = 0;
+
+	ActualPosition  = 0;
+	CommandPosition = 0;
+	SpeedDevide     = 1;
+	MinMovingTime   = 0;
+	AxisNO          = axs_no;
+	AxisLogicNO     = logical_no;
+	sHomeState      = 0;
+	CancelCmd       = 0;
+	CmdMode         = 0;
+
+	Speed = Accel = Decel = Jerk = 0.0;
+	SaveSpeed = SaveAccel = SaveJerk = 0.0;
+	InitSpeed = 0.0;
+	MaxSpeed  = 0.0;
+
+	CurPos = NxtPos = 0;
+	WorkPos = DfltWorking = 0;
+
+	bOverRide     = false;
+	OverRidePos   = 0.0;
+	OverRideRatio = 0.0;
+
+	// The flags, which are what actually caused the trouble. An axis with no
+	// drive behind it must read as stopped and idle, not as moving.
+	fDoHome = fIMRS = fMotorPause = fMotorHome = fDriving = 0;
+	IsHWLimitCW = IsHWLimitCCW = IsDRVRDY = IsORG = IsAlarm = 0;
+	IsInposition = IsServoOn = PrevIsServoOn = 0;
+	IsDriving = 0;
+	IsStop    = 1;
+	IsZPhase = EncoderSet = AlramReset = EncoderType = IsHomming = 0;
+	omove = moving = relative = 0;
+	imrs = irdy = isend = idrvalm = idrvrdy = canmovejog = ostart = 0;
+	bStatusReadFailed = 0;
+
+	ZPhaseSpeed = NULL;
+	HomeSpeed   = NULL;
+
+	MovingDistance = 0.0;
+	TimeDesier     = 0.0;
+	AdjustPosition = 0;
+	CurArrpos      = 0.0;
+	NxtArrpos      = 0.0;
+	Direction      = 0;
+
+	memset(PositionArray, 0, sizeof(PositionArray));
+	memset(SpeedArray,    0, sizeof(SpeedArray));
+	memset(AccelArray,    0, sizeof(AccelArray));
+	memset(DecelArray,    0, sizeof(DecelArray));
+
+	bCwLimitLevel = bCCwLimitLevel = bServoOnLevel = bAlarmLevel = 0;
+	bInpLevel = bInpEnable = 0;
+	nPulseOutM = nEncDir = nEncType = nMotorType = nSensorType = 0;
+
+	MMI_PulseRate = MMI_MaxVel = MMI_JogVel = MMI_HomeVel = MMI_Accel = 0;
+	MMI_HomeLevel = MMI_LimitLevel = MMI_ServoOnLevel = MMI_AlarmLevel = 0;
+	MMI_InpUse = MMI_MtrDir = MMI_EncDir = MMI_MotorType = MMI_Enc_Type = 0;
+
+	bCamType = 0;
+
+	dwServoAlarmCode = 0;
+	strServoAlarmName[0] = '\0';
+	dServoLoadRatio  = 0.0;
+
+	dwBitOffset      = 0;
+	dwDataBitLength  = 0;
+	byTorqueValue    = 0;
 }
 
 // Destructor Function
@@ -567,7 +650,22 @@ void CAjinMotor::GetMotorStatus()
 
 	MS.dwMask = 0x1F;
 
+	// The return used to be assigned and never looked at. On a failure MS keeps
+	// whatever it last held, and every flag below was then derived from stale
+	// data as though it had just been read from the board.
 	DWORD ret = AxmStatusReadMotionInfo(AxisNO, &MS);
+	if (ret != AXT_RT_SUCCESS) {
+		if (!bStatusReadFailed) {
+			bStatusReadFailed = 1;
+			printf("[AXM] axis %ld : AxmStatusReadMotionInfo() failed, code 0x%lx."
+				   " Reporting the axis stopped rather than acting on a stale read.\n",
+				   (long)AxisNO, ret);
+		}
+		IsDriving = 0;
+		IsStop    = 1;
+		return;
+	}
+	bStatusReadFailed = 0;
 
 	ActualPosition = (int)MS.dActPos;
 	CommandPosition = (int)MS.dCmdPos;
