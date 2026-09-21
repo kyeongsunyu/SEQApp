@@ -474,6 +474,25 @@ for y, head, code, lines in DEAL:
     para_block(s, RX5 + 0.26, y + 0.88, RW5 - 0.52, 1.40,
                [dict(text=t, size=11, bullet='·', line_pct=118, space_after=6) for t in lines])
 
+# ================================================================ 13b. 촬상 영역 상세
+s = new('촬상 영역 상세 — 평탄–딥 구조의 실체')
+kicker(s, '그림 8-1 의 빨간 띠를 단면으로 자른 것 — 11절 로그의 딥 주기 542 ms · 단차 163.5 µm 가 이 형상의 시간축 표현이다')
+DET = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'panel-detail.png')
+DW, DH = 9.45, 3.69               # 상세 이미지 1066×416 (2.5625:1)
+s.shapes.add_picture(DET, Inches(0.85 + (11.93 - DW) / 2), Inches(2.02), Inches(DW), Inches(DH))
+LEG = [('노란 모듈 상면 — 평탄부', '추종 대상. 이 면들의 완만한 높이차가 실측 0.011 µm/ms 다', RGBColor(0xFD, 0xF3, 0xE8), ORANGE),
+       ('모듈 사이 간극 — 딥', '바닥이 100–160 µm 아래. 유효 대역 밖이라 기각하고 직전 목표 유지', CARD, INK),
+       ('붉은 원 — 평탄–딥 경계', '전이율 중앙 8.06 · 최대 82.3 µm/ms 로 추종 한계 10 을 넘는다', RGBColor(0xFB, 0xEF, 0xEC), RED),
+       ('하단 — 실제 촬상 이미지', '그 지점의 Line-scan 결과. 리드·정렬 마크가 분해되면 정상 획득', CARD_B, ACCENT_D)]
+LGW, LGGAP = 2.7625, 0.26
+for i, (head, body, fill, hc) in enumerate(LEG):
+    x = 0.95 + i * (LGW + LGGAP)
+    rrect(s, x, 5.83, LGW, 1.08, fill, None, radius=0.05)
+    para_block(s, x + 0.20, 5.97, LGW - 0.40, 0.26,
+               [dict(text=head, size=11, bold=True, color=hc)])
+    para_block(s, x + 0.20, 6.26, LGW - 0.40, 0.46,
+               [dict(text=body, size=10, line_pct=120)])
+
 # ================================================================ 14. Z축 구동 능력
 s = new('Z축 구동 능력 — 병목은 구동이 아니다')
 T92 = [('20 pulse', '2 µm/ms', '40,000,000', '20,000', '5배 여유'),
