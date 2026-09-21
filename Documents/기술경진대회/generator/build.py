@@ -440,24 +440,24 @@ kicker(s, '앞 절이 「정상 신호일 때 얼마나 정확한가」라면, �
 
 # --- 좌측 : 실자재와 촬상 영역 도식 ---
 FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'panel-scan-area.png')
-FW, FH = 5.21, 3.20
-s.shapes.add_picture(FIG, Inches(0.95), Inches(2.10), Inches(FW), Inches(FH))
-para_block(s, 0.95, 5.42, FW, 0.48, [
-    dict(text='모듈 상면 = 평탄부(추종 대상) · 모듈 간극 = 딥 100–160 µm(기각)',
-         size=10.5, color=INK_SOFT, line_pct=118, space_after=2),
-    dict(text='11절 로그의 「평탄부 5 · 딥 4」 패턴이 이 물리 형상이다',
-         size=10.5, color=INK_SOFT, line_pct=118)])
-bnd = rrect(s, 0.95, 5.96, FW, 0.98, CARD_B, None, radius=0.05)
-para_block(s, 1.17, 6.10, FW - 0.44, 0.26,
-           [dict(text='유효 대역 설정 기준 — 정상 표면보다 넓고 자재 단차보다 좁게',
-                 size=11.5, bold=True, color=ACCENT_D)])
-para_block(s, 1.17, 6.40, FW - 0.44, 0.46, [
-    dict(text='실측 전 범위 1.243–1.413 mm (170 µm)  ·  정상 표면대 약 1.37–1.41 mm (약 40 µm)  ·  '
-              '자재 단차 100–160 µm', size=10.5, line_pct=125)])
+FW, FH, LW = 4.36, 3.30, 5.10     # 실자재 사진 698×528 (1.322:1)
+s.shapes.add_picture(FIG, Inches(0.95), Inches(2.08), Inches(FW), Inches(FH))
+para_block(s, 0.95, 5.46, LW, 0.44, [
+    dict(text='빨간 박스 = 촬상 영역 · Line-scan FOV 22.4 mm',
+         size=10, color=INK_SOFT, line_pct=115, space_after=2),
+    dict(text='모듈 상면 = 평탄부(추종) · 모듈 간극 = 딥(기각)',
+         size=10, color=INK_SOFT, line_pct=115)])
+bnd = rrect(s, 0.95, 5.94, LW, 0.98, CARD_B, None, radius=0.05)
+para_block(s, 1.15, 6.06, LW - 0.40, 0.26,
+           [dict(text='유효 대역 설정 기준 — 정상 표면보다 넓고 단차보다 좁게',
+                 size=11, bold=True, color=ACCENT_D)])
+para_block(s, 1.15, 6.34, LW - 0.40, 0.44, [
+    dict(text='실측 전 범위 1.243–1.413 mm (170 µm) · 정상 표면대 약 40 µm · 자재 단차 100–160 µm',
+         size=10, line_pct=120)])
 
 # --- 우측 : 두 가지 대응 기능 ---
-RX5, RW5 = 6.55, 6.23
-DEAL = [(2.10, '① 유효 대역 기각', 'VOLTAGE_RANGE_REJECT', [
+RX5, RW5 = 6.30, 6.48
+DEAL = [(2.08, '① 유효 대역 기각', 'VOLTAGE_RANGE_REJECT', [
             '딥 100–160 µm = D.O.F. 3.5 µm 의 30–45배 — 주변 표면과 동시에 초점을 맞출 수 없다',
             '추종하면 왕복 22.8 ms 동안 X축이 1.83 mm 를 지나가 앞뒤 정상 구간까지 손실',
             '대역 밖 값은 기각하고 직전 유효 목표를 유지 — 지연 큐의 시간축은 그대로']),
@@ -466,13 +466,13 @@ DEAL = [(2.10, '① 유효 대역 기각', 'VOLTAGE_RANGE_REJECT', [
             '첫 유효 샘플을 지연 없이 즉시 적용하고, 두 번째부터 906 ms 지연 큐를 태운다',
             '미적용 시 패널 앞 0.59 mm 초점 이탈 — 트리거 시점 Z 이동 여유는 122배'])]
 for y, head, code, lines in DEAL:
-    rrect(s, RX5, y, RW5, 2.32, CARD, INK, 0.75, 0.03)
+    rrect(s, RX5, y, RW5, 2.36, CARD, INK, 0.75, 0.03)
     para_block(s, RX5 + 0.26, y + 0.18, RW5 - 0.52, 0.30,
                [dict(text=head, size=15, bold=True, color=NAVY)])
     para_block(s, RX5 + 0.26, y + 0.54, RW5 - 0.52, 0.26,
                [dict(text=code, size=11, bold=True, color=ACCENT_D, font='Courier New')])
-    para_block(s, RX5 + 0.26, y + 0.90, RW5 - 0.52, 1.30,
-               [dict(text=t, size=11.5, bullet='·', line_pct=120, space_after=7) for t in lines])
+    para_block(s, RX5 + 0.26, y + 0.88, RW5 - 0.52, 1.40,
+               [dict(text=t, size=11, bullet='·', line_pct=118, space_after=6) for t in lines])
 
 # ================================================================ 14. Z축 구동 능력
 s = new('Z축 구동 능력 — 병목은 구동이 아니다')

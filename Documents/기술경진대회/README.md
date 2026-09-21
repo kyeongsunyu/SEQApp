@@ -43,8 +43,8 @@ pip install python-pptx
 python generator/build.py 출력경로.pptx   # build.py 의 SRC 를 양식 파일 경로로 지정
 ```
 
-13번 슬라이드의 도식은 `generator/assets/panel-scan-area.png` 를 그대로 배치한다.
-원본은 리포트 아티팩트의 그림 8-1(인라인 SVG)을 슬라이드 비율(1.63:1)로 다시 그려
-Chromium 으로 2× 렌더한 것이다.
+13번 슬라이드의 사진은 `generator/assets/panel-scan-area.png` (698×528) 을 원본 그대로
+배치한다. 스테이지에 안착된 실자재 정면이며, 빨간 박스가 촬상 영역이다.
+같은 사진이 리포트 아티팩트 8절 그림 8-1 에도 쓰인다.
 
 차트는 PowerPoint 네이티브 차트라 발표 중에도 데이터 편집이 가능하다.
