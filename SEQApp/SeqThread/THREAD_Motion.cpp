@@ -15,10 +15,7 @@ UINT CSeqMain::SEQ_Motion_Thread1(LPVOID param)
 
 	while (!seqMain->m_bSeqExit)
 	{
-		// Was a hardcoded (1, 2), which polled MTAxis[2] whether or not
-		// InitMotor() had configured it. Take the range from the same count
-		// everything else does, so an axis left out of it is not polled.
-		seqMain->AjinMotorStatus(1, (int)totalAxisCnt);
+		seqMain->AjinMotorStatus(1, 2);
 		Sleep(1);
 //		WaitForSingleObject(pMain->m_pThread_SeqMotion1, 1);
 //		seqMain->Wait(1000);

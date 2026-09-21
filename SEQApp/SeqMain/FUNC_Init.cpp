@@ -6,16 +6,6 @@
 
 using namespace tinyxml2;
 //////////////////////////////////////////////////////////////////////////
-// Highest usable MTAxis[] index, taken from the array itself so the two cannot
-// drift apart.
-static const int MAX_MOTOR_AXIS = (int)(sizeof(MTAxis) / sizeof(MTAxis[0])) - 1;
-
-// Which axes MotorConfig.xml actually described, by MTAxis[] index. Checked
-// against totalAxisCnt in InitMotor() below: an axis counted as live but never
-// described in the file would otherwise be configured entirely from zeros -
-// servo on level, limit levels, motor type and all - without a word.
-static bool g_bMotorParamLoaded[MAX_MOTOR_AXIS + 1] = { false };
-
 void CSeqMain::Load_Motor_Parameter(void)
 {
 	int nMotorNo;  //현재 처리 중인 **모터 번호(Motor Number)**를 저장할 정수형 변수를 선언합니다.
@@ -46,14 +36,7 @@ void CSeqMain::Load_Motor_Parameter(void)
 		* *NextSiblingElement() * *는 태그 이름을 지정하지 않았으므로, 다음 모든 엘리먼트를 찾지만, cfg가 이미 "MOTOR" 엘리먼트이므로, 
 		이 반복문은 보통 파일 내의 모든 "MOTOR" 블록을 순서대로 처리하게 됩니다.*/
 	{
-		nMotorNo = ele->IntAttribute("NO");
-		// The index below is written with no bound of its own. A NO the array
-		// cannot hold would walk straight off the end of MTAxis[].
-		if (nMotorNo < 0 || (nMotorNo + 1) > MAX_MOTOR_AXIS) {
-			printf("[MOTOR] MotorConfig.xml has MOTOR NO=\"%d\", which is outside"
-				   " MTAxis[1..%d]. Entry ignored.\n", nMotorNo, MAX_MOTOR_AXIS);
-			continue;
-		}//현재 <MOTOR> 엘리먼트의 NO 속성(Attribute) 값을 정수로 읽어와 nMotorNo에 저장합니다. 이 값이 현재 설정할 모터의 고유 번호입니다.
+		nMotorNo = ele->IntAttribute("NO");//현재 <MOTOR> 엘리먼트의 NO 속성(Attribute) 값을 정수로 읽어와 nMotorNo에 저장합니다. 이 값이 현재 설정할 모터의 고유 번호입니다.
 		if (MTAxis[nMotorNo + 1] != NULL) {//MTAxis는 모터 축 객체(포인터 배열)로 추정됩니다. nMotorNo + 1 인덱스에 해당하는 모터 객체가 유효한지 (NULL이 아닌지) 확인하여, 객체가 초기화된 경우에만 설정 값을 적용합니다. (인덱스가 +1인 것은 프로그래밍 관례상 모터 번호가 0부터 시작하지만 배열 인덱스는 1부터 시작할 수 있기 때문입니다.)
 			MTAxis[nMotorNo + 1]->bCwLimitLevel = ele->IntAttribute("PEndL"); //정방향 리미트 센서 레벨 (Positive End Limit Level) 속성 **PEndL**의 값을 읽어와 모터 객체의 bCwLimitLevel 멤버 변수에 설정합니다.
 			MTAxis[nMotorNo + 1]->bCCwLimitLevel = ele->IntAttribute("NEndL");//역방향 리미트 센서 레벨 (Negative End Limit Level) 속성 **NEndL**의 값을 읽어와 bCCwLimitLevel에 설정합니다.
@@ -66,7 +49,6 @@ void CSeqMain::Load_Motor_Parameter(void)
 			MTAxis[nMotorNo + 1]->nEncType = ele->IntAttribute("EncType");//엔코더 타입 (Encoder Type) 속성 **EncType**의 값을 설정합니다.
 			MTAxis[nMotorNo + 1]->nMotorType = ele->IntAttribute("MotorType");//모터 타입 (Motor Type) 속성 **MotorType**의 값을 설정합니다.
 			MTAxis[nMotorNo + 1]->nSensorType = ele->IntAttribute("SensorType");//센서 타입 (Sensor Type) 속성 **SensorType**의 값을 설정합니다.
-			g_bMotorParamLoaded[nMotorNo + 1] = true;
 		}
 	}
 }
@@ -84,27 +66,11 @@ void CSeqMain::InitMotor(void)
 	Load_Motor_Parameter();
 
 	// Both axes are in use. totalAxisCnt is what every per-axis loop and check
-	// runs on, so this is the single place that decides how much of MTAxis[] is
-	// live: initialisation, homing, the driver alarm and servo off checks, and
-	// the status polling in SEQ_Motion_Thread1 all take their range from it.
-	//
-	// It was held at 1 for as long as the second drive was not connected. An
-	// axis left out of that count is allocated but never configured, so drop it
-	// back only alongside the MotorConfig.xml entry it belongs with.
+	// runs on, so this one number decides how much of MTAxis[] is live:
+	// initialisation, homing, the driver alarm and servo off checks all take
+	// their range from it. It was held at 1 while the second drive was not
+	// connected; drop it back only if that drive is removed again.
 	totalAxisCnt = 2;
-
-	// And the other half of that: an axis counted as live but absent from
-	// MotorConfig.xml takes every parameter as zero - servo on level, both
-	// limit levels, motor type - and the loop below writes those zeros to the
-	// board without complaint. Say which axis is missing instead.
-	for (int j = 1; j <= totalAxisCnt; j++) {
-		if (!g_bMotorParamLoaded[j]) {
-			printf("[MOTOR] WARNING: axis %d is configured but MotorConfig.xml has"
-				   " no <MOTOR NO=\"%d\"> entry. Every parameter for it is zero:"
-				   " servo on level, limit levels, motor type. Add the entry"
-				   " before running that axis.\n", j - 1, j - 1);
-		}
-	}
 
 	// The axis count is fixed here while the board decides how many axes really
 	// exist. When the two disagree every AXM call on the surplus axes fails, and

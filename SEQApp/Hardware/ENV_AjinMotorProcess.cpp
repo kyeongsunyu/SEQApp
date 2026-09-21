@@ -332,17 +332,7 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 //////////////////////////////////////////////////////////////////////////
 void CSeqMain::AjinMotorStatus(int startaxis, int endaxis)
 {
-	// MTAxis[] has 50 slots and only the built ones are non-NULL, so a range
-	// that runs past the configured axis count is a missed check, not a crash
-	// waiting to be excused.
-	const int nMax = (int)(sizeof(MTAxis) / sizeof(MTAxis[0])) - 1;
-	if (startaxis < 1) startaxis = 1;
-	if (endaxis > nMax) endaxis = nMax;
-
 	for (int mtno = startaxis; mtno <= endaxis; mtno++) {
-		if (MTAxis[mtno] == NULL) {
-			continue;
-		}
 		MTAxis[mtno]->GetMotorStatus();
 
 		BITMOV(MTAxis[mtno]->irdy, MTAxis[mtno]->IsDriving);
