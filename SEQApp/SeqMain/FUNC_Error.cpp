@@ -311,8 +311,9 @@ int CSeqMain::ErrorProcedure(void)
 	else {
 		RESET_ERROR(ERROR_LIMIT_CW__STAGE_X);
 	}
-	// AXIS 02 MTStageY STROKE END. Guarded by the axis count: with no drive on
-	// that axis its signals mean nothing and the error would stand forever.
+	// AXIS 02 MTStageY STROKE END. Guarded by the axis count: an axis outside
+	// it has no drive, so its signals mean nothing and the error would stand
+	// forever.
 	if (totalAxisCnt >= 2 && MTStageY->IsHWLimitCCW && (MTStageY->NxtPos != 0)) {
 		SET_MOTOR_ERROR(MTStageY, ERROR_LIMIT_CCW_STAGE_Y);
 		bit.AllHome = 0;
