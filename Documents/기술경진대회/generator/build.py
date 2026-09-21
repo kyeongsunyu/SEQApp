@@ -481,8 +481,8 @@ DET = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'panel-
 DW, DH = 9.45, 3.69               # 상세 이미지 1066×416 (2.5625:1)
 s.shapes.add_picture(DET, Inches(0.85 + (11.93 - DW) / 2), Inches(2.02), Inches(DW), Inches(DH))
 LEG = [('노란 모듈 상면 — 평탄부', '추종 대상. 이 면들의 완만한 높이차가 실측 0.011 µm/ms 다', RGBColor(0xFD, 0xF3, 0xE8), ORANGE),
-       ('모듈 사이 간극 — 딥', '바닥이 100–160 µm 아래. 유효 대역 밖이라 기각하고 직전 목표 유지', CARD, INK),
-       ('붉은 원 — 평탄–딥 경계', '전이율 중앙 8.06 · 최대 82.3 µm/ms 로 추종 한계 10 을 넘는다', RGBColor(0xFB, 0xEF, 0xEC), RED),
+       ('모듈 사이 간극 — 딥', '바닥이 100–160 µm 아래. 경계 전이율 최대 82.3 µm/ms 로 기각', CARD, INK),
+       ('붉은 원 — 촬상 시작 지점', '광학모듈이 PANEL 시작점에 놓이는 곳 · 지연 큐의 기준점(3절)', RGBColor(0xFB, 0xEF, 0xEC), RED),
        ('하단 — 실제 촬상 이미지', '그 지점의 Line-scan 결과. 리드·정렬 마크가 분해되면 정상 획득', CARD_B, ACCENT_D)]
 LGW, LGGAP = 2.7625, 0.26
 for i, (head, body, fill, hc) in enumerate(LEG):
