@@ -93,12 +93,142 @@ void CAjinBase::WriteECATPdoOutput(DWORD dwBitOffset, DWORD dwDataBitLength, BYT
 
 CAjinMotor::CAjinMotor(unsigned short int axs_no, unsigned short int logical_no)
 {
+	InitMember();
+
 	AxisNO = axs_no;
 	AxisLogicNO = logical_no;
-	bOverRide = false;
+}
+
+// The object is allocated with new, so every member that is not assigned here
+// keeps the content of the memory it was given (0xCDCDCDCD in a debug build,
+// anything in a release build). Those values are used as flags, as array indices
+// and as motion parameters, so the axis has to start from a defined state :
+// not homed, not moving, no pending command, empty position tables.
+void CAjinMotor::InitMember()
+{
+	memset(&MS, 0x00, sizeof(MS));
+
+	SensorType = 0;
+	MotorType = 0;
+
+	ActualPosition = 0;
+	CommandPosition = 0;
+	SpeedDevide = AUTOSPEED;
+	MinMovingTime = 0;
+	AxisNO = 0;
+	AxisLogicNO = 0;
+	sHomeState = Init;
 	nOriginSetRetry = 0;
+	CancelCmd = 0;
+	CmdMode = Wait_Cmd;
+
+	Speed = 0.;
+	Accel = 0.;
+	Decel = 0.;
+	Jerk = 0.;
+	SaveSpeed = 0.;
+	SaveAccel = 0.;
+	SaveJerk = 0.;
+	InitSpeed = 0.;
+	MaxSpeed = 0.;
+
+	CurPos = 299;
+	NxtPos = 299;
+	WorkPos = 0;
+	DfltWorking = 0;
+	bOverRide = false;
+	OverRidePos = 0.;
+	OverRideRatio = 0.;
+
+	//-- FLAG --//
+	fDoHome = 0;
+	fIMRS = 0;			// never report "home finished" before a home really ran
+	fMotorPause = 0;
+	fMotorHome = 0;
+	fDriving = 0;
+	IsHWLimitCW = 0;
+	IsHWLimitCCW = 0;
+	IsDRVRDY = 1;
+	IsORG = 0;
+	IsAlarm = 0;
+	IsInposition = 1;
+	IsServoOn = 0;
+	PrevIsServoOn = 0;
+	IsDriving = 0;
+	IsStop = 1;
+	IsZPhase = 0;
+	EncoderSet = 0;
+	AlramReset = 0;
+	EncoderType = 0;
+	IsHomming = 0;
 	fMoveCmdFailed = 0;
 	fHomeFailed = 0;
+
+	omove = 0;
+	moving = 0;			// no move is in progress at power on
+	relative = 0;
+
+	imrs = 0;			// not homed
+	irdy = 0;
+	isend = 0;
+	idrvalm = 0;
+	idrvrdy = 0;
+	canmovejog = 0;
+	ostart = 1;
+
+	ZPhaseSpeed = NULL;
+	HomeSpeed = NULL;
+	MovingDistance = 0.;
+	TimeDesier = 0.;
+	AdjustPosition = 0;
+	CurArrpos = 0.;
+	NxtArrpos = 0.;
+	Direction = 0;
+
+	memset(PositionArray, 0x00, sizeof(PositionArray));
+	memset(SpeedArray, 0x00, sizeof(SpeedArray));
+	memset(AccelArray, 0x00, sizeof(AccelArray));
+	memset(DecelArray, 0x00, sizeof(DecelArray));
+
+	/* Motor Config Data from Data File */
+	bCwLimitLevel = 0;
+	bCCwLimitLevel = 0;
+	bServoOnLevel = 0;
+	bAlarmLevel = 0;
+	bInpLevel = 0;
+	bInpEnable = 0;
+	nPulseOutM = 0;
+	nEncDir = 0;
+	nEncType = 0;
+	nMotorType = 0;
+	nSensorType = 0;
+
+	/* Motor Config Data from MMI Data */
+	MMI_PulseRate = 0;
+	MMI_MaxVel = 0;
+	MMI_JogVel = 0;
+	MMI_HomeVel = 0;
+	MMI_Accel = 0;
+	MMI_HomeLevel = 0;
+	MMI_LimitLevel = 0;
+	MMI_ServoOnLevel = 0;
+	MMI_AlarmLevel = 0;
+	MMI_InpUse = 0;
+	MMI_MtrDir = 0;
+	MMI_EncDir = 0;
+	MMI_MotorType = 0;
+	MMI_Enc_Type = 0;
+
+	bCamType = 0;
+
+	dwServoAlarmCode = 0;
+	memset(strServoAlarmName, 0x00, sizeof(strServoAlarmName));
+	dServoLoadRatio = 0.;
+
+	// EtherCat
+	dwBitOffset = 0;
+	dwDataBitLength = 0;
+	byTorqueValue = 0;
 }
 
 // Destructor Function

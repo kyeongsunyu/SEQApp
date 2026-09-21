@@ -188,6 +188,18 @@ void CSeqMain::AjinHomeFunction(CAjinMotor* Axis)
 					Axis->InitSpeed = 50;
 					Axis->nOriginSetRetry = 0;
 					Axis->fHomeFailed = 0;
+
+					// Home is the point where the axis becomes usable, so every
+					// value left over from power on is replaced here : the target
+					// of the finished home move (NxtArrpos is copied into CurArrpos
+					// by the stop check) and the command flags. From here the axis
+					// is at a known origin and ready to take index moves.
+					Axis->NxtArrpos = 0.;
+					Axis->CurArrpos = 0.;
+					Axis->CancelCmd = 0;
+					Axis->fMotorPause = 0;
+					Axis->fMotorHome = 0;
+					Axis->fMoveCmdFailed = 0;
 				}
 				else {
 					LOG_ERROR("AXIS[%d] HOME ORIGIN SET FAILED. CmdPos = %d, ActPos = %d",

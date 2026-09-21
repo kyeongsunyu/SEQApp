@@ -42,6 +42,8 @@ public:
 	~CAjinMotor();
 
 	long GetTotalAxisCount();
+
+	void InitMember();		// deterministic start state, called by the constructor
 	
 	void SetSWLimitMode(bool Enable);
 	void SetHWLimitMode(DWORD CW_LogicLevel, DWORD CCW_LogicLevel);
