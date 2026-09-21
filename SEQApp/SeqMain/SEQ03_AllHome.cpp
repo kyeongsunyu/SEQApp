@@ -69,53 +69,42 @@ void CSeqMain::AllHomeC(void)
 	//}
 
 	////////////////////////////////////////////////////
-	// An axis that ended its home sequence without a valid origin must not be
-	// homed again in a loop : stop All Home and tell the operator.
-	if (MTStageX->fHomeFailed || MTStageY->fHomeFailed || MTStageZ->fHomeFailed) {
-		bit.AllHome = 0;
-		NOTIFY_MSG notify_msg;
-		memset(&notify_msg, 0x00, sizeof(NOTIFY_MSG));
-		sprintf(notify_msg.strMsg, "Home Failed. Origin(command/actual position) could not be cleared");
-		SendCopyDataToMMI(WM_SEQ_TO_MMI_NOTIFY, sizeof(NOTIFY_MSG), (void*)&notify_msg);
-		LOG_ERROR("ALL HOME ABORTED. ORIGIN SET FAILED X = %d, Y = %d, Z = %d",
-			MTStageX->fHomeFailed, MTStageY->fHomeFailed, MTStageZ->fHomeFailed);
-		return;
-	}
-
-	////////////////////////////////////////////////////
-	// Each axis keeps its own finished flag and re-issues its home command until
-	// it is homed. MTStageX/Y wait inside their home function until MTStageZ is
-	// homed, so the retry here is what starts them after Z has finished.
 	// AXIS 01 MTStageX
 	if (!bMTAxisHomeFinished[0]) {
 		if (MTStageX->imrs) {
 			bMTAxisHomeFinished[0] = true;
 		}
 		else {
-			MTStageXHomeM();
+			if (MTStageX->imrs ) {
+				MTStageXHomeM();
+			}
 		}
 	}
 	// AXIS 02 MTStageY
 	if (!bMTAxisHomeFinished[1]) {
 		if (MTStageY->imrs) {
-			bMTAxisHomeFinished[1] = true;
+			bMTAxisHomeFinished[0] = true;
 		}
 		else {
-			MTStageYHomeM();
+			if (MTStageY->imrs) {
+				MTStageYHomeM();
+			}
 		}
 	}
 	// AXIS 03 MTStageZ
 	if (!bMTAxisHomeFinished[2]) {
 		if (MTStageZ->imrs) {
-			bMTAxisHomeFinished[2] = true;
+			bMTAxisHomeFinished[0] = true;
 		}
 		else {
-			MTStageZHomeM();
+			if (MTStageZ->imrs) {
+				MTStageZHomeM();
+			}
 		}
 	}
 
 	bool allHomeDone = true;
-	for (int n = 0; n < (int)totalAxisCnt; n++)
+	for (int n = 0; n <1; n++)
 		allHomeDone &= bMTAxisHomeFinished[n];
 
 	//////////////////////////////
@@ -182,7 +171,6 @@ void CSeqMain::AllHomeM(void)
 	// Motor bMTAxisHomeFinished clear..
 	for (int mtno = 0; mtno < totalAxisCnt; mtno++) {
 		MTAxis[mtno+1]->imrs = 0;
-		MTAxis[mtno+1]->fHomeFailed = 0;
 		bMTAxisHomeFinished[mtno] = false;
 	}
 	bit.AllHome = 1;

@@ -13,12 +13,6 @@ void CSeqMain::Load_Motor_Parameter(void)
 	doc.LoadFile("C:\\WORK\\CONFIG\\MotorConfig.xml");	//지정된 경로에서 "MotorConfig.xml" 파일을 읽어 들여 doc 객체에 파싱(parsing)합니다.
 
 	tinyxml2::XMLElement* pRoot = doc.RootElement(); //XML 문서의 **최상위 엘리먼트 (Root Element)**를 가져옵니다. 예를 들어, XML 파일이 <CONFIG>...</CONFIG>로 시작한다면, pRoot는 <CONFIG> 엘리먼트를 가리킵니다. 
-	if (pRoot == NULL) {
-		// No config file (or not parsable) : leave the motor parameters at their
-		// initialised values instead of dereferencing a NULL root element.
-		printf("MotorConfig.xml could not be loaded, motor parameters stay at default\n");
-		return;
-	}
 	tinyxml2::XMLElement* cfg = pRoot->FirstChildElement("MOTOR");  //루트 엘리먼트의 자식 중에서 태그 이름이 "MOTOR"인 첫 번째 엘리먼트를 찾아서 cfg 포인터에 할당합니다. 이 코드는 일반적으로 모터 설정의 반복 시작점을 찾습니다.
 	for (tinyxml2::XMLElement* ele = cfg; ele != NULL; ele = ele->NextSiblingElement()) //반복 시작 (ele = cfg): 반복 변수 ele가 첫 번째 "MOTOR" 엘리먼트를 가리키며 시작합니다.
 
@@ -29,12 +23,6 @@ void CSeqMain::Load_Motor_Parameter(void)
 		이 반복문은 보통 파일 내의 모든 "MOTOR" 블록을 순서대로 처리하게 됩니다.*/
 	{
 		nMotorNo = ele->IntAttribute("NO");//현재 <MOTOR> 엘리먼트의 NO 속성(Attribute) 값을 정수로 읽어와 nMotorNo에 저장합니다. 이 값이 현재 설정할 모터의 고유 번호입니다.
-		// MTAxis[] has a fixed size : a wrong NO attribute would write the motor
-		// parameters past the end of the array.
-		if ((nMotorNo < 0) || ((nMotorNo + 1) >= (int)(sizeof(MTAxis) / sizeof(MTAxis[0])))) {
-			printf("MotorConfig.xml : invalid motor number [%d]\n", nMotorNo);
-			continue;
-		}
 		if (MTAxis[nMotorNo + 1] != NULL) {//MTAxis는 모터 축 객체(포인터 배열)로 추정됩니다. nMotorNo + 1 인덱스에 해당하는 모터 객체가 유효한지 (NULL이 아닌지) 확인하여, 객체가 초기화된 경우에만 설정 값을 적용합니다. (인덱스가 +1인 것은 프로그래밍 관례상 모터 번호가 0부터 시작하지만 배열 인덱스는 1부터 시작할 수 있기 때문입니다.)
 			MTAxis[nMotorNo + 1]->bCwLimitLevel = ele->IntAttribute("PEndL"); //정방향 리미트 센서 레벨 (Positive End Limit Level) 속성 **PEndL**의 값을 읽어와 모터 객체의 bCwLimitLevel 멤버 변수에 설정합니다.
 			MTAxis[nMotorNo + 1]->bCCwLimitLevel = ele->IntAttribute("NEndL");//역방향 리미트 센서 레벨 (Negative End Limit Level) 속성 **NEndL**의 값을 읽어와 bCCwLimitLevel에 설정합니다.
@@ -122,14 +110,6 @@ void CSeqMain::InitMotor(void)
 		MTAxis[j]->CurArrpos = 0;
 		MTAxis[j]->NxtArrpos = 0;
 		MTAxis[j]->imrs = 0;
-		MTAxis[j]->fIMRS = 0;			// not homed : no default working move
-		MTAxis[j]->moving = 0;
-		MTAxis[j]->CancelCmd = 0;
-		MTAxis[j]->sHomeState = Init;
-		MTAxis[j]->fMoveCmdFailed = 0;
-		MTAxis[j]->fHomeFailed = 0;
-		memset(MTAxis[j]->AccelArray, 0, sizeof(MTAxis[j]->AccelArray));
-		memset(MTAxis[j]->DecelArray, 0, sizeof(MTAxis[j]->DecelArray));
 
 		MTAxis[j]->IsAlarm = 0;
 		MTAxis[j]->IsDRVRDY = 1;

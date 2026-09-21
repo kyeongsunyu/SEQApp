@@ -39,17 +39,6 @@ void CSeqMain::Make_Parameter1(CAjinMotor* Axis)
 	long	MAXSPEED;
 	int		machinespeed = MachineSpeed;
 
-	/* A pulse rate of 0 (motor config not received yet) turns every division
-	   below into Inf/NaN and the axis would be started with a meaningless
-	   speed. A position index outside the array would read past SpeedArray[].
-	   Keep the speed the caller already calculated in both cases. */
-	const int nArrayCount = (int)(sizeof(Axis->SpeedArray) / sizeof(Axis->SpeedArray[0]));
-	if ((Axis->MMI_PulseRate == 0) || (Axis->NxtPos < 0) || (Axis->NxtPos >= nArrayCount)) {
-		Axis->Accel = fabs(Axis->Speed) * 10;
-		Axis->Decel = Axis->Accel;
-		return;
-	}
-
 	/*if ((Axis == MTStageX || Axis == MTStageY|| Axis == MTStageZ))  {
 		g_accel = 0.5;
 	}*/

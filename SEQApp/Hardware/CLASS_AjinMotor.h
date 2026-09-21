@@ -42,8 +42,6 @@ public:
 	~CAjinMotor();
 
 	long GetTotalAxisCount();
-
-	void InitMember();		// deterministic start state, called by the constructor
 	
 	void SetSWLimitMode(bool Enable);
 	void SetHWLimitMode(DWORD CW_LogicLevel, DWORD CCW_LogicLevel);
@@ -63,11 +61,9 @@ public:
 	void SetHomeSignalLevel(DWORD uLevel);
 
 	// Single Axis Drive Function
-	// The three move functions return the AXL return code, AXT_RT_SUCCESS when
-	// the command was accepted by the motion board.
-	DWORD MTSRMove(int pulse);		// Scurve Relative
-	DWORD MTSAMove(int Position);	// Scurve Absolute
-	DWORD MTSCMove();				// Scurve Continuous
+	void MTSRMove(int pulse);		// Scurve Relative
+	void MTSAMove(int Position);	// Scurve Absolute
+	void MTSCMove();				// Scurve Continuous
 	void MTOverRideMove(double ratio);
 
 	void MTEStop();
@@ -78,7 +74,6 @@ public:
 	int GetCommandPosition();
 	void SetActualPosition(int Position);
 	int GetActualPosition();
-	bool SetOrigin(int Position = 0, int Tolerance = 10);
 
 	void GetMotorStatus();
 	void SetInitPosition();
@@ -105,7 +100,6 @@ public:
 	unsigned short int AxisNO;		// Physical order
 	unsigned short int AxisLogicNO;	// program logical order
 	unsigned short int sHomeState;
-	unsigned short int nOriginSetRetry;
 	unsigned short int CancelCmd;
 	unsigned short int CmdMode;
 	double Speed;
@@ -146,8 +140,6 @@ public:
 	unsigned short int AlramReset : 1;
 	unsigned short int EncoderType : 1;
 	unsigned short int IsHomming : 1;
-	unsigned short int fMoveCmdFailed : 1;	// last move command was refused by the board
-	unsigned short int fHomeFailed : 1;		// home ended without a valid origin
 
 	unsigned short int omove : 1;
 	unsigned short int moving : 1;
@@ -170,14 +162,10 @@ public:
 	double NxtArrpos;
 	int Direction;
 
-	enum { POSITION_COUNT = 100 };		// number of entries of the position tables
-	// A position index is only usable when it really addresses the tables below.
-	bool IsValidPosIndex(int idx) const { return ((idx >= 0) && (idx < POSITION_COUNT)); }
-
-	double PositionArray[POSITION_COUNT];	// device dependent positions of motor
-	double SpeedArray[POSITION_COUNT];		// speed of positions of motor
-	double AccelArray[POSITION_COUNT];
-	double DecelArray[POSITION_COUNT];
+	double PositionArray[100];			// device dependent positions of motor
+	double SpeedArray[100];			// speed of positions of motor
+	double AccelArray[100];
+	double DecelArray[100];
 
 	/* Motor Config Data from Data File */
 	DWORD	bCwLimitLevel;

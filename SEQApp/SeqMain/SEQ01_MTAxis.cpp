@@ -2,23 +2,10 @@
 #include "CLASS_Main.h"
 
 //////////////////////////////////////////////////////////////////////////
-// MTAxis[] holds totalAxisCnt motors at index 1..totalAxisCnt, every other slot
-// is NULL. A motor number that comes from outside (MMI, ten key) must be checked
-// before it is used as an index, otherwise a wrong or uninitialised number
-// dereferences a NULL pointer.
-bool CSeqMain::bValidMotorNo(int axisno)
-{
-	if ((axisno < 0) || (axisno >= (int)totalAxisCnt) || (MTAxis[axisno + 1] == NULL)) {
-		printf("Invalid axis number [%d]\n", axisno);
-		return false;
-	}
-	return true;
-}
-
-//////////////////////////////////////////////////////////////////////////
 bool CSeqMain::bJogCondition(int axisno)
 {
-	if (!bValidMotorNo(axisno)) {
+	if (axisno < 0 || axisno > totalAxisCnt) {
+		printf("Invalid axis number\n");
 		return false;
 	}
 
@@ -54,7 +41,8 @@ bool CSeqMain::bJogCondition(int axisno)
 }
 bool CSeqMain::bJogIndexCondition(int axisno)
 {
-	if (!bValidMotorNo(axisno)) {
+	if (axisno < 0 || axisno > totalAxisCnt) {
+		printf("Invalid axis number\n");
 		return false;
 	}
 
@@ -142,15 +130,6 @@ void CSeqMain::JogMoveIndex(int axisno, int idx)
 		return;
 	}
 
-	// The index comes from the MMI. An index outside the position table would be
-	// written into NxtPos and used to read PositionArray[] out of its bounds, so
-	// the axis would be started towards a garbage target.
-	if (!MTAxis[axisno + 1]->IsValidPosIndex(idx) || (idx == 0)) {
-		printf("Invalid position index [%d] for MTAxis[%d]\n", idx, axisno + 1);
-		LOG_ERROR("AXIS[%d] INVALID INDEX MOVE. Index = %d", axisno + 1, idx);
-		return;
-	}
-
 	MTMOVE(MTAxis[axisno + 1], idx, MIDDLE);
 }
 
@@ -158,10 +137,9 @@ void CSeqMain::JogMoveIndex(int axisno, int idx)
 #pragma region AXIS01 MTStageZ
 void CSeqMain::MTStageXHomeM(void)
 {
-	// MTRDY() on the axis itself means "already homed", a not yet homed axis
-	// could never be homed with it. The home interlock on Z stays.
+
 	if (MTRDY(MTStageZ)) {
-		if (MTHOMERDY(MTStageX)) {
+		if (MTRDY(MTStageX)) {
 			MTStageX->imrs = 0;
 			MTStageX->NxtPos = 0;
 			MTStageX->omove = 1;
@@ -172,7 +150,7 @@ void CSeqMain::MTStageXHomeM(void)
 void CSeqMain::MTStageYHomeM(void)
 {
 	if (MTRDY(MTStageZ)) {
-		if (MTHOMERDY(MTStageY)) {
+		if (MTRDY(MTStageY)) {
 			MTStageY->imrs = 0;
 			MTStageY->NxtPos = 0;
 			MTStageY->omove = 1;
@@ -183,7 +161,7 @@ void CSeqMain::MTStageYHomeM(void)
 void CSeqMain::MTStageZHomeM(void)
 {
 
-	if (MTHOMERDY(MTStageZ)) {
+	if (MTRDY(MTStageZ)) {
 		MTStageZ->imrs = 0;
 		MTStageZ->NxtPos = 0;
 		MTStageZ->omove = 1;

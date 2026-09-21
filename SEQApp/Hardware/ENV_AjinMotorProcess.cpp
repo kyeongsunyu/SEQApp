@@ -177,45 +177,12 @@ void CSeqMain::AjinHomeFunction(CAjinMotor* Axis)
 			break;
 		case Complete:
 			if (Axis->IsStop && Axis->MotorStop.TimeOvermS(2000)) {
-				// The origin has to be really cleared before the default working
-				// move is started : that move is an absolute one, so a command or
-				// actual position that still holds its pre home value makes the
-				// axis run the whole stale offset at working speed.
-				if (Axis->SetOrigin(0)) {
-					Axis->fDoHome = false;
-					Axis->fIMRS = true;
-					Axis->sHomeState = Init;
-					Axis->InitSpeed = 50;
-					Axis->nOriginSetRetry = 0;
-					Axis->fHomeFailed = 0;
-
-					// Home is the point where the axis becomes usable, so every
-					// value left over from power on is replaced here : the target
-					// of the finished home move (NxtArrpos is copied into CurArrpos
-					// by the stop check) and the command flags. From here the axis
-					// is at a known origin and ready to take index moves.
-					Axis->NxtArrpos = 0.;
-					Axis->CurArrpos = 0.;
-					Axis->CancelCmd = 0;
-					Axis->fMotorPause = 0;
-					Axis->fMotorHome = 0;
-					Axis->fMoveCmdFailed = 0;
-				}
-				else {
-					LOG_ERROR("AXIS[%d] HOME ORIGIN SET FAILED. CmdPos = %d, ActPos = %d",
-						Axis->AxisNO, Axis->CommandPosition, Axis->ActualPosition);
-					Axis->nOriginSetRetry++;
-					if (Axis->nOriginSetRetry >= 5) {
-						// Give up, but leave imrs(ready) cleared so that no absolute
-						// move is started on a wrong origin. The axis reports
-						// "not homed" to the MMI instead of crashing into hardware.
-						Axis->fDoHome = false;
-						Axis->sHomeState = Init;
-						Axis->nOriginSetRetry = 0;
-						Axis->fHomeFailed = 1;
-					}
-					Axis->MotorStop.SetTime();		// retry after the settling time
-				}
+				Axis->fDoHome = false;
+				Axis->fIMRS = true;
+				Axis->sHomeState = Init;
+				Axis->SetActualPosition(0);
+				Axis->SetCommandPosition(0);
+				Axis->InitSpeed = 50;
 			}
 
 			/*
@@ -268,26 +235,13 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 			Axis->CurArrpos = Axis->NxtArrpos;
 			Axis->moving = 0;
 			Axis->omove = 0;
-
-			// Command and actual position are refreshed every scan by
-			// GetMotorStatus(). A large gap between them at standstill means the
-			// axis did not follow the profile (step out), log it with the index.
-			if ((Axis->MMI_PulseRate > 0) &&
-				(abs(Axis->CommandPosition - Axis->ActualPosition) > (int)Axis->MMI_PulseRate)) {
-				LOG_ERROR("AXIS[%d] POSITION DEVIATION. Index = %d, CmdPos = %d, ActPos = %d",
-					Axis->AxisNO, Axis->CurPos, Axis->CommandPosition, Axis->ActualPosition);
-			}
-
 			if (Axis->fIMRS) {
 				Axis->imrs = 1;
-				if (Axis->DfltWorking && Axis->IsValidPosIndex((int)Axis->DfltWorking)) {
+				if (Axis->DfltWorking) {
 					Axis->NxtPos = Axis->DfltWorking;
 					Axis->SpeedDevide = FAST;
 					Axis->NxtArrpos = Axis->PositionArray[Axis->DfltWorking];//+PULSE10_1MM*30;
-					// Start the profile from the position the axis really has, not
-					// from an assumed 0 : Make_Parameter1() uses CurArrpos for the
-					// moving distance and would otherwise plan a wrong profile.
-					Axis->CurArrpos = Axis->CommandPosition;
+					Axis->CurArrpos = 0L;
 					Axis->omove = 1;
 					Axis->fIMRS = false;
 				}
@@ -300,34 +254,21 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 			if ((Axis->imrs) || (Axis->NxtPos == 0)) {
 				/* signal out routine */
 				if (BITOFF(Axis->ostart) && BITON(Axis->irdy)) {
-					DWORD dwMoveRet = AXT_RT_SUCCESS;
 					if (Axis->NxtPos == 0) {
 						Axis->CmdMode = Move_Home;
 						Axis->CancelCmd = false;
 						Axis->fDoHome = true;
 						Axis->sHomeState = Init;
-						Axis->fHomeFailed = 0;
 					}
 					else {
 						if (Axis->NxtPos != 99) {
-							// NxtPos is either a position table index (0~99) or a
-							// special command (>100). Anything else would read past
-							// SpeedArray[]/AccelArray[] and send a garbage target to
-							// the board, so refuse it here as well as at the source.
-							if ((Axis->NxtPos < 0) || (Axis->NxtPos == 100)) {
-								dwMoveRet = AXT_RT_MOTION_INVALID_POSITION;
-							}
-							else if (Axis->NxtPos > 100) {
+							if (Axis->NxtPos > 100) {
 								Axis->Speed = Axis->SpeedArray[0];
 								Axis->Accel = Axis->AccelArray[0] * 10;
 								Axis->Decel = Axis->Accel;
 							}
 							else {
-								// CurPos 0 means the axis comes straight from home :
-								// move away from the origin at half speed. This used
-								// to be limited to NxtPos == 1 and stopped working
-								// when DfltWorking was changed to a 5x index.
-								if (Axis->CurPos == 0) {
+								if ((Axis->CurPos == 0) && (Axis->NxtPos == 1)) {
 									Axis->Speed = (int)(Axis->SpeedArray[Axis->NxtPos] * 0.5);
 									Axis->Accel = Axis->Speed * 5;// Axis->AccelArray[Axis->NxtPos];
 									Axis->Decel = Axis->Accel;
@@ -338,68 +279,48 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 									Axis->Decel = Axis->Accel;
 								}
 							}
-							if (dwMoveRet == AXT_RT_SUCCESS) {
-								Axis->fDriving = 1;
+							Axis->fDriving = 1;
 
-								if (Axis->bCamType) {
-									Axis->NxtArrpos = (int)(Axis->NxtArrpos * (8000. / 360.));
-								}
+							if (Axis->bCamType) {
+								Axis->NxtArrpos = (int)(Axis->NxtArrpos * (8000. / 360.));
+							}
 
-								/*if ((Axis == MTFrontPkZ1) || (Axis == MTFrontPkZ2) ||
-									(Axis == MTFrontPkZ3) || (Axis == MTFrontPkZ4) ||
-									(Axis == MTRearPkZ1) || (Axis == MTRearPkZ2) ||
-									(Axis == MTRearPkZ3) || (Axis == MTRearPkZ4)) {
-									Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
-									Axis->Accel = 5.0 * 9800 * MTFrontPkZ1->MMI_PulseRate;
-									Axis->Decel = Axis->Accel;
-								}
-								else if ((Axis == MTFrontPkX) || (Axis == MTRearPkX)) {
-									Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
-									Axis->Accel = 2.0 * 9800 * MTFrontPkX->MMI_PulseRate;
-									Axis->Decel = Axis->Accel;
-								}
-								else if ((Axis == MTGoodTrayY1) || (Axis == MTGoodTrayY2) ||
-										 (Axis == MTRewTrayY) || (Axis == MTNGTrayY)) {
-									Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
-									Axis->Accel = 1.0 * 9800 * MTGoodTrayY1->MMI_PulseRate;
-									Axis->Decel = Axis->Accel;
-								}
-								else {
-									Make_Parameter1(Axis);
-								}*/
-								/*if (Axis == MTFrontPkZ3) {
-									printf("====MTFrontPkZ3->CurPos=%d, MTFrontPkZ3->NxtPos=%d\n", MTFrontPkZ3->CurPos, MTFrontPkZ3->NxtPos);
-								}*/
+							/*if ((Axis == MTFrontPkZ1) || (Axis == MTFrontPkZ2) ||
+								(Axis == MTFrontPkZ3) || (Axis == MTFrontPkZ4) ||
+								(Axis == MTRearPkZ1) || (Axis == MTRearPkZ2) ||
+								(Axis == MTRearPkZ3) || (Axis == MTRearPkZ4)) {
+								Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
+								Axis->Accel = 5.0 * 9800 * MTFrontPkZ1->MMI_PulseRate;
+								Axis->Decel = Axis->Accel;
+							}
+							else if ((Axis == MTFrontPkX) || (Axis == MTRearPkX)) {
+								Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
+								Axis->Accel = 2.0 * 9800 * MTFrontPkX->MMI_PulseRate;
+								Axis->Decel = Axis->Accel;
+							}
+							else if ((Axis == MTGoodTrayY1) || (Axis == MTGoodTrayY2) ||
+									 (Axis == MTRewTrayY) || (Axis == MTNGTrayY)) {
+								Axis->Speed = Axis->SpeedArray[Axis->NxtPos];
+								Axis->Accel = 1.0 * 9800 * MTGoodTrayY1->MMI_PulseRate;
+								Axis->Decel = Axis->Accel;
+							}
+							else {
 								Make_Parameter1(Axis);
-								Axis->relative = 0;
-								if (Axis->relative) {
-									dwMoveRet = Axis->MTSRMove((int)Axis->NxtArrpos);
-								}
-								else {
-									dwMoveRet = Axis->MTSAMove((int)Axis->NxtArrpos);
-								}
+							}*/
+							/*if (Axis == MTFrontPkZ3) {
+								printf("====MTFrontPkZ3->CurPos=%d, MTFrontPkZ3->NxtPos=%d\n", MTFrontPkZ3->CurPos, MTFrontPkZ3->NxtPos);
+							}*/
+							Make_Parameter1(Axis);
+							Axis->relative = 0;
+							if (Axis->relative) {
+								Axis->MTSRMove((int)Axis->NxtArrpos);
+							}
+							else {
+								Axis->MTSAMove((int)Axis->NxtArrpos);
 							}
 						}
 					}
-
-					if (dwMoveRet == AXT_RT_SUCCESS) {
-						Axis->ostart = 0;
-						Axis->fMoveCmdFailed = 0;
-					}
-					else {
-						// The board refused the command (invalid speed, alarm, ...).
-						// Release the handshake : ostart would stay 0 and omove 1
-						// forever, MTRDY() would never get true again and the axis
-						// would silently ignore every following index move.
-						Axis->fDriving = 0;
-						Axis->omove = 0;
-						Axis->ostart = 1;
-						if (!Axis->fMoveCmdFailed) {		// log the transition only
-							Axis->fMoveCmdFailed = 1;
-							LOG_ERROR("AXIS[%d] MOVE COMMAND REJECTED. Ret = 0x%X, Index = %d, Pos = %d, Vel = %.1f, Acc = %.1f",
-								Axis->AxisNO, dwMoveRet, Axis->NxtPos, (int)Axis->NxtArrpos, Axis->Speed, Axis->Accel);
-						}
-					}
+					Axis->ostart = 0;
 				}
 			}
 			else {

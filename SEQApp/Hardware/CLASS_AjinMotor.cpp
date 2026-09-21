@@ -93,142 +93,9 @@ void CAjinBase::WriteECATPdoOutput(DWORD dwBitOffset, DWORD dwDataBitLength, BYT
 
 CAjinMotor::CAjinMotor(unsigned short int axs_no, unsigned short int logical_no)
 {
-	InitMember();
-
 	AxisNO = axs_no;
 	AxisLogicNO = logical_no;
-}
-
-// The object is allocated with new, so every member that is not assigned here
-// keeps the content of the memory it was given (0xCDCDCDCD in a debug build,
-// anything in a release build). Those values are used as flags, as array indices
-// and as motion parameters, so the axis has to start from a defined state :
-// not homed, not moving, no pending command, empty position tables.
-void CAjinMotor::InitMember()
-{
-	memset(&MS, 0x00, sizeof(MS));
-
-	SensorType = 0;
-	MotorType = 0;
-
-	ActualPosition = 0;
-	CommandPosition = 0;
-	SpeedDevide = AUTOSPEED;
-	MinMovingTime = 0;
-	AxisNO = 0;
-	AxisLogicNO = 0;
-	sHomeState = Init;
-	nOriginSetRetry = 0;
-	CancelCmd = 0;
-	CmdMode = Wait_Cmd;
-
-	Speed = 0.;
-	Accel = 0.;
-	Decel = 0.;
-	Jerk = 0.;
-	SaveSpeed = 0.;
-	SaveAccel = 0.;
-	SaveJerk = 0.;
-	InitSpeed = 0.;
-	MaxSpeed = 0.;
-
-	CurPos = 299;
-	NxtPos = 299;
-	WorkPos = 0;
-	DfltWorking = 0;
 	bOverRide = false;
-	OverRidePos = 0.;
-	OverRideRatio = 0.;
-
-	//-- FLAG --//
-	fDoHome = 0;
-	fIMRS = 0;			// never report "home finished" before a home really ran
-	fMotorPause = 0;
-	fMotorHome = 0;
-	fDriving = 0;
-	IsHWLimitCW = 0;
-	IsHWLimitCCW = 0;
-	IsDRVRDY = 1;
-	IsORG = 0;
-	IsAlarm = 0;
-	IsInposition = 1;
-	IsServoOn = 0;
-	PrevIsServoOn = 0;
-	IsDriving = 0;
-	IsStop = 1;
-	IsZPhase = 0;
-	EncoderSet = 0;
-	AlramReset = 0;
-	EncoderType = 0;
-	IsHomming = 0;
-	fMoveCmdFailed = 0;
-	fHomeFailed = 0;
-
-	omove = 0;
-	moving = 0;			// no move is in progress at power on
-	relative = 0;
-
-	imrs = 0;			// not homed
-	irdy = 0;
-	isend = 0;
-	idrvalm = 0;
-	idrvrdy = 0;
-	canmovejog = 0;
-	ostart = 1;
-
-	ZPhaseSpeed = NULL;
-	HomeSpeed = NULL;
-	MovingDistance = 0.;
-	TimeDesier = 0.;
-	AdjustPosition = 0;
-	CurArrpos = 0.;
-	NxtArrpos = 0.;
-	Direction = 0;
-
-	memset(PositionArray, 0x00, sizeof(PositionArray));
-	memset(SpeedArray, 0x00, sizeof(SpeedArray));
-	memset(AccelArray, 0x00, sizeof(AccelArray));
-	memset(DecelArray, 0x00, sizeof(DecelArray));
-
-	/* Motor Config Data from Data File */
-	bCwLimitLevel = 0;
-	bCCwLimitLevel = 0;
-	bServoOnLevel = 0;
-	bAlarmLevel = 0;
-	bInpLevel = 0;
-	bInpEnable = 0;
-	nPulseOutM = 0;
-	nEncDir = 0;
-	nEncType = 0;
-	nMotorType = 0;
-	nSensorType = 0;
-
-	/* Motor Config Data from MMI Data */
-	MMI_PulseRate = 0;
-	MMI_MaxVel = 0;
-	MMI_JogVel = 0;
-	MMI_HomeVel = 0;
-	MMI_Accel = 0;
-	MMI_HomeLevel = 0;
-	MMI_LimitLevel = 0;
-	MMI_ServoOnLevel = 0;
-	MMI_AlarmLevel = 0;
-	MMI_InpUse = 0;
-	MMI_MtrDir = 0;
-	MMI_EncDir = 0;
-	MMI_MotorType = 0;
-	MMI_Enc_Type = 0;
-
-	bCamType = 0;
-
-	dwServoAlarmCode = 0;
-	memset(strServoAlarmName, 0x00, sizeof(strServoAlarmName));
-	dServoLoadRatio = 0.;
-
-	// EtherCat
-	dwBitOffset = 0;
-	dwDataBitLength = 0;
-	byTorqueValue = 0;
 }
 
 // Destructor Function
@@ -246,16 +113,7 @@ long CAjinMotor::GetTotalAxisCount()
 
 void CAjinMotor::SetCommandPosition(int Position)
 {
-	// AxmStatusSetPosMatch() is "Only RTEX use" (see AXM.h). On an EtherCAT
-	// network it is refused, so the command position used to keep its pre home
-	// value and the first absolute move after homing ran the whole stale offset.
-	DWORD dwRet = AxmStatusSetCmdPos(AxisNO, (double)Position);
-	if (dwRet != AXT_RT_SUCCESS) {
-		dwRet = AxmStatusSetPosMatch(AxisNO, (double)Position);		// RTEX
-	}
-	if (dwRet == AXT_RT_SUCCESS) {
-		CommandPosition = Position;
-	}
+	AxmStatusSetPosMatch(AxisNO, (double)Position);
 }
 
 int CAjinMotor::GetCommandPosition()
@@ -268,29 +126,7 @@ int CAjinMotor::GetCommandPosition()
 
 void CAjinMotor::SetActualPosition(int Position)
 {
-	DWORD dwRet = AxmStatusSetActPos(AxisNO, (double)Position);
-	if (dwRet != AXT_RT_SUCCESS) {
-		dwRet = AxmStatusSetPosMatch(AxisNO, (double)Position);		// RTEX
-	}
-	if (dwRet == AXT_RT_SUCCESS) {
-		ActualPosition = Position;
-	}
-}
-
-// Move the origin of the axis and verify it by reading both counters back.
-// Returns false when the motion board did not take the new origin : the caller
-// must not start an absolute move then, the axis would run to a target that is
-// expressed in the old coordinate system.
-bool CAjinMotor::SetOrigin(int Position, int Tolerance)
-{
-	SetCommandPosition(Position);
-	SetActualPosition(Position);
-
-	GetCommandPosition();
-	GetActualPosition();
-
-	return ((abs(CommandPosition - Position) <= Tolerance) &&
-			(abs(ActualPosition - Position) <= Tolerance));
+	AxmStatusSetPosMatch(AxisNO, (double)Position);
 }
 
 int CAjinMotor::GetActualPosition()
@@ -387,7 +223,7 @@ void CAjinMotor::SetMaxSpeed(int maxspeed)
 }
 
 // Relative S Curve Move
-DWORD CAjinMotor::MTSRMove(int Position)
+void CAjinMotor::MTSRMove(int Position)
 {
 	GetActualPosition();
 
@@ -399,10 +235,10 @@ DWORD CAjinMotor::MTSRMove(int Position)
 	}
 
 	AxmMotSetAbsRelMode(AxisNO, POS_REL_MODE);
-	return AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
+	AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
 }
 // Absolute S Curve Move
-DWORD CAjinMotor::MTSAMove(int Position)
+void CAjinMotor::MTSAMove(int Position)
 {
 	GetActualPosition();
 
@@ -424,28 +260,24 @@ DWORD CAjinMotor::MTSAMove(int Position)
 	fMotorPause = 0;*/
 	AxmMotSetAbsRelMode(AxisNO, POS_ABS_MODE);
 
-	DWORD dwRet;
 	if (bOverRide) {
-		dwRet = AxmOverrideAccelVelDecelAtPos(AxisNO,
+		AxmOverrideAccelVelDecelAtPos(AxisNO,
 		NxtArrpos, Speed, Accel, Decel,
 		OverRidePos, Speed * OverRideRatio, Accel * OverRideRatio, Decel * OverRideRatio, 0);
 		bOverRide = false;
 	}
 	else {
 		AxmMotSetAbsRelMode(AxisNO, POS_ABS_MODE);
-		dwRet = AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
+		AxmMoveStartPos(AxisNO, AdjustPosition, Speed, Accel, Decel);
 	}
 	fMotorPause = 0;
-
-	return dwRet;
 }
 
 // Continue S_Curve move
-DWORD CAjinMotor::MTSCMove()
+void CAjinMotor::MTSCMove()
 {
-	DWORD ret = AxmMoveVel(AxisNO, Speed, Accel, Decel);
+	int ret = AxmMoveVel(AxisNO, Speed, Accel, Decel);
 	//	printf("(%d)AxmMoveVel(%d,%ld,%ld,%ld)\n",ret,AxisNO,Speed,Accel,Decel);
-	return ret;
 }
 void CAjinMotor::GetMotorStatus()
 {
