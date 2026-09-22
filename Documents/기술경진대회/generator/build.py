@@ -31,6 +31,56 @@ def cap_under(slide, x, y, w, text, size=10.5):
          for t in text.split('|')])
 
 
+# 제목 글꼴(HY견고딕)에는 µ(U+00B5) 글리프가 없어 □ 로 떨어진다.
+# µ 한 글자만 본문 글꼴로 떼어내면 제목 인상은 그대로 두고 단위가 보인다.
+import copy, re
+from pptx.oxml.ns import qn
+
+def _set_face(run_el, face):
+    rPr = run_el.find(qn('a:rPr'))
+    if rPr is None:
+        return
+    for tag in ('a:latin', 'a:ea', 'a:cs'):
+        node = rPr.find(qn(tag))
+        if node is not None:
+            node.set('typeface', face)
+
+def micro_fix(shape):
+    if not shape.has_text_frame:
+        return
+    for para in shape.text_frame.paragraphs:
+        for r in list(para._p.findall(qn('a:r'))):
+            tnode = r.find(qn('a:t'))
+            text = tnode.text or ''
+            rPr = r.find(qn('a:rPr'))
+            latin = rPr.find(qn('a:latin')) if rPr is not None else None
+            if 'µ' not in text or latin is None or latin.get('typeface') != TITLE_FONT:
+                continue
+            proto = copy.deepcopy(r)
+            parts = [x for x in re.split('(µ)', text) if x]
+            tnode.text = parts[0]
+            if parts[0] == 'µ':
+                _set_face(r, BODY_FONT)
+            prev = r
+            for piece in parts[1:]:
+                nr = copy.deepcopy(proto)
+                nr.find(qn('a:t')).text = piece
+                if piece == 'µ':
+                    _set_face(nr, BODY_FONT)
+                prev.addnext(nr)
+                prev = nr
+
+def micro_fix_all(pres):
+    n = 0
+    for sl in pres.slides:
+        for sh in sl.shapes:
+            before = sh.has_text_frame and sh.text_frame.text
+            micro_fix(sh)
+            if before and 'µ' in before:
+                n += 1
+    return n
+
+
 SRC = '/tmp/claude-0/-home-user-SEQApp/c46c0310-bc87-528b-9dd4-74e4ac81297d/scratchpad/template.pptx'
 OUT = sys.argv[1] if len(sys.argv) > 1 else '/tmp/claude-0/-home-user-SEQApp/c46c0310-bc87-528b-9dd4-74e4ac81297d/scratchpad/out.pptx'
 
@@ -812,6 +862,8 @@ footnote(s, '구조가 지연 상수 하나로 닫히므로, 스캔 속도와 �
 lst = prs.slides._sldIdLst
 el = list(lst)[1]                    # '감사 합니다' 슬라이드를 맨 뒤로
 lst.remove(el); lst.append(el)
+
+micro_fix_all(prs)                   # 제목의 µ 가 □ 로 떨어지지 않게
 
 prs.save(OUT)
 print('saved', OUT, '· slides =', len(prs.slides.__iter__.__self__._sldIdLst))
