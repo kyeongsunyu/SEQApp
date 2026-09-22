@@ -202,7 +202,7 @@ bar = rect(s, 1.35, 3.52, 10.55, 0.62, RGBColor(0xE9, 0xEC, 0xF1), INK, 0.75)
 label_in(bar, '자재 (패널 · 전체 길이 약 200 mm · 높이 편차 목표 200 µm)', 13, False, INK)
 for cx in (3.425, 9.925):
     rect(s, cx - 0.01, 3.20, 0.022, 0.33, ACCENT_D)
-sc = arrow(s, 1.35, 4.30, 3.05, 0.34, ACCENT_D)
+sc = arrow(s, 1.35, 4.30, 3.05, 0.34, ACCENT_D, MSO_SHAPE.LEFT_ARROW)
 label_in(sc, '스캔 방향', 12, True, WHITE)
 para_block(s, 4.60, 4.34, 5.0, 0.30, [dict(text='X축 80 mm/s (연속 이동)', size=13, bold=True, color=INK)])
 fb = rrect(s, 0.95, 4.94, CW, 0.86, ACCENT_L, None, radius=0.05)
