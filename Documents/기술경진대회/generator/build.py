@@ -248,22 +248,22 @@ para_block(s, 1.05, FOCUS_Y - 0.30, 3.40, 0.26,
 
 # 조명부
 s.shapes.add_picture(asset('illum-spot.png'), Inches(5.00), Inches(2.18), height=Inches(3.20))
-cap_under(s, 4.95, 5.48, 3.66, '조명부 — 사각 조명(SPOT) 과 COAXIAL 이 같은 지점을 비춘다')
+cap_under(s, 4.95, 5.48, 3.66, '조명부 — 사측 조명(SPOT) 과 COAXIAL 이 같은 지점을 비춘다')
 
 # 설명 열
 OX, OW = 8.85, 3.93
 OPT = [('선행 측정계', 'Confocal 프로브 FS2404-2 와 컨트롤러 IFC2421 · 0–10 V = 0–2 mm · 2채널'),
        ('초점면', '노란 조명 광선이 모이는 끝단. 자재 표면이 이 면에 놓여야 초점이 맞는다'),
-       ('조명 경로', '사각 조명이 한 점으로 모이는 SPOT, 광축을 따라 들어가는 COAXIAL'),
-       ('Z축이 하는 일', '자재 표면을 매 순간 이 면에 올려두는 것 · 1 pulse = 0.1 µm')]
-yy = 2.18
+       ('조명 경로', '사측 조명이 한 점으로 모이는 SPOT, 광축을 따라 들어가는 COAXIAL'),
+       ('Z축이 하는 일', '표면을 매 순간 이 면에 올려두는 것 · 1 pulse = 0.1 µm')]
+yy = 2.16
 for head, body in OPT:
-    rrect(s, OX, yy, OW, 1.00, CARD, None, radius=0.05)
-    para_block(s, OX + 0.22, yy + 0.13, OW - 0.44, 0.26,
+    rrect(s, OX, yy, OW, 0.98, CARD, None, radius=0.05)
+    para_block(s, OX + 0.22, yy + 0.12, OW - 0.44, 0.26,
                [dict(text=head, size=12, bold=True, color=ACCENT_D)])
-    para_block(s, OX + 0.22, yy + 0.43, OW - 0.44, 0.46,
-               [dict(text=body, size=10.5, line_pct=120)])
-    yy += 1.08
+    para_block(s, OX + 0.22, yy + 0.41, OW - 0.44, 0.50,
+               [dict(text=body, size=10.5, line_pct=118)])
+    yy += 1.03
 banner(s, 6.32, '두 지점은 같은 Z 평면이고 스캔 방향으로만 72.5 mm 떨어져 있다 — '
                 '같은 높이를 다른 시각에 재는 것이 이 설계의 전부다', 13)
 
