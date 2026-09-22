@@ -191,6 +191,10 @@ para_block(s, 0.95, 6.40, CW - 0.10, 0.44, [
 
 # ================================================================ 5. 피드포워드 전환 — 선행 배치
 s = new('피드포워드 전환 — 선행 측정 구조')
+car = rect(s, 2.05, 1.86, 9.25, 0.26, ACCENT_L, ACCENT_D, 0.75)
+label_in(car, 'X축 캐리지 — 센서 · 카메라 · Z축이 한 몸으로 이동', 10.5, True, ACCENT_D)
+for cx in (3.425, 9.925):
+    rect(s, cx - 0.012, 2.12, 0.024, 0.09, ACCENT_D)
 sen = rrect(s, 2.05, 2.20, 2.75, 1.00, ACCENT_D, None, radius=0.06)
 label_in(sen, 'Confocal 센서 FS2404-2\n측정 범위 2 mm', 13.5, True, WHITE, line_pct=125)
 cam = rrect(s, 8.55, 2.20, 2.75, 1.00, NAVY, None, radius=0.06)
@@ -199,12 +203,14 @@ para_block(s, 4.90, 2.28, 3.55, 0.34,
            [dict(text='72.5 mm', size=17, bold=True, color=NAVY, align=PP_ALIGN.CENTER, font=TITLE_FONT)])
 arrow(s, 4.95, 2.72, 3.45, 0.30, ACCENT, MSO_SHAPE.LEFT_RIGHT_ARROW)
 bar = rect(s, 1.35, 3.52, 10.55, 0.62, RGBColor(0xE9, 0xEC, 0xF1), INK, 0.75)
-label_in(bar, '자재 (패널 · 전체 길이 약 200 mm · 높이 편차 목표 200 µm)', 13, False, INK)
+label_in(bar, '자재 (패널 · 전체 길이 약 200 mm · 높이 편차 목표 200 µm) — 고정', 13, False, INK)
 for cx in (3.425, 9.925):
     rect(s, cx - 0.01, 3.20, 0.022, 0.33, ACCENT_D)
 sc = arrow(s, 1.35, 4.30, 3.05, 0.34, ACCENT_D, MSO_SHAPE.LEFT_ARROW)
-label_in(sc, '스캔 방향', 12, True, WHITE)
-para_block(s, 4.60, 4.34, 5.0, 0.30, [dict(text='X축 80 mm/s (연속 이동)', size=13, bold=True, color=INK)])
+label_in(sc, 'X축 헤드 이동', 12, True, WHITE)
+para_block(s, 4.60, 4.34, 6.2, 0.30,
+           [dict(text='80 mm/s 연속 이동 · 자재는 고정, 헤드가 센서 쪽으로 나아간다',
+                 size=13, bold=True, color=INK)])
 fb = rrect(s, 0.95, 4.94, CW, 0.86, ACCENT_L, None, radius=0.05)
 label_in(fb, '906.25 ms  =  72.5 mm ÷ 80 mm/s     —     센서가 읽은 지점이 촬상점에 도착하기까지의 예비 시간',
          17, True, NAVY, PP_ALIGN.CENTER, font=TITLE_FONT)
