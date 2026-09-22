@@ -621,18 +621,24 @@ for r, row in enumerate(T92, 1):
              PP_ALIGN.LEFT if c == 4 else PP_ALIGN.CENTER)
 style_table(tb)
 RX3, RW3 = 8.98, 3.80
-ZC = [('D.O.F. 한 칸 보정', '0.84 ms', 't = 2√(35 ÷ 2×10⁸) · 삼각 프로파일 · 최대 83,700 pulse/s = 상한의 17 %'),
-      ('그동안 시료 이동', '67 µm', '제어 주기 2회 · 높이 샘플 2개 · 906 ms 예비 시간의 1/1,080'),
-      ('먼저 걸리는 쪽', '가속도', 'Vel 150,000 은 15 µm/ms 까지, Accel 200 M 은 10 µm/ms 까지 감당')]
+ZC = [('D.O.F. 한 칸 보정', '0.84 ms', 1.22,
+       ['v²/a = 112.5 > 35 pulse → 삼각 프로파일',
+        't = 2√(35 ÷ 2×10⁸) = 0.84 ms',
+        '최대 83,700 pulse/s = 상한의 17 %']),
+      ('그동안 시료 이동', '67 µm', 1.00,
+       ['제어 주기 2회 · 높이 샘플 2개 · 906 ms 예비 시간의 1/1,080']),
+      ('먼저 걸리는 쪽', '가속도', 1.00,
+       ['Vel 150,000 은 15 µm/ms 까지, Accel 200 M 은 10 µm/ms 까지 감당'])]
 yy = 2.18
-for h, v, t in ZC:
-    rrect(s, RX3, yy, RW3, 1.00, CARD, None, radius=0.05)
+for h, v, ch, lines in ZC:
+    rrect(s, RX3, yy, RW3, ch, CARD, None, radius=0.05)
     para_block(s, RX3 + 0.22, yy + 0.14, RW3 - 0.44, 0.26, [dict(text=h, size=11.5, bold=True, color=ACCENT_D)])
     para_block(s, RX3 + 0.22, yy + 0.14, RW3 - 0.44, 0.26, [dict(text=v, size=13, bold=True, color=NAVY, align=PP_ALIGN.RIGHT)])
-    para_block(s, RX3 + 0.22, yy + 0.48, RW3 - 0.44, 0.44, [dict(text=t, size=10.5, color=INK_SOFT, line_pct=120)])
-    yy += 1.07
-banner(s, 5.54, '10 µm/ms 에서 필요 가속도 200 M 과 현재 설정이 정확히 일치하고, 초점 정확도(2.5 µm ÷ 0.25 ms)도 같은 지점에서 만족된다', 13.5)
-footnote(s, '다만 여유가 정확히 0 인 균형점이다 — 초점 오차 2.5 µm + 데드밴드 1.0 µm = D.O.F. 3.5 µm. 사양으로 확정하려면 데드밴드 SKIP 으로 1 µm 를 회수해 두는 것이 안전하다.', 6.30)
+    para_block(s, RX3 + 0.22, yy + 0.48, RW3 - 0.44, ch - 0.60,
+               [dict(text=t, size=10.5, color=INK_SOFT, line_pct=118, space_after=2) for t in lines])
+    yy += ch + 0.07
+banner(s, 5.66, '10 µm/ms 에서 필요 가속도 200 M 과 현재 설정이 정확히 일치하고, 초점 정확도(2.5 µm ÷ 0.25 ms)도 같은 지점에서 만족된다', 13.5)
+footnote(s, '다만 여유가 정확히 0 인 균형점이다 — 초점 오차 2.5 µm + 데드밴드 1.0 µm = D.O.F. 3.5 µm. 사양으로 확정하려면 데드밴드 SKIP 으로 1 µm 를 회수해 두는 것이 안전하다.', 6.40)
 
 # ================================================================ 15. 실측 로그 검증
 s = new('실측 로그 검증 — 36,472행 · 6.9 MB')
