@@ -505,8 +505,13 @@ para_block(s, GX, 4.96, GW, 0.60, [dict(text='오차의 98 %가 데드밴드다.
 warn = rrect(s, 0.95, 5.52, CW, 0.72, RGBColor(0xFD, 0xF3, 0xE8), ORANGE, 0.75, 0.05)
 label_in(warn, '단, 계단 응답은 별개다 — 1차 IIR 의 95 % 정착은 3τ = 14.2 ms 이고 그동안 X축은 1.14 mm(약 3,400 라인)를 지나간다. '
                '큰 단차는 유효 대역에서 기각되므로 문제 구간은 대역 안에서 빠르게 변하는 곳뿐이다.', 12, True, ORANGE, PP_ALIGN.CENTER)
-footnote(s, '지연 보상 전 예측 1.24 µm 에서 현재 1.01 µm 로 내려갔고, 가정 조건 1 µm/ms 도 초과(200 %)에서 통과(36 %)로 바뀌었다 — '
-            '계산이 「정상 이미지 획득」이라는 현장 결과와 일치한다.', 6.42)
+para_block(s, 0.95, 6.28, CW - 0.10, 0.62, [
+    dict(text='실측 조건 0.04 µm/ms = 자재 편차 100 µm / 200 mm (= 0.5 µm/mm) × 스캔 80 mm/s',
+         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+    dict(text='제어 주기 양자화 0.01 µm = ±0.25 ms × 0.04 µm/ms  ·  합계 1.01 µm ÷ D.O.F. 3.5 µm = 29 %',
+         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+    dict(text='지연 보상 전 예측 1.24 µm 에서 현재 1.01 µm 로 내려갔고, 가정 조건 1 µm/ms 도 초과(200 %)에서 통과(36 %)로 바뀌었다.',
+         size=10, color=INK_SOFT, line_pct=118)])
 
 # ================================================================ 13. 자재 단차 대응
 s = new('자재 단차 대응과 초기 위치 정렬')
