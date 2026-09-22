@@ -830,34 +830,53 @@ style_table(tb)
 para_block(s, 0.95, 4.72, CW - 0.10, 0.30,
     [dict(text='추종 한계 10.0 µm/ms 는 실측 조건 0.04 µm/ms 의 250배, 개발 목표 0.08 µm/ms 의 125배 — 이 여유가 「정상 이미지 획득」의 근거다.', size=11.5, color=INK_SOFT)])
 
-# ================================================================ 18. 권고 조치와 확장성
-s = new('권고 조치와 확장 가능성')
-kicker(s, '현 요구는 이미 충족한다 — 아래는 장애 복구가 아니라 여유 확보가 목적이다')
-REC = [(0.95, 5.70, 'A. 측정으로 결정할 설정', '코드 수정이 아니라 검증 테스트로 결정', [
-            '정지 상태 전압 노이즈(p-p) 실측 하나로 데드밴드·필터를 동시에 판단',
-            '노이즈가 ±1 µm(±5 mV)보다 작으면 데드밴드 SKIP 이 유리 — 예산 1.00 µm 회수',
-            '필터는 군지연이 보상되어 정상상태 기여 0 — 근거는 노이즈와 계단 응답',
-            'Lead Control 은 유지 — SKIP 시 Δt 1.09 ms, 추종 한계 2.3 µm/ms 로 하락']),
-       (7.08, 5.70, 'B. 10 µm/ms 를 사양화할 경우', '여유가 정확히 0 인 균형점이라 둘 중 하나 필요', [
-            '① 데드밴드 SKIP — 비용 없이 1 µm 회수해 14 µm/ms (우선 권고)',
-            '② 제어 주기 250 µs — 가속도 400 M 동반 필요 (작업시간 211 µs = 84 %)',
-            '계단 전이가 문제되면 대칭(zero-phase) 필터 — 추가 지연 비용 없음',
-            'Setting.ini [ITEM2] 미반영 — 2번 카메라 운용 시 함께 맞출 것'])]
-for x, w, head, sub, lines in REC:
-    rrect(s, x, 2.12, w, 3.28, CARD, INK, 0.75, 0.03)
-    para_block(s, x + 0.28, 2.32, w - 0.55, 0.32, [dict(text=head, size=16, bold=True, color=NAVY)])
-    para_block(s, x + 0.28, 2.70, w - 0.55, 0.28, [dict(text=sub, size=11.5, color=ACCENT_D)])
-    para_block(s, x + 0.28, 3.06, w - 0.55, 2.10,
-               [dict(text=t, size=12, bullet='·', line_pct=120, space_after=8) for t in lines])
-CHIP = [('미확보 — Z축 실위치', '엔코더 되먹임이 없어 AxmStatusGetActPos 는 0.000. Confocal 기준 또는 외부 계측기 필요'),
-        ('미확보 — 초기 오프셋 분포', '패널 간 초기 높이 편차. 10장 정도의 초기 거리값 기록으로 확인된다'),
-        ('확장 — 스캔 속도 증속', '지연 상수 72.5 mm ÷ v 재계산. 120 mm/s → 604 ms · 추종 사양 동시 갱신')]
-for i, (h, t) in enumerate(CHIP):
+# ================================================================ 18. 파급 효과와 확장 가능성
+s = new('피드포워드 파급 효과 및 확장 가능성')
+kicker(s, '구조가 지연 상수 하나로 닫히므로, 선행 센서 1대와 상수 하나만 맞추면 전사 광학 검사 장비의 표준 초점 모듈이 된다')
+IMP = [('품질', '단차 구간에서도 정상 이미지', [
+            '초점 오차 1.01 µm — D.O.F. 3.5 µm 예산의 29 % 만 사용',
+            '측정점과 보정점이 분리되어 헌팅이 구조적으로 없다',
+            '딥 100–160 µm 는 유효 대역에서 기각, Z 는 직전 목표 유지']),
+       ('생산성', '증속 여유 912배를 확보', [
+            '추종 한계 10 µm/ms 대 실측 요구 0.011 µm/ms',
+            '제어 주기 500 µs · 38,007주기 초과 0 회',
+            '증속해도 다시 잡을 값은 72.5 mm ÷ v 하나']),
+       ('비용 · 이식', '엔코더 없이 개루프 구조 그대로', [
+            'Z축 모터·드라이버 교체 없이 설정만 바꿨다',
+            '0.43 → 10.0 µm/ms(23배)는 타이밍 정확도로 얻은 값',
+            '선행 거리와 속도만 맞추면 타 장비에 그대로 이식'])]
+for i, (h, sub, lines) in enumerate(IMP):
     x = 0.95 + i * (CW3 + GAP)
-    rrect(s, x, 5.54, CW3, 1.00, CARD_B, None, radius=0.05)
-    para_block(s, x + 0.22, 5.70, CW3 - 0.44, 0.26, [dict(text=h, size=12, bold=True, color=ACCENT_D)])
-    para_block(s, x + 0.22, 6.00, CW3 - 0.44, 0.46, [dict(text=t, size=10.5, line_pct=120)])
-footnote(s, '구조가 지연 상수 하나로 닫히므로, 스캔 속도와 선행 거리만 바꾸면 동일 설계를 타 검사 장비에 그대로 이식할 수 있다 — 전사 광학 검사 장비의 표준 초점 모듈로 확장 가능하다.', 6.68)
+    rrect(s, x, 2.06, CW3, 2.46, CARD, INK, 0.75, 0.03)
+    para_block(s, x + 0.26, 2.22, CW3 - 0.50, 0.30,
+               [dict(text=h, size=15, bold=True, color=NAVY)])
+    para_block(s, x + 0.26, 2.56, CW3 - 0.50, 0.28,
+               [dict(text=sub, size=11.5, color=ACCENT_D)])
+    para_block(s, x + 0.26, 2.90, CW3 - 0.50, 1.52,
+               [dict(text=t, size=11, bullet='·', line_pct=120, space_after=6) for t in lines])
+banner(s, 4.58, '확장 가능성 — 스캔 속도를 바꿔도 다시 잡을 값은 지연 상수 72.5 mm ÷ v 하나뿐이다',
+       13, h=0.42)
+T18 = [('80 mm/s  (현재)', '906.25 ms', '912배', '1.01 µm · 29 %', '240 kHz', '2.50 s'),
+       ('120 mm/s  (+50 %)', '604.17 ms', '608배', '1.02 µm · 29 %', '360 kHz', '1.67 s'),
+       ('160 mm/s  (2배)', '453.13 ms', '456배', '1.02 µm · 29 %', '480 kHz', '1.25 s')]
+tb = table(s, 0.95, 5.08, CW, 1.42, 4, 6,
+           col_w=[2.30, 1.90, 1.45, 2.10, 1.90, 2.28], header_h=0.40, row_h=0.34)
+for c, h in enumerate(['스캔 속도 v', '지연 상수 72.5 ÷ v', '추종 여유',
+                       '초점 오차 / D.O.F.', '카메라 라인 레이트', '1회 스캔 200 mm']):
+    cell(tb, 0, c, h, 11, True, WHITE, ACCENT_D, PP_ALIGN.CENTER if c else PP_ALIGN.LEFT)
+for r, row in enumerate(T18, 1):
+    for c, v in enumerate(row):
+        cell(tb, r, c, v, 11, c in (1, 2), NAVY if c in (1, 2) else INK,
+             RGBColor(0xEB, 0xF2, 0xF9) if r == 1 else (RGBColor(0xF7, 0xF9, 0xFC) if r % 2 else None),
+             PP_ALIGN.CENTER if c else PP_ALIGN.LEFT)
+style_table(tb)
+para_block(s, 0.95, 6.56, CW - 0.10, 0.40, [
+    dict(text='추종 여유 = 10 µm/ms ÷ (0.137 µm/mm × v) · 초점 오차 = 데드밴드 1.00 µm + 양자화 0.25 ms × 변화율 — '
+              '데드밴드가 지배하므로 속도를 올려도 예산 사용률은 29 % 로 거의 그대로다',
+         size=9.5, color=INK_SOFT, line_pct=118, space_after=1),
+    dict(text='증속의 실제 한계는 초점계가 아니라 카메라 라인 레이트와 조명 광량이다 · '
+              '10절 권고인 데드밴드 SKIP 을 적용하면 추종 한계가 14 µm/ms 로 올라가 여유가 한 단계 더 생긴다',
+         size=9.5, color=INK_SOFT, line_pct=118)])
 
 # ================================================================ 마무리
 lst = prs.slides._sldIdLst
