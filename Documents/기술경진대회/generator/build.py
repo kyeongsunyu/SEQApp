@@ -10,7 +10,26 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_TICK_MARK
+from pptx.enum.shapes import MSO_CONNECTOR
+from pptx.enum.dml import MSO_LINE_DASH_STYLE
+
 from deckkit import *
+
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
+def asset(name): return os.path.join(ASSETS, name)
+
+def dashed(slide, x1, y1, x2, y2, color=RED, w=1.4):
+    c = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,
+                                   Inches(x1), Inches(y1), Inches(x2), Inches(y2))
+    c.line.color.rgb = color; c.line.width = Pt(w)
+    c.line.dash_style = MSO_LINE_DASH_STYLE.DASH
+    return c
+
+def cap_under(slide, x, y, w, text, size=10.5):
+    return para_block(slide, x, y, w, 0.44,
+        [dict(text=t, size=size, color=INK_SOFT, align=PP_ALIGN.CENTER, line_pct=115)
+         for t in text.split('|')])
+
 
 SRC = '/tmp/claude-0/-home-user-SEQApp/c46c0310-bc87-528b-9dd4-74e4ac81297d/scratchpad/template.pptx'
 OUT = sys.argv[1] if len(sys.argv) > 1 else '/tmp/claude-0/-home-user-SEQApp/c46c0310-bc87-528b-9dd4-74e4ac81297d/scratchpad/out.pptx'
@@ -28,6 +47,11 @@ def drop_slides(prs, idxs):
 
 drop_slides(prs, range(1, 20))       # 2~20번 본문 삭제, 표지/감사 슬라이드 유지
 title_slide, thanks_slide = prs.slides[0], prs.slides[1]
+
+# 남겨둔 '감사 합니다' 슬라이드는 slide21.xml 을 점유한다. 본문을 20장 넘게 추가하면
+# python-pptx 가 같은 이름을 다시 배정해 파트가 덮어써지므로, 미리 비켜 둔다.
+from pptx.opc.packuri import PackURI
+thanks_slide.part.partname = PackURI('/ppt/slides/slide900.xml')
 
 def new(title, size=26):
     s = prs.slides.add_slide(LAY)
@@ -188,6 +212,49 @@ for i, (h, t) in enumerate(NOTE):
     rrect(s, x, 5.98, 5.85, 0.94, CARD, None, radius=0.05)
     para_block(s, x + 0.25, 6.14, 5.35, 0.28, [dict(text=h, size=13.5, bold=True, color=ACCENT_D)])
     para_block(s, x + 0.25, 6.46, 5.35, 0.42, [dict(text=t, size=11.5, line_pct=120)])
+
+# ================================================================ 5b. 광학 헤드와 조명
+s = new('촬상 광학 헤드와 조명')
+kicker(s, '선행 측정계와 촬상계가 같은 높이를 본다 — 다른 것은 재는 시각뿐이다')
+
+# 광학 헤드 : 초점면이 이미지 높이의 12.9 % 지점
+HH = 4.05; HY = 2.18
+FOCUS_Y = HY + HH * 0.129
+s.shapes.add_picture(asset('optical-head.png'), Inches(2.62), Inches(HY),
+                     height=Inches(HH))
+# 선행 프로브 : 원뿔 꼭짓점이 이미지 높이의 6.57 % 지점 → 초점면에 맞춘다
+PH = 1.80
+s.shapes.add_picture(asset('confocal-probe.png'),
+                     Inches(1.28), Inches(FOCUS_Y - PH * 0.0657), height=Inches(PH))
+cap_under(s, 0.95, FOCUS_Y - PH * 0.0657 + PH + 0.08, 1.35,
+          'FS2404-2|Confocal 변위센서|측정 범위 2 mm')
+s.shapes.add_picture(asset('confocal-controller.png'),
+                     Inches(0.95), Inches(5.05), width=Inches(1.35))
+cap_under(s, 0.95, 5.93, 1.35, 'IFC2421|센서 컨트롤러')
+dashed(s, 0.98, FOCUS_Y, 4.55, FOCUS_Y)
+para_block(s, 1.05, FOCUS_Y - 0.30, 3.40, 0.26,
+           [dict(text='측정면 = 초점면 (같은 높이)', size=10.5, bold=True, color=RED)])
+
+# 조명부
+s.shapes.add_picture(asset('illum-spot.png'), Inches(5.00), Inches(2.18), height=Inches(3.20))
+cap_under(s, 4.95, 5.48, 3.66, '조명부 — 사각 조명(SPOT) 과 COAXIAL 이 같은 지점을 비춘다')
+
+# 설명 열
+OX, OW = 8.85, 3.93
+OPT = [('선행 측정계', 'Confocal 프로브 FS2404-2 와 컨트롤러 IFC2421 · 0–10 V = 0–2 mm · 2채널'),
+       ('초점면', '노란 조명 광선이 모이는 끝단. 자재 표면이 이 면에 놓여야 초점이 맞는다'),
+       ('조명 경로', '사각 조명이 한 점으로 모이는 SPOT, 광축을 따라 들어가는 COAXIAL'),
+       ('Z축이 하는 일', '자재 표면을 매 순간 이 면에 올려두는 것 · 1 pulse = 0.1 µm')]
+yy = 2.18
+for head, body in OPT:
+    rrect(s, OX, yy, OW, 1.00, CARD, None, radius=0.05)
+    para_block(s, OX + 0.22, yy + 0.13, OW - 0.44, 0.26,
+               [dict(text=head, size=12, bold=True, color=ACCENT_D)])
+    para_block(s, OX + 0.22, yy + 0.43, OW - 0.44, 0.46,
+               [dict(text=body, size=10.5, line_pct=120)])
+    yy += 1.08
+banner(s, 6.32, '두 지점은 같은 Z 평면이고 스캔 방향으로만 72.5 mm 떨어져 있다 — '
+                '같은 높이를 다른 시각에 재는 것이 이 설계의 전부다', 13)
 
 # ================================================================ 6. 시스템 구성
 s = new('시스템 구성 — 측정 경로와 지령 경로')
@@ -492,6 +559,45 @@ for i, (head, body, fill, hc) in enumerate(LEG):
                [dict(text=head, size=11, bold=True, color=hc)])
     para_block(s, x + 0.20, 6.26, LGW - 0.40, 0.46,
                [dict(text=body, size=10, line_pct=120)])
+
+# ================================================================ 14b. 센서 실측 신호
+s = new('센서 실측 신호 — 평탄부 · 딥 · 무신호')
+kicker(s, 'sensorTOOL 실측 파형이 실운전 로그 수치와 그대로 맞는다')
+
+WX, WY, WW = 0.95, 2.15, 7.52
+WH = WW / 1.8994                               # 2000 × 1053
+s.shapes.add_picture(asset('sensortool-waveform.png'),
+                     Inches(WX), Inches(WY), Inches(WW), Inches(WH))
+# 평탄부 중앙 (이미지 폭 대비 %) — 파형 픽셀 스캔으로 산출
+for i, pct in enumerate([25.27, 34.48, 42.23, 49.95, 58.25], 1):
+    cx = WX + WW * pct / 100.0
+    tag = rrect(s, cx - 0.31, WY + WH * 0.355, 0.62, 0.24, WHITE, ACCENT_D, 0.75, 0.10)
+    label_in(tag, f'평탄 {i}', 9.5, True, ACCENT_D)
+cap_under(s, WX, WY + WH + 0.10, WW,
+          '평탄부 5개와 그 사이 딥 4개 · 딥 간격 548 ms (화면 좌표) = 로그 542 ms')
+
+SX, SW = 8.78, 4.00
+SIG = [('기준 전압 refV', '4.3918 V (0.8784 mm)'),
+       ('유효 대역', '4.00 – 4.55 V'),
+       ('평탄부 변화율', '0.0110 µm/ms'),
+       ('단차 깊이', '163.5 µm'),
+       ('딥 주기', '542 ms · 편차 0')]
+tb = table(s, SX, 2.15, SW, 2.30, 6, 2, col_w=[2.2, 1.8], header_h=0.38, row_h=0.38)
+for c, h in enumerate(['실운전 로그 기준', '값']):
+    cell(tb, 0, c, h, 11, True, WHITE, ACCENT_D, PP_ALIGN.RIGHT if c else PP_ALIGN.LEFT)
+for r, (k, v) in enumerate(SIG, 1):
+    cell(tb, r, 0, k, 10.5, False, INK, RGBColor(0xF7, 0xF9, 0xFC) if r % 2 else None)
+    cell(tb, r, 1, v, 10.5, True, NAVY, RGBColor(0xF7, 0xF9, 0xFC) if r % 2 else None, PP_ALIGN.RIGHT)
+style_table(tb)
+ns = rrect(s, SX, 4.62, SW, 1.62, RGBColor(0xFB, 0xEF, 0xEC), RED, 0.75, 0.05)
+para_block(s, SX + 0.22, 4.76, SW - 0.44, 0.26,
+           [dict(text='무신호 = 측정값이 아닌 고정 출력', size=12, bold=True, color=RED)])
+para_block(s, SX + 0.22, 5.08, SW - 0.44, 1.05, [
+    dict(text='Distance 1.960 mm 를 가리키는 그 순간 Intensity 0.000 % · ShutterTime 1000 µs(최대) — '
+              '노출을 올려도 빛이 돌아오지 않는 상태. 값 흔들림은 1 LSB(0.061 µm)뿐이다.',
+         size=10.5, line_pct=125)])
+footnote(s, '최소 0.677 · 최대 1.960 · 피크 대 피크 1.283 mm 가 로그 대조표(표 11-6)와 일치한다 — '
+            '화면과 로그가 독립적으로 같은 값을 가리킨다.', 6.52)
 
 # ================================================================ 14. Z축 구동 능력
 s = new('Z축 구동 능력 — 병목은 구동이 아니다')
