@@ -466,9 +466,13 @@ for head, val, sub, hot in UP:
     yy += 0.90
 tag = rrect(s, RX2, yy + 0.12, RW2, 0.52, NAVY, None, radius=0.06)
 label_in(tag, '지배 상한  10 µm/ms', 14, True, WHITE)
-para_block(s, 0.95, 6.34, 7.35, 0.60,
-    [dict(text='지배 상한에서 ②′와 ③이 같은 값에서 만난다 — 구동 능력과 초점 정확도가 동시에 한계에 닿는 균형점이라 '
-                '어느 한쪽만 올려서는 전체가 오르지 않는다.', size=11, color=INK_SOFT, line_pct=120)])
+para_block(s, 0.95, 6.30, 7.35, 0.62, [
+    dict(text='보상 전 Δt 5.75 ms = 필터 군지연 4.50 + 틱 양자화 1.00 + 지연 상수 절삭 0.25 ms (표 7-1)',
+         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+    dict(text='예산 2.5 µm = D.O.F. 3.5 − 데드밴드 1.0 µm · 데드밴드 SKIP 시 분자가 3.5 로 바뀐다',
+         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+    dict(text='지배 상한에서 ②′와 ③이 만난다 — 어느 한쪽만 올려서는 전체가 오르지 않는다.',
+         size=10, color=INK_SOFT, line_pct=118)])
 
 # ================================================================ 12. 오차 예산 vs D.O.F.
 s = new('오차 예산과 D.O.F. 판정')
