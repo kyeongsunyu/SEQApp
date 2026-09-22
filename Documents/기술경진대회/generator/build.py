@@ -686,36 +686,35 @@ for x, w, h, t in NB:
     para_block(s, x + 0.24, 5.82, w - 0.48, 0.28, [dict(text=h, size=12.5, bold=True, color=ACCENT_D)])
     para_block(s, x + 0.24, 6.14, w - 0.48, 0.58, [dict(text=t, size=11, line_pct=125)])
 
-# ================================================================ 16. 모션 지령
-s = new('모션 지령 결과 — 정반대의 두 실패')
-kicker(s, '수락 여부를 가르는 것은 부하나 통신이 아니라 그 주기의 이동 거리 하나다')
-MOT = [('거부 4151', 'IN_NONMOTION', '322건 · 69.4 %', '0.380 pulse', '0.087 ms',
-        '명령이 도착했을 때 이미 멈춰 있었다 (가속 중으로 읽힘 97.8 %)', '너무 빨라서', RED),
-       ('수락', 'Override 성공', '36건 · 7.8 %', '5.592 pulse', '0.334 ms',
-        '아직 가속 중이라 진로를 바꿀 여유가 남아 있는 좁은 창', '—', RGBColor(0x1F, 0x6B, 0x4A)),
-       ('거부 4168', 'CACULATION', '106건 · 22.8 %', '29.022 pulse', '0.762 ms',
-        '이미 계산된 감속 곡선을 남은 거리로 다시 짤 수 없었다 (감속 중 89.6 %)', '너무 커서', ORANGE)]
-for i, (code, name, cnt, mv, tt, why, tag, col) in enumerate(MOT):
-    x = 0.95 + i * (CW3 + GAP)
-    rrect(s, x, 2.12, CW3, 3.30, CARD, INK, 0.75, 0.03)
-    hd = rrect(s, x, 2.12, CW3, 0.62, col, None, radius=0.03)
-    label_in(hd, code + '   ' + name, 13.5, True, WHITE)
-    rows = [('건수', cnt), ('이동량 p50', mv), ('소요 시간', tt)]
-    yy = 2.92
-    for k, v in rows:
-        para_block(s, x + 0.26, yy, CW3 - 0.52, 0.28, [dict(text=k, size=11.5, color=INK_SOFT)])
-        para_block(s, x + 0.26, yy, CW3 - 0.52, 0.28, [dict(text=v, size=13, bold=True, color=NAVY, align=PP_ALIGN.RIGHT)])
-        hline(s, x + 0.26, yy + 0.32, CW3 - 0.52)
-        yy += 0.50
-    para_block(s, x + 0.26, 4.46, CW3 - 0.52, 0.68, [dict(text=why, size=11.5, line_pct=125)])
-    if tag != '—':
-        t = rrect(s, x + 0.26, 5.02, 1.45, 0.34, col, None, radius=0.10)
-        label_in(t, tag, 11.5, True, WHITE)
-para_block(s, 0.95, 5.62, CW, 1.10, [
-    dict(text='AxmMoveStartPos(축 정지 중) 5,224건은 전량 수락 — 전체 5,688건 중 수락 92.5 %', size=13, bold=True, color=ACCENT_D, space_after=7),
-    dict(text='초점 오차로는 이어지지 않는다. 지령이 절대위치이므로 거부된 값은 누적되지 않고 다음 수락 지령이 올바른 좌표로 데려간다. '
-              '실측 회복 지연 p50 0 ms · p95 2 ms · 최대 8 ms, 그동안 목표가 낡는 양은 p95 1.30 µm(D.O.F. 예산의 37 %)로 최대치에서만 초과한다.',
-         size=12.5, line_pct=130)])
+# ================================================================ 15b. 측정된 패턴
+s = new('측정된 패턴 — 추종 대상과 기각 대상')
+kicker(s, '센서가 읽은 표면은 평탄부 5개와 단차 딥 4개가 규칙적으로 반복된다')
+SW2 = 11.83
+s.shapes.add_picture(asset('surface-segments.png'), Inches(0.95), Inches(2.06),
+                     Inches(SW2), Inches(SW2 / 3.4929))
+PAT = [(0.95, '추종 대상 — 평탄부의 완만한 높이 변화', ACCENT_L, ACCENT_D, [
+            '평탄부 2 → 5 : +17.8 µm / 1,626 ms  =  0.0110 µm/ms',
+            '딥 주기 542 ms (4회 편차 0) · 평탄부 길이 424–429 ms ×5',
+            '유효 대역 0.800–0.910 mm 안 · refV 0.8784 mm']),
+       (6.99, '기각 대상 — 단차 딥과 그 경계', RGBColor(0xFB, 0xEF, 0xEC), RED, [
+            '깊이 163.5 µm · 길이 106–114 ms ×4 — 유효 대역 아래로 이탈',
+            '경계 전이율 중앙 8.06 · 최대 82.3 µm/ms 로 추종 한계 10 초과',
+            '기각 중에는 직전 유효 목표를 유지하고 시간축은 그대로 둔다(8절)'])]
+for x, head, fill, hc, lines in PAT:
+    rrect(s, x, 5.58, 5.79, 1.34, fill, None, radius=0.05)
+    para_block(s, x + 0.24, 5.72, 5.31, 0.28,
+               [dict(text=head, size=12.5, bold=True, color=hc)])
+    para_block(s, x + 0.24, 6.04, 5.31, 0.80,
+               [dict(text=t, size=10.5, bullet='·', line_pct=118, space_after=3) for t in lines])
+
+# ================================================================ 15c. 전압 · 지령 궤적
+s = new('전압 · 지령 궤적 — 같은 곡선이 901.5 ms 뒤에 나간다')
+kicker(s, '산출(측정 시각)과 적용(축 전달)은 같은 곡선이고 시각만 다르다 — 그 간격이 선행 측정으로 확보한 예비 시간이다')
+TW = 11.00
+s.shapes.add_picture(asset('volt-cmd-trace.png'), Inches((SLIDE_W - TW) / 2), Inches(2.06),
+                     Inches(TW), Inches(TW / 2.5163))
+footnote(s, '계산 900.66 ms 대비 실측 901.5 ms — Lead Control 이 실제로는 거의 걸리지 않기 때문이다'
+            '(주기당 지령 변화 중앙값 0.03 µm). 이 901.5 는 결과값이므로 FocusDelayMs 에 넣지 않는다.', 6.62)
 
 # ================================================================ 17. 종합 판정
 s = new('종합 판정 — 현 요구 충족')
