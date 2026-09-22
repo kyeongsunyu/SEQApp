@@ -291,10 +291,13 @@ para_block(s, 0.95, 6.14, CW, 0.75, [
 
 # ================================================================ 7. 지연 상수 유도
 s = new('지연 상수 906.25 ms 의 유도')
-fx = rrect(s, 0.95, 2.14, 5.55, 1.10, CARD, ACCENT_D, 0.75, 0.04)
-label_in(fx, 't delay  =  센서–카메라 거리 ÷ X축 속도\n= 72.5 mm ÷ 80 mm/s  =  906.25 ms',
-         15, True, NAVY, line_pct=135, font=TITLE_FONT)
-bullets(s, 0.95, 3.40, 5.55, [
+fx = rrect(s, 0.95, 2.14, 5.55, 1.32, CARD, ACCENT_D, 0.75, 0.04)
+label_in(fx, 't delay  =  센서–카메라 거리 ÷ X축 속도\n= 72.5 mm ÷ 80 mm/s  =  906.25 ms'
+             '\n906.25 ms ÷ Z축 이동 0.84 ms = 1,080배',
+         15, True, NAVY, line_pct=132, font=TITLE_FONT)
+_r = fx.text_frame.paragraphs[2].runs[0]
+_r.font.size = Pt(11.5); _r.font.color.rgb = ACCENT_D
+bullets(s, 0.95, 3.58, 5.55, [
     'applyTime = sampleTime + 906.25 ms — 절대 시각 기준',
     '주기를 1 ms → 500 µs 로 바꿔도 지연은 그대로 유지',
     '「906 샘플」은 1 ms 주기 표현 · 500 µs 에서는 1,812 샘플',
