@@ -384,6 +384,37 @@ para_block(s, 0.95, 6.12, CW, 0.86, [
     dict(text='스캔 라인 피치 0.333 µm/라인   ·   라인 레이트 240 kHz   ·   1회 스캔 2.5 s   ·   초점 갱신 간격 120 라인(X축 40 µm)   ·   선행 구간 약 217,500 라인',
          size=12, line_pct=125)])
 
+# ================================================================ 7b. 운용 화면 대조
+s = new('운용 화면 — 설정값과 리포트 상수의 대조')
+kicker(s, 'AutoFocusProject 실행 화면 · Position 0.1 µm = 1 pulse · Velocity 0.1 µm/s · Acc/Dec 0.1 µm/s² — '
+          '화면의 모든 수치가 이 단위계다')
+s.shapes.add_picture(asset('af-ui.png'), Inches(0.95), Inches(2.05), height=Inches(4.70))
+TUI = [('Delay Time (ms)', '906.250', '72.5 mm ÷ 80 mm/s · 5절 FocusDelayMs', False),
+       ('Lead Control', '사용', 'Z축 이동시간만큼 선행 지령 · 7절', False),
+       ('Deadband / Filter', '사용 / 사용', '±5 mV(±1 µm) · IIR α 0.10 · 7절', False),
+       ('Reference Voltage', '4.391787 V', '초점 기준 전압 refV 4.3918 V · 8절', False),
+       ('Valid Min / Max V', '4.000 / 4.550 V', '유효 대역 — 밖은 기각 · 8절', False),
+       ('Accel / Decel', '200,000,000', '20 m/s² = 200 M · 9절 표 9-2', False),
+       ('Vel', '100,000', '10 µm/ms — 리포트 운용값 150,000 과 다름', True),
+       ('Home Offset #1', '66,992', '홈 복귀 오프셋 6.6992 mm · 리포트 미기재', False)]
+tb = table(s, 5.00, 2.10, 7.78, 3.90, 9, 3,
+           col_w=[2.30, 1.90, 3.58], header_h=0.42, row_h=0.435)
+for c, h in enumerate(['화면 항목 (Item#1)', '화면값', '의미 · 근거']):
+    cell(tb, 0, c, h, 12, True, WHITE, ACCENT_D, PP_ALIGN.CENTER if c == 1 else PP_ALIGN.LEFT)
+for r, (k, v, meaning, warn) in enumerate(TUI, 1):
+    for c, txt in enumerate((k, v, meaning)):
+        cell(tb, r, c, txt, 11, c == 1,
+             ORANGE if warn and c == 1 else (NAVY if c == 1 else INK),
+             RGBColor(0xFD, 0xF3, 0xE8) if warn else (RGBColor(0xF7, 0xF9, 0xFC) if r % 2 else None),
+             PP_ALIGN.CENTER if c == 1 else PP_ALIGN.LEFT)
+style_table(tb)
+al = rrect(s, 5.00, 6.06, 7.78, 0.88, RGBColor(0xFB, 0xEF, 0xEC), ORANGE, 0.75, 0.04)
+para_block(s, 5.22, 6.15, 7.34, 0.72, [
+    dict(text='발표 전 확인 — Vel 화면값 100,000(10 µm/ms) 대 리포트 운용값 150,000(15 µm/ms)',
+         size=11, bold=True, color=RED, line_pct=118, space_after=3),
+    dict(text='Item#2 기준 전압 5.000 V · 유효 대역 3.200–3.500 V 는 초기값 그대로 — 2번 카메라 운용 전 확정 필요(10절)',
+         size=10.5, color=INK_SOFT, line_pct=118)])
+
 # ================================================================ 8. 제어 주기 실측 검증
 s = new('제어 주기 실측 검증 — 500 µs')
 kicker(s, '실장비 측정값 · 실앱 20초 · 카메라 2채널 동시 구동 · 매 주기 로깅 OFF 조건')
