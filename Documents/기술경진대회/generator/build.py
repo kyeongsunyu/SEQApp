@@ -466,13 +466,15 @@ for head, val, sub, hot in UP:
     yy += 0.90
 tag = rrect(s, RX2, yy + 0.12, RW2, 0.52, NAVY, None, radius=0.06)
 label_in(tag, '지배 상한  10 µm/ms', 14, True, WHITE)
-para_block(s, 0.95, 6.30, 7.35, 0.62, [
+para_block(s, 0.95, 6.22, 7.35, 0.74, [
     dict(text='보상 전 Δt 5.75 ms = 필터 군지연 4.50 + 틱 양자화 1.00 + 지연 상수 절삭 0.25 ms (표 7-1)',
-         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+         size=9.5, color=INK_SOFT, line_pct=115, space_after=1),
     dict(text='예산 2.5 µm = D.O.F. 3.5 − 데드밴드 1.0 µm · 데드밴드 SKIP 시 분자가 3.5 로 바뀐다',
-         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+         size=9.5, color=INK_SOFT, line_pct=115, space_after=1),
+    dict(text='향상 배수 10.00 ÷ 0.43 = 23배 — 축을 바꾼 것이 아니라 타이밍 오차를 줄여 얻은 값이다',
+         size=9.5, color=INK_SOFT, line_pct=115, space_after=1),
     dict(text='지배 상한에서 ②′와 ③이 만난다 — 어느 한쪽만 올려서는 전체가 오르지 않는다.',
-         size=10, color=INK_SOFT, line_pct=118)])
+         size=9.5, color=INK_SOFT, line_pct=115)])
 
 # ================================================================ 12. 오차 예산 vs D.O.F.
 s = new('오차 예산과 D.O.F. 판정')
@@ -505,13 +507,15 @@ para_block(s, GX, 4.96, GW, 0.60, [dict(text='오차의 98 %가 데드밴드다.
 warn = rrect(s, 0.95, 5.52, CW, 0.72, RGBColor(0xFD, 0xF3, 0xE8), ORANGE, 0.75, 0.05)
 label_in(warn, '단, 계단 응답은 별개다 — 1차 IIR 의 95 % 정착은 3τ = 14.2 ms 이고 그동안 X축은 1.14 mm(약 3,400 라인)를 지나간다. '
                '큰 단차는 유효 대역에서 기각되므로 문제 구간은 대역 안에서 빠르게 변하는 곳뿐이다.', 12, True, ORANGE, PP_ALIGN.CENTER)
-para_block(s, 0.95, 6.28, CW - 0.10, 0.62, [
+para_block(s, 0.95, 6.22, CW - 0.10, 0.74, [
     dict(text='실측 조건 0.04 µm/ms = 자재 편차 100 µm / 200 mm (= 0.5 µm/mm) × 스캔 80 mm/s',
-         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+         size=9.5, color=INK_SOFT, line_pct=115, space_after=1),
     dict(text='제어 주기 양자화 0.01 µm = ±0.25 ms × 0.04 µm/ms  ·  합계 1.01 µm ÷ D.O.F. 3.5 µm = 29 %',
-         size=10, color=INK_SOFT, line_pct=118, space_after=1),
+         size=9.5, color=INK_SOFT, line_pct=115, space_after=1),
+    dict(text='정착 시간 3τ = 14.2 ms · τ = −T ÷ ln(1−α) = −0.5 ms ÷ ln 0.9 = 4.746 ms (α = 0.10, T = 0.5 ms)',
+         size=9.5, color=INK_SOFT, line_pct=115, space_after=1),
     dict(text='지연 보상 전 예측 1.24 µm 에서 현재 1.01 µm 로 내려갔고, 가정 조건 1 µm/ms 도 초과(200 %)에서 통과(36 %)로 바뀌었다.',
-         size=10, color=INK_SOFT, line_pct=118)])
+         size=9.5, color=INK_SOFT, line_pct=115)])
 
 # ================================================================ 13. 자재 단차 대응
 s = new('자재 단차 대응과 초기 위치 정렬')
@@ -692,9 +696,11 @@ for r, row in enumerate(MARG, 1):
              ACCENT_L if hot else (RGBColor(0xF7, 0xF9, 0xFC) if r % 2 else None),
              PP_ALIGN.CENTER if c else PP_ALIGN.LEFT)
 style_table(tb)
-para_block(s, RX4, 4.78, RW4, 0.50,
-           [dict(text='실측 요구 변화율 0.0110 µm/ms (X축 환산 0.137 µm/mm)  ·  순시 p99 1.879 µm/ms 는 센서 노이즈 — 지배 상한 대비 순시 여유 5배',
-                 size=11.5, line_pct=125)])
+para_block(s, RX4, 4.74, RW4, 0.86, [
+    dict(text='실측 요구 변화율 0.0110 µm/ms (X축 환산 0.137 µm/mm) · 순시 p99 1.879 µm/ms 는 센서 노이즈',
+         size=10.5, line_pct=120, space_after=3),
+    dict(text='여유 = 각 상한 ÷ 추종 대상 0.01097 µm/ms (평탄부 2→5 : +17.8 µm / 1,626 ms) → 10 ÷ 0.01097 = 912배',
+         size=10.5, color=INK_SOFT, line_pct=120)])
 NB = [(0.95, 5.85, '적용 시프트 — 계산 900.66 vs 실측 901.5 ms',
        'Lead Control 이 실제로는 거의 걸리지 않는다. 주기당 지령 변화가 중앙값 0.03 µm(0.3 pulse)에 그쳐 선행 시간이 사실상 0 이다 — 오류가 아니라 예시값과 실동작의 차이다.'),
       (7.08, 5.70, '로깅 ON 조건에서의 비용',
