@@ -133,7 +133,7 @@ def retext(shape, pidx, text, size=None, bold=None, font=None, color=None):
 for sh in title_slide.shapes:
     if sh.name == '직사각형 8':
         retext(sh, 0, '피드포워드 오토포커스', 54, True, TITLE_FONT, NAVY)
-        retext(sh, 2, '민수개발팀   윤경현', 22, True, BODY_FONT, INK)
+        retext(sh, 2, '민수개발팀   유경선, 이기성, 최중건', 22, True, BODY_FONT, INK)
         retext(sh, 3, '2026. 09. 01', 30, True)
     elif sh.name == 'Text 1':
         sh.left, sh.width = Inches(1.55), Inches(10.3)
@@ -144,7 +144,7 @@ for sh in title_slide.shapes:
 # ================================================================ 2. 개발 배경 및 개발 목적
 s = new('개발 배경 및 개발 목적')
 kicker(s, '동축(Co-axial) AFM 의 두 가지 구조적 한계를 선행 측정 피드포워드로 해소한다')
-LX, LW, RX, RW = 0.95, 5.45, 6.95, 5.65
+LX, LW, RX, RW = 0.95, 5.78, 6.88, 5.72
 pill(s, LX, 2.12, 2.95, 0.50, '기술 개발 필요성')
 pill(s, RX, 2.12, 2.95, 0.50, '핵심 개선 방향')
 LB = [
