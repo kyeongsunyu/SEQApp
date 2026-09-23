@@ -618,8 +618,11 @@ kicker(s, '앞 절이 「정상 신호일 때 얼마나 정확한가」라면, �
 FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'panel-scan-area.png')
 FW, FH, LW = 4.36, 3.30, 5.10     # 실자재 사진 698×528 (1.322:1)
 s.shapes.add_picture(FIG, Inches(0.95), Inches(2.08), Inches(FW), Inches(FH))
+# 촬상 지점(TAB–패널 부착부) 표시 — 원본 698×528 px 좌표 (95,162)-(593,179)
+rect(s, 0.95 + FW * 95 / 698, 2.08 + FH * 162 / 528,
+     FW * (593 - 95) / 698, FH * (179 - 162) / 528, None, RED, 1.25)
 para_block(s, 0.95, 5.46, LW, 0.44, [
-    dict(text='촬상 영역 = 본딩 모듈 열 바로 아래의 가로 띠 · Line-scan FOV 22.4 mm',
+    dict(text='빨간 박스 = 촬상 지점(TAB–패널 부착부) · Line-scan FOV 22.4 mm',
          size=10, color=INK_SOFT, line_pct=115, space_after=2),
     dict(text='모듈 상면 = 평탄부(추종) · 모듈 간극 = 딥(기각)',
          size=10, color=INK_SOFT, line_pct=115)])
