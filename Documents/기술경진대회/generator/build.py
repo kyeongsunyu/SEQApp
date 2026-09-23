@@ -619,7 +619,7 @@ FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'panel-
 FW, FH, LW = 4.36, 3.30, 5.10     # 실자재 사진 698×528 (1.322:1)
 s.shapes.add_picture(FIG, Inches(0.95), Inches(2.08), Inches(FW), Inches(FH))
 para_block(s, 0.95, 5.46, LW, 0.44, [
-    dict(text='빨간 박스 = 촬상 영역 · Line-scan FOV 22.4 mm',
+    dict(text='촬상 영역 = 본딩 모듈 열 바로 아래의 가로 띠 · Line-scan FOV 22.4 mm',
          size=10, color=INK_SOFT, line_pct=115, space_after=2),
     dict(text='모듈 상면 = 평탄부(추종) · 모듈 간극 = 딥(기각)',
          size=10, color=INK_SOFT, line_pct=115)])
@@ -652,7 +652,7 @@ for y, head, code, lines in DEAL:
 
 # ================================================================ 13b. 촬상 영역 상세
 s = new('촬상 영역 상세 — 평탄–딥 구조의 실체')
-kicker(s, '그림 8-1 의 빨간 띠를 단면으로 자른 것 — 11절 로그의 딥 주기 542 ms · 단차 163.5 µm 가 이 형상의 시간축 표현이다')
+kicker(s, '그림 8-1 의 촬상 띠를 단면으로 자른 것 — 11절 로그의 딥 주기 542 ms · 단차 163.5 µm 가 이 형상의 시간축 표현이다')
 DET = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'panel-detail.png')
 DW, DH = 9.45, 3.69               # 상세 이미지 1066×416 (2.5625:1)
 s.shapes.add_picture(DET, Inches(0.85 + (11.93 - DW) / 2), Inches(2.02), Inches(DW), Inches(DH))
