@@ -299,13 +299,13 @@ para_block(s, 1.05, FOCUS_Y - 0.30, 3.40, 0.26,
 
 # 조명부
 s.shapes.add_picture(asset('illum-spot.png'), Inches(5.00), Inches(2.18), height=Inches(3.20))
-cap_under(s, 4.95, 5.48, 3.66, '조명부 — 사측 조명(SPOT) 과 COAXIAL 이 같은 지점을 비춘다')
+cap_under(s, 4.95, 5.48, 3.66, '조명부 — 사축 조명(SPOT) 과 COAXIAL 이 같은 지점을 비춘다')
 
 # 설명 열
 OX, OW = 8.85, 3.93
 OPT = [('선행 측정계', 'Confocal 프로브 FS2404-2 와 컨트롤러 IFC2421 · 0–10 V = 0–2 mm · 2채널'),
        ('초점면', '노란 조명 광선이 모이는 끝단. 자재 표면이 이 면에 놓여야 초점이 맞는다'),
-       ('조명 경로', '사측 조명이 한 점으로 모이는 SPOT, 광축을 따라 들어가는 COAXIAL'),
+       ('조명 경로', '사축 조명이 한 점으로 모이는 SPOT, 광축을 따라 들어가는 COAXIAL'),
        ('Z축이 하는 일', '표면을 매 순간 이 면에 올려두는 것 · 1 pulse = 0.1 µm')]
 yy = 2.16
 for head, body in OPT:
@@ -380,8 +380,8 @@ eff = rrect(s, 0.95, 5.26, CW, 0.74, ACCENT_L, None, radius=0.05)
 label_in(eff, '부수 효과 — 주기를 1 ms → 500 µs 로 줄이면서 X 방향 높이 샘플 간격이 80 µm → 40 µm 로 조밀해졌다 (짧은 주기의 요철 포착)',
          13.5, True, NAVY, PP_ALIGN.CENTER)
 para_block(s, 0.95, 6.12, CW, 0.86, [
-    dict(text='촬상 조건 (정상 획득 이미지 3,200 × 600,000 px · 8-bit · 1.8 GB 에서 역산)', size=12.5, bold=True, color=ACCENT_D, space_after=5),
-    dict(text='스캔 라인 피치 0.333 µm/라인   ·   라인 레이트 240 kHz   ·   1회 스캔 2.5 s   ·   초점 갱신 간격 120 라인(X축 40 µm)   ·   선행 구간 약 217,500 라인',
+    dict(text='촬상 조건 (라인 피치 0.35 µm 확정 · 정상 획득 이미지 3,200 × 600,000 px · 8-bit · 1.8 GB)', size=12.5, bold=True, color=ACCENT_D, space_after=5),
+    dict(text='스캔 라인 피치 0.35 µm/라인  ·  라인 레이트 228.6 kHz  ·  1회 스캔 2.5 s  ·  초점 갱신 간격 114 라인(X축 40 µm)  ·  선행 구간 207,100 라인',
          size=12, line_pct=125)])
 
 # ================================================================ 7b. 운용 화면 대조
@@ -656,8 +656,8 @@ kicker(s, '그림 8-1 의 촬상 띠를 단면으로 자른 것 — 11절 로그
 DET = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'panel-detail.png')
 DW, DH = 9.45, 3.69               # 상세 이미지 1066×416 (2.5625:1)
 s.shapes.add_picture(DET, Inches(0.85 + (11.93 - DW) / 2), Inches(2.02), Inches(DW), Inches(DH))
-LEG = [('노란 모듈 상면 — 평탄부', '추종 대상. 이 면들의 완만한 높이차가 실측 0.011 µm/ms 다', RGBColor(0xFD, 0xF3, 0xE8), ORANGE),
-       ('모듈 사이 간극 — 딥', '바닥이 100–160 µm 아래. 경계 전이율 최대 82.3 µm/ms 로 기각', CARD, INK),
+LEG = [('TAB-패널 부착부 평탄 정도', '추종 대상. 이 면들의 완만한 높이차가 실측 0.011 µm/ms 다', RGBColor(0xFD, 0xF3, 0xE8), ORANGE),
+       ('TAB-TAB 사이 간극 — 딥', '바닥이 100–160 µm 아래. 경계 전이율 최대 82.3 µm/ms 로 기각', CARD, INK),
        ('붉은 원 — 촬상 시작 지점', '광학모듈이 PANEL 시작점에 놓이는 곳 · 지연 큐의 기준점(3절)', RGBColor(0xFB, 0xEF, 0xEC), RED),
        ('하단 — 실제 촬상 이미지', '그 지점의 Line-scan 결과. 리드·정렬 마크가 분해되면 정상 획득', CARD_B, ACCENT_D)]
 LGW, LGGAP = 2.7625, 0.26
@@ -887,9 +887,9 @@ for i, (h, sub, lines) in enumerate(IMP):
                [dict(text=t, size=11, bullet='·', line_pct=120, space_after=6) for t in lines])
 banner(s, 4.58, '확장 가능성 — 스캔 속도를 바꿔도 다시 잡을 값은 지연 상수 72.5 mm ÷ v 하나뿐이다',
        13, h=0.42)
-T18 = [('80 mm/s  (현재)', '906.25 ms', '912배', '1.01 µm · 29 %', '240 kHz', '2.50 s'),
-       ('120 mm/s  (+50 %)', '604.17 ms', '608배', '1.02 µm · 29 %', '360 kHz', '1.67 s'),
-       ('160 mm/s  (2배)', '453.13 ms', '456배', '1.02 µm · 29 %', '480 kHz', '1.25 s')]
+T18 = [('80 mm/s  (현재)', '906.25 ms', '912배', '1.01 µm · 29 %', '228.6 kHz', '2.50 s'),
+       ('120 mm/s  (+50 %)', '604.17 ms', '608배', '1.02 µm · 29 %', '342.9 kHz', '1.67 s'),
+       ('160 mm/s  (2배)', '453.13 ms', '456배', '1.02 µm · 29 %', '457.1 kHz', '1.25 s')]
 tb = table(s, 0.95, 5.08, CW, 1.42, 4, 6,
            col_w=[2.30, 1.90, 1.45, 2.10, 1.90, 2.28], header_h=0.40, row_h=0.34)
 for c, h in enumerate(['스캔 속도 v', '지연 상수 72.5 ÷ v', '추종 여유',
