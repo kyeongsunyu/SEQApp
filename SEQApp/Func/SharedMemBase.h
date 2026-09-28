@@ -377,6 +377,8 @@ enum SCANTRIGGER_VALIDATE
 	SCANTRIGGER_VALIDATE_NOT_HOMED     = 10,  // axis has not found its origin
 	SCANTRIGGER_VALIDATE_PULSEWIDTH    = 11,  // pulse width under 1 us, or too wide
                                               // for the line period the speed gives
+	SCANTRIGGER_VALIDATE_INDEXPOS      = 12,  // motor index 50..53 are not in order,
+                                              // or the trigger block has no length
 };
 //-------------------------------//
 // Cycle progress, reported in _scantriggerdisplay.nState.
@@ -407,11 +409,15 @@ enum SCANTRIGGER_STATE
 // The trigger pulse width is entered rather than chosen here, because only the
 // camera datasheet says what it needs. SEQ checks it against the line period
 // and refuses a width that cannot fit.
+//
+// The four positions are NOT here. They live in the motor index table, at
+// SCANTRIGGER_IDX_* in SEQ04_ScanTrigger.cpp, which is the machine's own way of
+// naming a position and is what the motor screen already edits. Indices 50 and
+// above sit in MOTOR_COMMON, so they belong to the machine rather than to one
+// device, which is what a scan geometry is.
 using _scantriggerrecipe = struct
 {
 	unsigned int uAxisNo;        // 0 based, same numbering the MMI uses elsewhere
-	double dTrigStart;           // mm, absolute
-	double dTrigEnd;             // mm, absolute
 	double dPitch;               // mm   (5 um = 0.005)
 	double dSpeed;               // mm/s, entered
 	double dPulseWidthUS;        // us,   entered
@@ -423,10 +429,9 @@ using _scantriggerrecipe = struct
 	double dDecel;               // mm/s^2
 	int    nDirection;           // +1 / -1
 
-	// Two words shorter than it was, because dPulseWidthUS took their place.
-	// The struct is the same size either way, so a build that disagrees about
-	// this field still agrees about every offset after it.
-	unsigned int uReserved[6];
+	// Grows and shrinks with the fields above so the struct keeps its size, and
+	// a build that disagrees about one of them still agrees about the rest.
+	unsigned int uReserved[10];
 };
 //-------------------------------//
 // Everything SEQ computes from the recipe. Kept on one side only so the two
@@ -437,8 +442,10 @@ using _scantriggerdisplay = struct
 	double dLineRate;            // Hz    = speed / pitch, derived here
 	int    nLineCount;           // lines = (end - start) / pitch
 	double dScanTime;            // s     = (end - start) / speed
-	double dMotionStart;         // mm    where the move actually begins
-	double dMotionEnd;           // mm    where it ends
+	double dMotionStart;         // mm    where the move begins, index 50
+	double dMotionEnd;           // mm    where it ends, index 53
+	double dTrigStart;           // mm    trigger block lower, index 51
+	double dTrigEnd;             // mm    trigger block upper, index 52
 
 	double dPitchCounts;         // pitch expressed in encoder counts
 	bool   bPitchIsInteger;      // false means the comparator will round

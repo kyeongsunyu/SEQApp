@@ -49,6 +49,24 @@ static const bool   SCANTRIGGER_ENC_REVERSE = true;
 // in counts. Large enough not to trip on a count of dither at the start.
 static const double SCANTRIGGER_WRONG_WAY_COUNTS = 200.0;
 
+// Where the scan geometry lives: four entries in the motor index table, which
+// the motor screen edits and the operator names. 50 and above are MOTOR_COMMON
+// rows, so they belong to the machine rather than to one device - which is what
+// a scan geometry is.
+//
+//   50  SCAN START          approach begins here
+//   51  SCAN TRIGGER START  block lower - the axis is already at speed
+//   52  SCAN TRIGGER END    block upper
+//   53  SCAN END            deceleration ends here
+//
+// Splitting the move from the block is the point: the old cycle ran from the
+// block's own start to its own end, so the ramps happened inside the block and
+// the first and last lines were taken while the stage was still changing speed.
+static const int    SCANTRIGGER_IDX_MOTION_START = 50;
+static const int    SCANTRIGGER_IDX_TRIG_START   = 51;
+static const int    SCANTRIGGER_IDX_TRIG_END     = 52;
+static const int    SCANTRIGGER_IDX_MOTION_END   = 53;
+
 // Counter channel and trigger output the camera is wired to.
 static const long   SCANTRIGGER_CHANNEL = 0;
 static const DWORD  SCANTRIGGER_OUTPORT = 0x1;
@@ -163,6 +181,17 @@ static double ScanTriggerPulseWidthUS(void)
 }
 
 //////////////////////////////////////////////////////////////////////////
+// A motor index position in mm. PositionArray holds pulses, because the MMI
+// multiplies by the pulse rate before sending the table.
+static double ScanTriggerIndexMM(const CAjinMotor* pAxis, int nIdx)
+{
+	if (pAxis == NULL || pAxis->MMI_PulseRate == 0) {
+		return 0.0;
+	}
+	return pAxis->PositionArray[nIdx] / (double)pAxis->MMI_PulseRate;
+}
+
+//////////////////////////////////////////////////////////////////////////
 static CAjinMotor* ScanTriggerAxis(void)
 {
 	const int nIdx = (int)ScanTriggerRecipe.uAxisNo + 1;
@@ -195,20 +224,36 @@ int CSeqMain::ScanTriggerValidate(void)
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_SPEED_ZERO;
 		return ScanTriggerDisplay.nValidateCode;
 	}
-	if (ScanTriggerRecipe.dTrigEnd <= ScanTriggerRecipe.dTrigStart) {
-		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_RANGE;
+	if (pAxis->MMI_PulseRate == 0) {
+		// Without it the index table cannot be read as mm at all.
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_PULSERATE;
 		return ScanTriggerDisplay.nValidateCode;
 	}
 
-	const double dLength = ScanTriggerRecipe.dTrigEnd - ScanTriggerRecipe.dTrigStart;
+	// The geometry, straight out of the motor index table.
+	ScanTriggerDisplay.dMotionStart = ScanTriggerIndexMM(pAxis, SCANTRIGGER_IDX_MOTION_START);
+	ScanTriggerDisplay.dTrigStart   = ScanTriggerIndexMM(pAxis, SCANTRIGGER_IDX_TRIG_START);
+	ScanTriggerDisplay.dTrigEnd     = ScanTriggerIndexMM(pAxis, SCANTRIGGER_IDX_TRIG_END);
+	ScanTriggerDisplay.dMotionEnd   = ScanTriggerIndexMM(pAxis, SCANTRIGGER_IDX_MOTION_END);
+
+	// 50 <= 51 < 52 <= 53. The run-up and run-out may be zero length - that is
+	// a scan with no room to accelerate outside the block, which is what the
+	// cycle used to do - but the block itself has to have length, and nothing
+	// may be out of order.
+	if (ScanTriggerDisplay.dTrigEnd   <= ScanTriggerDisplay.dTrigStart ||
+		ScanTriggerDisplay.dTrigStart <  ScanTriggerDisplay.dMotionStart ||
+		ScanTriggerDisplay.dMotionEnd <  ScanTriggerDisplay.dTrigEnd) {
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_INDEXPOS;
+		return ScanTriggerDisplay.nValidateCode;
+	}
+
+	const double dLength = ScanTriggerDisplay.dTrigEnd - ScanTriggerDisplay.dTrigStart;
 
 	// speed = pitch x line rate, entered from the speed end. The camera is then
 	// set from a line rate nobody had to work out by hand.
 	ScanTriggerDisplay.dSpeed       = ScanTriggerRecipe.dSpeed;
 	ScanTriggerDisplay.dLineRate    = ScanTriggerDisplay.dSpeed / ScanTriggerRecipe.dPitch;
 	ScanTriggerDisplay.dScanTime    = dLength / ScanTriggerDisplay.dSpeed;
-	ScanTriggerDisplay.dMotionStart = ScanTriggerRecipe.dTrigStart;
-	ScanTriggerDisplay.dMotionEnd   = ScanTriggerRecipe.dTrigEnd;
 	ScanTriggerDisplay.nLineCount   = (int)(dLength / ScanTriggerRecipe.dPitch + 0.5);
 
 	// The comparator counts whole encoder counts. A fractional pitch is
@@ -226,11 +271,6 @@ int CSeqMain::ScanTriggerValidate(void)
 	}
 	if (ScanTriggerDisplay.nLineCount <= 0 || ScanTriggerDisplay.nLineCount > SCANTRIGGER_MAX_LINES) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_LINECOUNT;
-		return ScanTriggerDisplay.nValidateCode;
-	}
-	if (pAxis->MMI_PulseRate == 0) {
-		// Without it mm cannot be converted to the pulses the axis moves in.
-		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_PULSERATE;
 		return ScanTriggerDisplay.nValidateCode;
 	}
 	if (ScanTriggerDisplay.dSpeed * (double)pAxis->MMI_PulseRate > (double)pAxis->MaxSpeed) {
@@ -308,14 +348,35 @@ void CSeqMain::ScanTriggerM(void)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 1;
 
-	printf("[SCANTRIGGER] start %.4f -> %.4f mm, pitch %.4f mm (%.0f counts),"
-		   " %.1f mm/s -> %.0f Hz, %.2f us pulse, %d lines, %.3f s\n",
-		   ScanTriggerRecipe.dTrigStart, ScanTriggerRecipe.dTrigEnd, ScanTriggerRecipe.dPitch,
-		   ScanTriggerDisplay.dPitchCounts, ScanTriggerDisplay.dSpeed, ScanTriggerDisplay.dLineRate,
+	printf("[SCANTRIGGER] move %.4f -> %.4f mm [idx %d..%d],"
+		   " trigger %.4f .. %.4f mm [idx %d..%d], run-up %.3f mm, run-out %.3f mm\n",
+		   ScanTriggerDisplay.dMotionStart, ScanTriggerDisplay.dMotionEnd,
+		   SCANTRIGGER_IDX_MOTION_START, SCANTRIGGER_IDX_MOTION_END,
+		   ScanTriggerDisplay.dTrigStart, ScanTriggerDisplay.dTrigEnd,
+		   SCANTRIGGER_IDX_TRIG_START, SCANTRIGGER_IDX_TRIG_END,
+		   ScanTriggerDisplay.dTrigStart - ScanTriggerDisplay.dMotionStart,
+		   ScanTriggerDisplay.dMotionEnd - ScanTriggerDisplay.dTrigEnd);
+
+	printf("[SCANTRIGGER] pitch %.4f mm (%.0f counts), %.1f mm/s -> %.0f Hz,"
+		   " %.2f us pulse, %d lines, %.3f s\n",
+		   ScanTriggerRecipe.dPitch, ScanTriggerDisplay.dPitchCounts,
+		   ScanTriggerDisplay.dSpeed, ScanTriggerDisplay.dLineRate,
 		   ScanTriggerPulseWidthUS(), ScanTriggerDisplay.nLineCount, ScanTriggerDisplay.dScanTime);
 
+	// The distance the stage has to get up to speed in, against the distance it
+	// needs. Accel is set to Speed * 5 in the RUN state below.
+	{
+		const double dRunUp  = ScanTriggerDisplay.dTrigStart - ScanTriggerDisplay.dMotionStart;
+		const double dNeeded = ScanTriggerDisplay.dSpeed / 10.0;   // v^2 / (2 * v*5)
+		if (dRunUp < dNeeded) {
+			printf("[SCANTRIGGER] WARNING: run-up is %.3f mm but reaching %.1f mm/s needs"
+				   " %.3f mm. The first lines will be taken while still accelerating.\n",
+				   dRunUp, ScanTriggerDisplay.dSpeed, dNeeded);
+		}
+	}
+
 	sprintf(strFileLog, "Scan start %.4f to %.4f mm, %d lines",
-			ScanTriggerRecipe.dTrigStart, ScanTriggerRecipe.dTrigEnd, ScanTriggerDisplay.nLineCount);
+			ScanTriggerDisplay.dTrigStart, ScanTriggerDisplay.dTrigEnd, ScanTriggerDisplay.nLineCount);
 	LOG_TRACE(strFileLog);
 }
 
@@ -450,7 +511,7 @@ void CSeqMain::ScanTriggerC(void)
 		pAxis->Speed = ScanTriggerDisplay.dSpeed * dRate;
 		pAxis->Accel = fabs(pAxis->Speed * 5);
 		pAxis->Decel = pAxis->Accel;
-		pAxis->MTSAMove((int)(ScanTriggerRecipe.dTrigStart * dRate + 0.5));
+		pAxis->MTSAMove((int)(ScanTriggerDisplay.dMotionStart * dRate + 0.5));
 		g_tmScanTriggerSettle.SetTime();
 		g_nScanTriggerState = SCANTRIGGER_WAIT_START;
 		break;
@@ -473,7 +534,7 @@ void CSeqMain::ScanTriggerC(void)
 		// The counter works in raw encoder counts - AxcMotSetMoveUnitPerPulse is
 		// CN2CH-only and does nothing on this board - so the preset is in counts.
 		if (!AjinTrigger->ResetScanOrigin(SCANTRIGGER_CHANNEL,
-										  ScanTriggerRecipe.dTrigStart / SCANTRIGGER_ENC_UNIT_MM)) {
+										  ScanTriggerDisplay.dMotionStart / SCANTRIGGER_ENC_UNIT_MM)) {
 			ScanTriggerAbort("could not preset the counter position");
 			break;
 		}
@@ -484,8 +545,8 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dwTriggerOutPort = SCANTRIGGER_OUTPORT;
 		cfg.dMoveUnitPerPulse= SCANTRIGGER_ENC_UNIT_MM;
 		cfg.dPitch           = ScanTriggerRecipe.dPitch;
-		cfg.dScanStart       = ScanTriggerRecipe.dTrigStart;
-		cfg.dScanEnd         = ScanTriggerRecipe.dTrigEnd;
+		cfg.dScanStart       = ScanTriggerDisplay.dTrigStart;
+		cfg.dScanEnd         = ScanTriggerDisplay.dTrigEnd;
 		cfg.dPulseWidthUS    = ScanTriggerPulseWidthUS();
 		cfg.dLineRateHz      = ScanTriggerDisplay.dLineRate;
 		cfg.dwTriggerLevel   = 1;
@@ -516,7 +577,7 @@ void CSeqMain::ScanTriggerC(void)
 		pAxis->Speed = ScanTriggerDisplay.dSpeed * dRate;
 		pAxis->Accel = fabs(pAxis->Speed * 5);
 		pAxis->Decel = pAxis->Accel;
-		pAxis->MTSAMove((int)(ScanTriggerRecipe.dTrigEnd * dRate + 0.5));
+		pAxis->MTSAMove((int)(ScanTriggerDisplay.dMotionEnd * dRate + 0.5));
 
 		g_bScanTriggerMoving = false;
 		g_tmScanTriggerMoveStart.SetTime();
@@ -585,7 +646,7 @@ void CSeqMain::ScanTriggerC(void)
 		double dEncEnd = 0.0;
 		if (AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dEncEnd)) {
 			const double dEncTravel = (dEncEnd - g_dScanTriggerEncArm) * SCANTRIGGER_ENC_UNIT_MM;
-			const double dCmdTravel = ScanTriggerRecipe.dTrigEnd - ScanTriggerRecipe.dTrigStart;
+			const double dCmdTravel = ScanTriggerDisplay.dMotionEnd - ScanTriggerDisplay.dMotionStart;
 
 			printf("[SCANTRIGGER] counter travelled %.4f mm, the stage was told to travel"
 				   " %.4f mm\n", dEncTravel, dCmdTravel);
