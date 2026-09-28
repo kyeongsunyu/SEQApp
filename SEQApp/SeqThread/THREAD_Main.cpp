@@ -66,6 +66,11 @@ UINT CSeqMain::SEQ_Main_Thread(LPVOID param)
 	
 	printf("Sequence Start\n");
 
+	// When this file was compiled. Twice now a screen full of wrong numbers has
+	// been a stale executable rather than wrong arithmetic, and there was no way
+	// to tell the two apart from the outside. Now there is.
+	printf("[BUILD] SEQApp compiled %s %s\n", __DATE__, __TIME__);
+
 	sprintf(strFileLog, "%s", "Sequence Start");
 	LOG_TRACE(strFileLog);
 
