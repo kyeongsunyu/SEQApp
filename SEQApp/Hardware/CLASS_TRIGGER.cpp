@@ -9,10 +9,6 @@
 //  them here degrades to a log line instead.
 //==========================================================================
 
-// Pulse width to aim for, in us. CounterAgent used 10 us and that train was
-// seen on a scope; 2 us was not, at the time base the scan was watched with.
-static const double SUGGESTED_PULSE_US = 10.0;
-
 typedef DWORD (__stdcall *PFN_AXC_CH_DW)  (long, DWORD);
 typedef DWORD (__stdcall *PFN_AXC_PATTERN)(long, long, DWORD);
 typedef DWORD (__stdcall *PFN_AXC_CH_DWP) (long, DWORD*);
@@ -398,25 +394,23 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	const double dUpperCnt = cfg.dScanEnd   * dCountsPerMM;
 	const double dPitchCnt = floor(cfg.dPitch * dCountsPerMM + 0.5);
 
-	// Pulse width. cfg.dPulseWidthUS is the floor, not the answer: a 2 us pulse
-	// is a twentieth of a division at 40 us/div and is easy to miss on a scope
-	// entirely, which is not a property you want in the signal you are trying
-	// to confirm. CounterAgent used 10 us here and that train was seen, so aim
-	// for the same, capped at 40 % of the trigger period so a fast line rate
-	// cannot end up with the output high more than it is low.
-	double dPulseUS = cfg.dPulseWidthUS;
+	// The pulse width is what the caller asked for, not what this function
+	// would have preferred. It used to be raised towards 10 us here, which was
+	// right while nobody could enter one and wrong the moment somebody could:
+	// only the camera datasheet knows what the camera needs, and silently
+	// widening a number the operator typed is not a service.
+	//
+	// The caller checks it against the line period. Printing the period here
+	// too is what tells the person at the scope where to set the timebase,
+	// which is how a pulse train that was there all along got missed once.
+	const double dPulseUS = cfg.dPulseWidthUS;
 	if (cfg.dLineRateHz > 0.0) {
 		const double dPeriodUS = 1.0e6 / cfg.dLineRateHz;
-		double dWant = SUGGESTED_PULSE_US;
-		if (dWant > dPeriodUS * 0.4) {
-			dWant = dPeriodUS * 0.4;
-		}
-		if (dWant > dPulseUS) {
-			dPulseUS = dWant;
-		}
-		printf("[TRIGGER] ch%ld pulse %.2f us every %.1f us (%.0f Hz)."
-			   " On a scope: rising edge, NORMAL sweep, 20 us/div or faster.\n",
-			   ch, dPulseUS, dPeriodUS, cfg.dLineRateHz);
+		printf("[TRIGGER] ch%ld pulse %.2f us every %.1f us (%.0f Hz), %.1f %% duty."
+			   " On a scope: rising edge, NORMAL sweep, %.0f us/div or faster.\n",
+			   ch, dPulseUS, dPeriodUS, cfg.dLineRateHz,
+			   dPulseUS / dPeriodUS * 100.0,
+			   (dPulseUS < 10.0) ? 20.0 : dPeriodUS / 4.0);
 	}
 
 	//< Position period mode

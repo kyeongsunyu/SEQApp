@@ -368,13 +368,15 @@ enum SCANTRIGGER_VALIDATE
 	SCANTRIGGER_VALIDATE_AXIS          = 1,   // axis number out of range, or not built
 	SCANTRIGGER_VALIDATE_RANGE         = 2,   // end is not beyond start
 	SCANTRIGGER_VALIDATE_PITCH         = 3,   // pitch is not positive
-	SCANTRIGGER_VALIDATE_LINERATE      = 4,   // line rate is not positive
+	SCANTRIGGER_VALIDATE_SPEED_ZERO    = 4,   // entered speed is not positive
 	SCANTRIGGER_VALIDATE_PITCH_FRACTION= 5,   // pitch is not a whole number of counts
-	SCANTRIGGER_VALIDATE_SPEED         = 6,   // derived speed exceeds the axis maximum
+	SCANTRIGGER_VALIDATE_SPEED_MAX     = 6,   // entered speed exceeds the axis maximum
 	SCANTRIGGER_VALIDATE_LINECOUNT     = 7,   // no lines, or more than the cap
 	SCANTRIGGER_VALIDATE_NO_COUNTER    = 8,   // no counter channel to trigger from
 	SCANTRIGGER_VALIDATE_PULSERATE     = 9,   // axis pulse rate unset, mm cannot convert
 	SCANTRIGGER_VALIDATE_NOT_HOMED     = 10,  // axis has not found its origin
+	SCANTRIGGER_VALIDATE_PULSEWIDTH    = 11,  // pulse width under 1 us, or too wide
+                                              // for the line period the speed gives
 };
 //-------------------------------//
 // Cycle progress, reported in _scantriggerdisplay.nState.
@@ -394,18 +396,25 @@ enum SCANTRIGGER_STATE
 //-------------------------------//
 // Line scan trigger recipe. Positions are absolute machine coordinates in mm.
 //
-// The operator enters four values; the stage speed is derived, not entered,
-// because speed, line rate and pitch are one relation:
+// Speed, line rate and pitch are one relation:
 //     speed [mm/s] = pitch [mm] x line rate [Hz]
-// Entering speed as well would over-specify it and let the pitch land on a
-// fraction of an encoder count, which the hardware comparator then rounds.
+// so exactly two of the three can be entered. The operator enters the pitch,
+// which the optics fix, and the speed, which is what the machine is actually
+// commanded to do and what the tact time is argued about in. SEQ derives the
+// line rate from those two and reports it back, so the camera is set from a
+// number nobody had to work out by hand.
+//
+// The trigger pulse width is entered rather than chosen here, because only the
+// camera datasheet says what it needs. SEQ checks it against the line period
+// and refuses a width that cannot fit.
 using _scantriggerrecipe = struct
 {
 	unsigned int uAxisNo;        // 0 based, same numbering the MMI uses elsewhere
 	double dTrigStart;           // mm, absolute
 	double dTrigEnd;             // mm, absolute
 	double dPitch;               // mm   (5 um = 0.005)
-	double dLineRate;            // Hz
+	double dSpeed;               // mm/s, entered
+	double dPulseWidthUS;        // us,   entered
 
 	// Reserved. The cycle runs at constant velocity through the trigger block,
 	// so these are carried but not used yet. Present now so that adding the
@@ -413,15 +422,19 @@ using _scantriggerrecipe = struct
 	double dAccel;               // mm/s^2
 	double dDecel;               // mm/s^2
 	int    nDirection;           // +1 / -1
-	unsigned int uReserved[8];
+
+	// Two words shorter than it was, because dPulseWidthUS took their place.
+	// The struct is the same size either way, so a build that disagrees about
+	// this field still agrees about every offset after it.
+	unsigned int uReserved[6];
 };
 //-------------------------------//
 // Everything SEQ computes from the recipe. Kept on one side only so the two
 // programs cannot disagree about what a recipe means.
 using _scantriggerdisplay = struct
 {
-	double dSpeed;               // mm/s  = pitch x line rate
-	double dLineRate;            // Hz    echoed back after validation
+	double dSpeed;               // mm/s  echoed back after validation
+	double dLineRate;            // Hz    = speed / pitch, derived here
 	int    nLineCount;           // lines = (end - start) / pitch
 	double dScanTime;            // s     = (end - start) / speed
 	double dMotionStart;         // mm    where the move actually begins

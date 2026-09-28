@@ -52,7 +52,16 @@ static const double SCANTRIGGER_WRONG_WAY_COUNTS = 200.0;
 // Counter channel and trigger output the camera is wired to.
 static const long   SCANTRIGGER_CHANNEL = 0;
 static const DWORD  SCANTRIGGER_OUTPORT = 0x1;
-static const double SCANTRIGGER_PULSE_US = 2.0;       // camera minimum is 1.0
+// Bounds on the pulse width the operator enters. The floor is the shortest
+// pulse a camera input can be relied on to see at all; the ceiling is a
+// fraction of the line period, so the output cannot end up high for more of
+// the line than it is low.
+static const double SCANTRIGGER_PULSE_MIN_US   = 1.0;
+static const double SCANTRIGGER_PULSE_MAX_DUTY = 0.4;
+
+// Used only when the recipe carries nothing, which is what a database written
+// before the pulse width was an entered value looks like.
+static const double SCANTRIGGER_PULSE_DEFAULT_US = 10.0;
 
 // A scan longer than this is a data entry mistake, not a recipe.
 static const int    SCANTRIGGER_MAX_LINES = 2000000;
@@ -143,6 +152,17 @@ static void ScanTriggerLogCounter(const char* pszWhen)
 }
 
 //////////////////////////////////////////////////////////////////////////
+// The pulse width the recipe carries, or the default when it carries nothing.
+// A recipe saved before the width became an entered value reads back as zero,
+// and zero would fail validation for a reason the operator never chose.
+static double ScanTriggerPulseWidthUS(void)
+{
+	return (ScanTriggerRecipe.dPulseWidthUS > 0.0)
+			   ? ScanTriggerRecipe.dPulseWidthUS
+			   : SCANTRIGGER_PULSE_DEFAULT_US;
+}
+
+//////////////////////////////////////////////////////////////////////////
 static CAjinMotor* ScanTriggerAxis(void)
 {
 	const int nIdx = (int)ScanTriggerRecipe.uAxisNo + 1;
@@ -161,7 +181,6 @@ int CSeqMain::ScanTriggerValidate(void)
 	memset(&ScanTriggerDisplay, 0, sizeof(ScanTriggerDisplay));
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	ScanTriggerDisplay.nTriggerCount = g_nScanTriggerLastCount;
-	ScanTriggerDisplay.dLineRate = ScanTriggerRecipe.dLineRate;
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (pAxis == NULL) {
@@ -172,8 +191,8 @@ int CSeqMain::ScanTriggerValidate(void)
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_PITCH;
 		return ScanTriggerDisplay.nValidateCode;
 	}
-	if (ScanTriggerRecipe.dLineRate <= 0.0) {
-		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_LINERATE;
+	if (ScanTriggerRecipe.dSpeed <= 0.0) {
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_SPEED_ZERO;
 		return ScanTriggerDisplay.nValidateCode;
 	}
 	if (ScanTriggerRecipe.dTrigEnd <= ScanTriggerRecipe.dTrigStart) {
@@ -183,7 +202,10 @@ int CSeqMain::ScanTriggerValidate(void)
 
 	const double dLength = ScanTriggerRecipe.dTrigEnd - ScanTriggerRecipe.dTrigStart;
 
-	ScanTriggerDisplay.dSpeed       = ScanTriggerRecipe.dPitch * ScanTriggerRecipe.dLineRate;
+	// speed = pitch x line rate, entered from the speed end. The camera is then
+	// set from a line rate nobody had to work out by hand.
+	ScanTriggerDisplay.dSpeed       = ScanTriggerRecipe.dSpeed;
+	ScanTriggerDisplay.dLineRate    = ScanTriggerDisplay.dSpeed / ScanTriggerRecipe.dPitch;
 	ScanTriggerDisplay.dScanTime    = dLength / ScanTriggerDisplay.dSpeed;
 	ScanTriggerDisplay.dMotionStart = ScanTriggerRecipe.dTrigStart;
 	ScanTriggerDisplay.dMotionEnd   = ScanTriggerRecipe.dTrigEnd;
@@ -212,7 +234,17 @@ int CSeqMain::ScanTriggerValidate(void)
 		return ScanTriggerDisplay.nValidateCode;
 	}
 	if (ScanTriggerDisplay.dSpeed * (double)pAxis->MMI_PulseRate > (double)pAxis->MaxSpeed) {
-		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_SPEED;
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_SPEED_MAX;
+		return ScanTriggerDisplay.nValidateCode;
+	}
+
+	// The entered pulse width, against the line period the entered speed gives.
+	// Too narrow and the camera never sees it; wider than the period and the
+	// output has no gap between lines at all.
+	const double dPeriodUS = 1.0e6 / ScanTriggerDisplay.dLineRate;
+	if (ScanTriggerPulseWidthUS() < SCANTRIGGER_PULSE_MIN_US ||
+		ScanTriggerPulseWidthUS() > dPeriodUS * SCANTRIGGER_PULSE_MAX_DUTY) {
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_PULSEWIDTH;
 		return ScanTriggerDisplay.nValidateCode;
 	}
 	if (AjinTrigger == NULL || AjinTrigger->GetChannelCount() <= SCANTRIGGER_CHANNEL) {
@@ -277,10 +309,10 @@ void CSeqMain::ScanTriggerM(void)
 	bit.ScanTriggerRun = 1;
 
 	printf("[SCANTRIGGER] start %.4f -> %.4f mm, pitch %.4f mm (%.0f counts),"
-		   " %.0f Hz, %.1f mm/s, %d lines, %.3f s\n",
+		   " %.1f mm/s -> %.0f Hz, %.2f us pulse, %d lines, %.3f s\n",
 		   ScanTriggerRecipe.dTrigStart, ScanTriggerRecipe.dTrigEnd, ScanTriggerRecipe.dPitch,
-		   ScanTriggerDisplay.dPitchCounts, ScanTriggerRecipe.dLineRate, ScanTriggerDisplay.dSpeed,
-		   ScanTriggerDisplay.nLineCount, ScanTriggerDisplay.dScanTime);
+		   ScanTriggerDisplay.dPitchCounts, ScanTriggerDisplay.dSpeed, ScanTriggerDisplay.dLineRate,
+		   ScanTriggerPulseWidthUS(), ScanTriggerDisplay.nLineCount, ScanTriggerDisplay.dScanTime);
 
 	sprintf(strFileLog, "Scan start %.4f to %.4f mm, %d lines",
 			ScanTriggerRecipe.dTrigStart, ScanTriggerRecipe.dTrigEnd, ScanTriggerDisplay.nLineCount);
@@ -454,8 +486,8 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dPitch           = ScanTriggerRecipe.dPitch;
 		cfg.dScanStart       = ScanTriggerRecipe.dTrigStart;
 		cfg.dScanEnd         = ScanTriggerRecipe.dTrigEnd;
-		cfg.dPulseWidthUS    = SCANTRIGGER_PULSE_US;
-		cfg.dLineRateHz      = ScanTriggerRecipe.dLineRate;
+		cfg.dPulseWidthUS    = ScanTriggerPulseWidthUS();
+		cfg.dLineRateHz      = ScanTriggerDisplay.dLineRate;
 		cfg.dwTriggerLevel   = 1;
 		cfg.dwDirectionCheck = 1;          // count up only, the scan direction
 		cfg.bEncReverse      = SCANTRIGGER_ENC_REVERSE;

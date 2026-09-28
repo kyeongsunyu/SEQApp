@@ -53,8 +53,9 @@ struct PERIODIC_TRIG_CFG
 	double dPitch;				// trigger pitch                (0.005   = 5.0 um)
 	double dScanStart;			// trigger block lower position
 	double dScanEnd;			// trigger block upper position
-	double dPulseWidthUS;		// pulse width [us] FLOOR, camera minimum is 1.0
-	double dLineRateHz;			// expected line rate, only used to size the pulse
+	double dPulseWidthUS;		// pulse width [us], used as given; minimum 1.0
+	double dLineRateHz;			// line rate, reported alongside the pulse width so
+								// the period and duty appear in the log
 	DWORD  dwTriggerLevel;		// 0 = low active, 1 = high active
 	DWORD  dwDirectionCheck;	// 0 = both directions, 1 = count up only, 2 = count down only
 	bool   bEncReverse;			// reverse the encoder count direction
