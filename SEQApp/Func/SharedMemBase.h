@@ -394,6 +394,8 @@ enum SCANTRIGGER_STATE
 	SCANTRIGGER_DONE        = 7,
 	SCANTRIGGER_ABORTED     = 8,
 	SCANTRIGGER_OUTPUT_TEST = 9,   // driving the trigger pin directly, for a scope
+	SCANTRIGGER_RETURN      = 10,  // going back to the scan start position
+	SCANTRIGGER_WAIT_RETURN = 11,  // waiting for that move to finish
 };
 //-------------------------------//
 // Line scan trigger recipe. Positions are absolute machine coordinates in mm.

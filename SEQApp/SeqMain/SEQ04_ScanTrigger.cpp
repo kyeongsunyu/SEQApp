@@ -54,7 +54,8 @@ static const double SCANTRIGGER_WRONG_WAY_COUNTS = 200.0;
 // rows, so they belong to the machine rather than to one device - which is what
 // a scan geometry is.
 //
-//   50  SCAN START          approach begins here
+//   50  SCAN START          approach begins here, and where the stage is parked
+//                           again once the scan has finished
 //   51  SCAN TRIGGER START  block lower - the axis is already at speed
 //   52  SCAN TRIGGER END    block upper
 //   53  SCAN END            deceleration ends here
@@ -674,9 +675,53 @@ void CSeqMain::ScanTriggerC(void)
 		}
 
 		AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
-		g_nScanTriggerState = SCANTRIGGER_DONE;
+		g_nScanTriggerState = SCANTRIGGER_RETURN;
 		break;
 	}
+
+	case SCANTRIGGER_RETURN:
+		// Back to SCAN START, so the next scan can be started without anybody
+		// first driving the stage back by hand - and so a scan always leaves the
+		// machine where it found it. The trigger is already off, so nothing is
+		// exposed on the way back.
+		//
+		// The return is always a real move: the block has length, so SCAN END is
+		// always beyond SCAN START and the axis cannot already be there.
+		pAxis->Speed = ScanTriggerDisplay.dSpeed * dRate;
+		pAxis->Accel = fabs(pAxis->Speed * 5);
+		pAxis->Decel = pAxis->Accel;
+		pAxis->MTSAMove((int)(ScanTriggerDisplay.dMotionStart * dRate + 0.5));
+
+		printf("[SCANTRIGGER] returning to the scan start position, %.3f mm\n",
+			   ScanTriggerDisplay.dMotionStart);
+
+		g_bScanTriggerMoving = false;
+		g_tmScanTriggerMoveStart.SetTime();
+		g_nScanTriggerState = SCANTRIGGER_WAIT_RETURN;
+		break;
+
+	case SCANTRIGGER_WAIT_RETURN:
+		// Same race as WAIT_END: IsStop still reads true for the first few
+		// passes after MTSAMove, so the axis has to be seen moving before the
+		// end of the move means anything.
+		if (!g_bScanTriggerMoving) {
+			if (!pAxis->IsStop) {
+				g_bScanTriggerMoving = true;
+			}
+			else if (g_tmScanTriggerMoveStart.TimeOvermS(SCANTRIGGER_MOVE_START_MS)) {
+				// The scan itself is finished and its count is already reported,
+				// so say which half failed rather than letting "aborted" suggest
+				// the scan was no good.
+				ScanTriggerAbort("the scan finished, but the stage never started"
+								 " its return move");
+			}
+			break;
+		}
+
+		if (pAxis->IsStop) {
+			g_nScanTriggerState = SCANTRIGGER_DONE;
+		}
+		break;
 
 	case SCANTRIGGER_DONE:
 		bit.ScanTriggerRun = 0;
@@ -693,6 +738,9 @@ void CSeqMain::ScanTriggerC(void)
 				   " (this AXL has no AxcTriggerReadTriggerCount)\n",
 				   ScanTriggerDisplay.nLineCount);
 		}
+		printf("[SCANTRIGGER] parked at the scan start position, %.3f mm\n",
+			   ScanTriggerDisplay.dMotionStart);
+
 		sprintf(strFileLog, "%s", "Scan finished");
 		LOG_TRACE(strFileLog);
 
