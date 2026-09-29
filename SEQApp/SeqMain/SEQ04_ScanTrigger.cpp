@@ -501,6 +501,14 @@ void CSeqMain::ScanTriggerM(void)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 1;
 
+	// Which SEQApp produced the lines below. SEQ and the MMI are built and
+	// copied separately, so the panel can be showing a scan run by a SEQApp
+	// from before the change that is being looked for - which reads as the
+	// change not working rather than as the binary not having been replaced.
+	// The console already carries this at start-up; the log needs it too,
+	// because a screenshot of the panel is all anybody sends.
+	ScanTriggerLogPrintf("[SCANTRIGGER] SEQApp built %s %s\n", __DATE__, __TIME__);
+
 	ScanTriggerLogPrintf("[SCANTRIGGER] move %.4f -> %.4f mm [idx %d..%d],"
 		   " trigger %.4f .. %.4f mm [idx %d..%d], run-up %.3f mm, run-out %.3f mm\n",
 		   ScanTriggerDisplay.dMotionStart, ScanTriggerDisplay.dMotionEnd,
