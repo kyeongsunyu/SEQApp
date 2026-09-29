@@ -415,9 +415,85 @@ SIO-HPC4L은 거부합니다. `AxcMotSetMoveUnitPerPulse`와 같은 종류의 �
 읽을 수 없습니다. V-3 검증은 AXL 교체 전까지 **스코프 또는 카메라 Strobe OUT 계수로만**
 가능합니다.
 
-### 주의 — SIO-HPC4에는 등간격 거리 트리거 모드가 없습니다
+### SIO-HPC4 트리거 모드 — 벤더 가이드 기준 (2026-09-29 확인)
 
-`AxcTableTriggerDistancePatternShot` / `AxcTriggerDistancePatternShot`(= `CCGC_CNT_DISTANCE_PERIODIC_TRIGGER`)은 **CNT_RECAT_SC_10 전용**입니다. SIO-HPC4의 트리거 모드는 RANGE(0) / VECTOR(1) / PATTERN(3) 뿐이며, PATTERN은 **주파수 기반 타이머**라 위치 동기가 아닙니다. 반드시 위 periodic mode를 사용하십시오.
+출처: Ajinextek **"CS_Function_Example Guide Manual Rev 1.0 — Counter Trigger"** 2장.
+
+> Trigger 출력 방법으로는 **Timer Mode(Count), Timer Mode, Absolute Mode, Period Mode, One Shot Trigger 총 5가지**를 지원한다.
+
+| 모드 | 위치 동기 | 피치 양자화 | 용도 |
+|---|---|---|---|
+| **Period Mode** | ○ 엔코더 비교기 | 엔코더 1 count (= 1 µm) | 현재 사용 |
+| **Timer Mode** | ✕ 자유 발진 | 정수 Hz | 엔코더로 표현 못 하는 피치 |
+| **Timer Mode (Count)** | ✕ 자유 발진 | 정수 Hz | 위 + **펄스 개수 하드웨어 고정** |
+| Absolute Mode | ○ 위치 배열 | UnitPerPulse | 개별 위치 촬상 |
+| One Shot | — | — | 강제 1발 |
+
+`AxcTableTriggerDistancePatternShot` / `AxcTriggerDistancePatternShot`(= `CCGC_CNT_DISTANCE_PERIODIC_TRIGGER`)은 **CNT_RECAT_SC_10 전용**이며 HPC4에는 없습니다.
+
+#### Timer Mode (Count) — 펄스 개수를 하드웨어가 셉니다
+
+> AxcKeSetCommandData32 함수를 이용하여 Trigger 출력 개수를 설정하며 내부 인자값 중 Command는 모듈 기준 **0번 채널[244], 1번 채널[245], 2번 채널[246], 3번 채널[247]**로 입력하여 사용한다.
+
+Timer mode에는 블록이 없어 소프트웨어가 창을 여닫아야 하고, 그 가장자리는 SEQ 사이클 1회분(200 mm/s · 18 µm에서 약 **111 라인**)만큼 흔들립니다. 개수를 하드웨어에 맡기면 **라인 수는 정확**해지고 남는 오차는 이미지 시작 위치의 어긋남뿐입니다.
+
+### ★ 레지스터 설정 — 벤더 가이드가 명문화
+
+EzSpy 추적으로 찾아낸 레지스터 조작이 가이드에 **산문으로** 기재되어 있습니다.
+
+> (1) **Trigger Mode, Active Level, Direction Check에 따라 레지스터의 값이 변경**된다.
+> - Trigger Mode → **4, 5번 비트**
+> - Active Level → **0번 비트**
+> - Direction Check → **6, 7번 비트**
+>
+> (2) AxcKeGetCommandData16 함수로 특정 어드레스 값을 읽어 **1번 비트를 1로 변경**하여 입력한다. **1번 비트는 트리거 출력에 영향을 주는 비트로, PC 종료 시 0으로 초기화되므로 반드시 변경**해야 한다.
+>
+> (3) **0, 1번 채널은 22(Command)에서 읽어 150(Command)에 설정**하며, **2, 3번 채널은 54(Command)에서 읽어 182(Command)에 설정**한다.
+
+두 가지가 확정되었습니다.
+
+1. **bit 1은 추측이 아니라 필수 절차**입니다. "PC 종료 시 0으로 초기화"가 이 프로젝트가 며칠을 쓴 증상 — 모든 호출이 성공을 반환하는데 출력 핀은 죽어 있던 — 의 정체입니다.
+2. **채널 2, 3은 주소가 다릅니다.** 코드에 22/150이 하드코딩되어 있었고, 채널 2로 옮겼다면 채널 0의 레지스터를 쓰고 자기 출력은 죽은 채 아무 에러도 나지 않았을 것입니다. → `TriggerRegApply()`로 수정.
+
+또한 **모드가 bits 4-5에 실려 되읽힌다**는 점이 중요합니다. API 모드 번호가 맞는지를 하드웨어에 직접 물을 수 있습니다.
+
+#### ⚠ 모드 번호 — AXC.h와 가이드 예제가 불일치
+
+| | Timer | Absolute | Period |
+|---|---|---|---|
+| **AXC.h** (HPC4 항목) | `0x01` | `0x00` ram / `0x02` fifo | **`0x03`** |
+| **가이드 예제** | `0x00` | `0x02` | `0x02` ← 주석은 "절대위치모드" |
+
+가이드 예제 쪽이 신뢰도가 낮습니다. Timer 예제 2개가 주석까지 동일한 복붙이고, Period 예제의 주석은 절대위치모드라고 적혀 있습니다. 무엇보다 **AXC.h의 `0x03`(periodic)은 이 장비에서 스코프로 검증**되었습니다. 따라서 AXC.h를 따르되, `AxcTriggerGetFunction`과 레지스터 bits 4-5를 **둘 다 되읽어** 불일치를 로그로 드러냅니다.
+
+### ★ 트리거 간격 하한 — 듀티 50 %
+
+> 연속적으로 Trigger를 출력 시에는 해당 Trigger의 출력시간, 속도 대비 적절한 주기를 사용해야 출력될 Trigger가 겹치지 않고 정상적으로 출력된다. 적절한 주기는 **Trigger가 출력되는 동안 이동거리의 2배(Trigger 출력시간 × 속도 × 2)**의 값을 권장한다.
+
+가이드의 실측 예시:
+
+| 조건 | 듀티 | 결과 |
+|---|---|---|
+| 펄스 1000 µs, 100,000 pulse/s, 주기 100 pulse | 100 % | **50개 중 21개만 출력** |
+| 펄스 1000 µs, 50,000 pulse/s, 주기 100 pulse | 50 % | 50개 중 50개 출력 |
+
+즉 **듀티 ≤ 50 %**. 초과 시 트리거가 합쳐지는 게 아니라 **누락**됩니다.
+
+현재 코드의 `SCANTRIGGER_PULSE_MAX_DUTY = 0.4`는 이보다 엄격하므로 안전합니다. 현재 설정(5 µs / 200 mm/s / 18 µm)은 듀티 5.6 %.
+
+### ⚠ 확인 필요 — 펄스폭 하한 10 µs
+
+가이드 `AxcTriggerSetTime` 설명(SIO-CN2CH 항):
+
+> dTrigTime: Trigger 펄스폭 (단위: uSec, **범위 [10 ~ 50,000]**)
+
+HPC4 항에는 범위 표기가 없지만, **현재 5 µs로 운용 중**입니다. 하한이 HPC4에도 적용된다면 조용히 클램프되고 있을 수 있습니다. `AxcTriggerGetTime` 되읽기로 확인이 필요합니다. 코드의 `SCANTRIGGER_PULSE_MIN_US = 1.0`도 이 값보다 낮습니다.
+
+### 확인 방법 — 벤더 권장
+
+> Trigger 출력이 정상적으로 동작하는지 확인을 위해서는 **Trigger Level을 변경하여 상시 출력 전압값이 변하는지 확인**한다.
+
+이 프로젝트에서 실제로 출력단을 처음 분리해낸 방법과 동일합니다.
 
 ---
 

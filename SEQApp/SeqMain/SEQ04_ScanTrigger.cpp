@@ -737,6 +737,11 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dScanEnd         = ScanTriggerDisplay.dTrigEnd;
 		cfg.dPulseWidthUS    = ScanTriggerPulseWidthUS();
 		cfg.dLineRateHz      = ScanTriggerDisplay.dLineRate;
+		// Timer mode only: the board stops itself after this many pulses, so
+		// the number of lines is exact however late the cycle closes the
+		// window. Ignored by the periodic path, which gets its end from the
+		// block.
+		cfg.lTriggerCount    = ScanTriggerDisplay.nLineCount;
 		cfg.dwTriggerLevel   = 1;
 		cfg.dwDirectionCheck = 1;          // count up only, the scan direction
 		cfg.bEncReverse      = SCANTRIGGER_ENC_REVERSE;
@@ -756,9 +761,12 @@ void CSeqMain::ScanTriggerC(void)
 				break;
 			}
 			printf("[SCANTRIGGER] timer mode: the encoder does not gate the output."
-				   " The window is opened and closed by this cycle, so its edges carry"
-				   " one pass of jitter, and the pitch holds only while the stage holds"
-				   " %.4f mm/s.\n", ScanTriggerDisplay.dSpeed);
+				   " The board stops itself after %d pulses, so the line count is exact;"
+				   " what carries a pass of jitter is where the first line lands.\n",
+				   ScanTriggerDisplay.nLineCount);
+			printf("[SCANTRIGGER]  the pitch holds only while the stage holds"
+				   " %.4f mm/s - the encoder is not checking it.\n",
+				   ScanTriggerDisplay.dSpeed);
 		}
 		else if (!AjinTrigger->StartPeriodicTrigger(cfg)) {
 			ScanTriggerAbort("StartPeriodicTrigger refused the configuration");
@@ -860,6 +868,10 @@ void CSeqMain::ScanTriggerC(void)
 					}
 				}
 				else if (dPosMM >= ScanTriggerDisplay.dTrigEnd) {
+					// The board has already stopped itself at the programmed
+					// pulse count by now. Switching it off here is what keeps
+					// a miscount from running on past the block, and costs
+					// nothing when there was not one.
 					AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, false);
 					g_bScanTriggerTimerOn    = false;
 					g_dScanTriggerTimerOffAt = dPosMM;
@@ -941,11 +953,17 @@ void CSeqMain::ScanTriggerC(void)
 				   ScanTriggerDisplay.dTrigStart, ScanTriggerDisplay.dTrigEnd, dWantMM);
 
 			if (ScanTriggerDisplay.dPitchAchieved > 0.0) {
-				printf("[SCANTRIGGER]  that is %.0f lines against the %d expected,"
-					   " %+.0f from the window edges alone\n",
-					   dSpanMM / ScanTriggerDisplay.dPitchAchieved,
+				// The pulse count is bounded in hardware, so this is not a line
+				// count error - it is where the lines landed. A window opened
+				// late shifts the image; one opened early leaves the last lines
+				// beyond the block, which is what a span shorter than asked for
+				// means here.
+				printf("[SCANTRIGGER]  %d lines were programmed and the window covers"
+					   " %.0f of them; the %+.4f mm difference is an image offset,"
+					   " not a size error\n",
 					   ScanTriggerDisplay.nLineCount,
-					   (dSpanMM - dWantMM) / ScanTriggerDisplay.dPitchAchieved);
+					   dSpanMM / ScanTriggerDisplay.dPitchAchieved,
+					   dSpanMM - dWantMM);
 			}
 
 			AjinTrigger->StopTimerTrigger(SCANTRIGGER_CHANNEL);

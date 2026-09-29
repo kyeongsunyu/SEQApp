@@ -312,6 +312,81 @@ bool CAjinTrigger::IsPitchIntegerCounts(double dPitch, double dUPP,
 	return (fabs(dCounts - dNearest) <= dNearest * 1e-6);
 }
 
+//==========================================================================
+//  The SIO-HPC4 trigger register
+//
+//  Ajinextek's own "CS_Function_Example Guide - Counter Trigger" states this
+//  in prose rather than leaving it to be found in an EzSpy trace, and it is
+//  worth quoting because two parts of it were guessed at here:
+//
+//    - the register holds the settings, by bit: trigger mode in bits 4 and 5,
+//      active level in bit 0, direction check in bits 6 and 7
+//
+//    - bit 1 affects the trigger output and "is reset to 0 when the PC is shut
+//      down, so it must be set" - which is exactly the symptom this project
+//      spent days on, every call returning success with a dead output pin
+//
+//    - the address pair is per channel: channels 0 and 1 read command 22 and
+//      write command 150; channels 2 and 3 read 54 and write 182
+//
+//  The last of those was hard coded to 22/150 here. Only channel 0 is wired on
+//  this machine, so nothing was wrong yet - but a scan moved to channel 2
+//  would have written channel 0's register and left its own output dead, with
+//  no error anywhere.
+static DWORD TriggerRegReadCmd(long lChannelNo)
+{
+	return (lChannelNo <= 1) ? 22 : 54;
+}
+static DWORD TriggerRegWriteCmd(long lChannelNo)
+{
+	// 150 = 22 | 0x80, 182 = 54 | 0x80: the same register through its write
+	// alias.
+	return (lChannelNo <= 1) ? 150 : 182;
+}
+
+// Set bit 1, and report what the register says the channel is actually doing.
+// The mode in bits 4-5 is read back from the hardware rather than from the API
+// call that was just made, which is the only way to tell an API mode number
+// that was accepted from one that was understood.
+static bool TriggerRegApply(long lChannelNo, const char* pszWhen)
+{
+	WORD  wData = 0;
+	DWORD dwCode = AxcKeGetCommandData16(lChannelNo, TriggerRegReadCmd(lChannelNo), &wData);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] ch%ld : AxcKeGetCommandData16(%lu) failed, code %lu\n",
+			   lChannelNo, TriggerRegReadCmd(lChannelNo), dwCode);
+		return false;
+	}
+
+	const WORD wWanted = (WORD)(wData | 0x0002);
+	dwCode = AxcKeSetCommandData16(lChannelNo, TriggerRegWriteCmd(lChannelNo), wWanted);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("[TRIGGER] ch%ld : AxcKeSetCommandData16(%lu, 0x%04X) failed, code %lu\n",
+			   lChannelNo, TriggerRegWriteCmd(lChannelNo), (unsigned int)wWanted, dwCode);
+		return false;
+	}
+
+	WORD wBack = 0;
+	AxcKeGetCommandData16(lChannelNo, TriggerRegReadCmd(lChannelNo), &wBack);
+
+	printf("[TRIGGER] ch%ld register %lu %s : 0x%04X -> 0x%04X (reads 0x%04X)"
+		   " mode bits[5:4]=%u, level bit0=%u, dircheck bits[7:6]=%u, output bit1=%u\n",
+		   lChannelNo, TriggerRegReadCmd(lChannelNo),
+		   (pszWhen != NULL) ? pszWhen : "",
+		   (unsigned int)wData, (unsigned int)wWanted, (unsigned int)wBack,
+		   (unsigned int)((wBack >> 4) & 0x3),
+		   (unsigned int)(wBack & 0x1),
+		   (unsigned int)((wBack >> 6) & 0x3),
+		   (unsigned int)((wBack >> 1) & 0x1));
+
+	if ((wBack & 0x0002) == 0) {
+		printf("[TRIGGER] ch%ld : bit 1 did not stay set. The output stage is not"
+			   " connected and no trigger setting will reach the pin.\n", lChannelNo);
+		return false;
+	}
+	return true;
+}
+
 bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 {
 	long ch = cfg.lChannelNo;
@@ -419,31 +494,14 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	}
 
 	//< The step this driver was missing, and the reason the trigger pin stayed
-	//  quiet while every call above returned success.
-	//
-	//  An EzSpy trace of EzManager's own CounterAgent shows it reading channel
-	//  register 0x16 back and writing it straight out again through the write
-	//  alias 0x96 (150 = 0x16 | 0x80) - between disabling the trigger and
-	//  writing the period and block - and the output only pulses when those
-	//  two calls are in the sequence. CLASS_AjinCounter::SetTriggerPosition()
-	//  in this same project already carries the identical pair for absolute
-	//  mode, so this is Ajinextek's sequence rather than a guess. AXDev.h
-	//  declares the accessors but documents neither the register nor bit 1.
-	WORD  wTrigReg  = 0;
-	DWORD dwRegCode = AxcKeGetCommandData16(ch, 22, &wTrigReg);
-	if (dwRegCode != AXT_RT_SUCCESS) {
-		printf("StartPeriodicTrigger: AxcKeGetCommandData16(ch%ld, 22) failed, code 0x%lx\n",
-			   ch, dwRegCode);
+	//  quiet while every call above returned success. Found first in an EzSpy
+	//  trace of EzManager's CounterAgent, and since confirmed in prose by
+	//  Ajinextek's own counter trigger guide - which also gives the per channel
+	//  addresses and says bit 1 is cleared by a PC shutdown, so it has to be
+	//  set again every time. See TriggerRegApply().
+	if (!TriggerRegApply(ch, "periodic")) {
 		return false;
 	}
-	dwRegCode = AxcKeSetCommandData16(ch, 150, (WORD)(wTrigReg | 0x0002));
-	if (dwRegCode != AXT_RT_SUCCESS) {
-		printf("StartPeriodicTrigger: AxcKeSetCommandData16(ch%ld, 150, 0x%04X) failed, code 0x%lx\n",
-			   ch, (unsigned int)(wTrigReg | 0x0002), dwRegCode);
-		return false;
-	}
-	printf("[TRIGGER] ch%ld trigger register 0x16 : 0x%04X -> 0x%04X\n",
-		   ch, (unsigned int)wTrigReg, (unsigned int)(wTrigReg | 0x0002));
 
 	//< Period, pulse width, then upper and lower - one call each, in exactly the
 	//  order EzSpy caught EzManager's CounterAgent using:
@@ -572,6 +630,7 @@ bool CAjinTrigger::StopPeriodicTrigger(long lChannelNo)
 static const double TIMER_FREQ_MIN_HZ = 1.0;
 static const double TIMER_FREQ_MAX_HZ = 500000.0;
 
+
 bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 {
 	long ch = cfg.lChannelNo;
@@ -608,10 +667,19 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 
 	// The period has to have room for the pulse, or the output never returns
 	// low between lines.
+	//
+	// Ajinextek's counter trigger guide puts a number on how much room: the
+	// period should be at least twice the distance travelled while the pulse
+	// is high, which is the same as saying the duty must stay under 50 %. Its
+	// worked example runs a 1000 us pulse at a period equal to the pulse and
+	// gets 21 of 50 triggers; at half the speed, so half the duty, it gets all
+	// 50. The caller's own cap is 40 %, which is inside this.
 	const double dPeriodUS = 1.0e6 / dRounded;
-	if (cfg.dPulseWidthUS >= dPeriodUS) {
-		printf("StartTimerTrigger: pulse %.2f us does not fit in the %.2f us period"
-			   " %lu Hz gives\n", cfg.dPulseWidthUS, dPeriodUS, dwFreq);
+	if (cfg.dPulseWidthUS >= dPeriodUS * 0.5) {
+		printf("StartTimerTrigger: pulse %.2f us is %.0f %% of the %.2f us period %lu Hz"
+			   " gives. Ajinextek's guide puts the limit at 50 %%, above which triggers"
+			   " are dropped rather than merged.\n",
+			   cfg.dPulseWidthUS, cfg.dPulseWidthUS / dPeriodUS * 100.0, dPeriodUS, dwFreq);
 		return false;
 	}
 
@@ -619,23 +687,42 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 		return false;
 	}
 
-	//< Timer mode. 0x01 for SIO-HPC4, per the AxcTriggerSetFunction comment
-	//  block in AXC.h; 0x03 is the periodic mode used elsewhere in this file.
+	//< Timer mode, and the two sources disagree about its number.
+	//
+	//  AXC.h heads the SIO-HPC4 list "0x01 : timer mode", and AXC.h is right
+	//  about 0x03 for periodic mode - that one is proven on this machine by a
+	//  scope. Ajinextek's counter trigger guide instead shows
+	//  AxcTriggerSetFunction(0, 0) in both of its SIO-HPC4 timer examples, but
+	//  those two examples are the same block copied twice, comment included,
+	//  and its Period Mode example carries a comment naming absolute mode. The
+	//  guide's example code is not reliable on this point; AXC.h is used.
+	//
+	//  It does not have to be settled by argument. The mode lives in bits 4-5
+	//  of the trigger register, TriggerRegApply() reads those bits back from
+	//  the hardware, and AxcTriggerGetFunction reports what the API believes -
+	//  so a wrong number here shows up as the two disagreeing rather than as a
+	//  scan that quietly does something else.
 	DWORD dwCode = AxcTriggerSetFunction(ch, 0x01);
 	if (dwCode != AXT_RT_SUCCESS) {
 		printf("StartTimerTrigger: AxcTriggerSetFunction(ch%ld, 0x01) failed, code %lu.\n"
-			   "  Timer mode is documented for SIO-HPC4 but has not been confirmed on"
-			   " this board - a refusal here is that answer.\n", ch, dwCode);
+			   "  Timer mode is documented for SIO-HPC4 in both AXC.h and Ajinextek's"
+			   " counter trigger guide, so a refusal here is this board's answer.\n"
+			   "  The guide's own examples use 0x00 for it - if that is what this board"
+			   " wants, this is where it says so.\n", ch, dwCode);
 		return false;
 	}
 
-	//< The register 0x16 write the periodic path needs. Whether timer mode
-	//  needs it is not known - the EzSpy trace that found it was of a periodic
-	//  setup - but it is the bit that connects the comparator to the output
-	//  stage and setting it twice is harmless.
-	WORD wTrigReg = 0;
-	if (AXT_RT_SUCCESS == AxcKeGetCommandData16(ch, 22, &wTrigReg)) {
-		AxcKeSetCommandData16(ch, 150, (WORD)(wTrigReg | 0x0002));
+	DWORD dwGotMode = 0xFFFFFFFF;
+	if (AXT_RT_SUCCESS == AxcTriggerGetFunction(ch, &dwGotMode) && dwGotMode != 0x01) {
+		printf("StartTimerTrigger: wrote mode 0x01, AxcTriggerGetFunction reads 0x%lX.\n",
+			   dwGotMode);
+	}
+
+	//< The same register write. Ajinextek's guide gives it for every SIO-HPC4
+	//  trigger mode, timer included - its own timer mode example carries it -
+	//  so this is not the periodic path's private workaround.
+	if (!TriggerRegApply(ch, "timer")) {
+		return false;
 	}
 
 	dwCode = AxcTriggerSetFreq(ch, dwFreq);
@@ -674,6 +761,39 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 		return false;
 	}
 
+	//< Timer Mode (Count): stop after exactly lTriggerCount pulses.
+	//
+	//  Ajinextek's counter trigger guide lists this as a mode of its own on
+	//  SIO-HPC4 and sets the count through AxcKeSetCommandData32, command 244
+	//  for channel 0 and one per channel after that.
+	//
+	//  It matters here because plain timer mode has no block: the cycle has to
+	//  close the window by polling the counter, and that edge lands wherever a
+	//  cycle pass happens to fall - about 111 lines of slop at 200 mm/s and
+	//  18 um. Letting the hardware count the pulses makes the number of lines
+	//  exact no matter when the software gets round to switching it off. The
+	//  start still carries that jitter, but a scan that begins a fraction of a
+	//  millimetre late is an image offset, while one with the wrong number of
+	//  lines is an image of the wrong size.
+	if (cfg.lTriggerCount > 0) {
+		const DWORD dwCountCmd = (DWORD)(244 + ch);
+		dwCode = AxcKeSetCommandData32(ch, dwCountCmd, (DWORD)cfg.lTriggerCount);
+		if (dwCode != AXT_RT_SUCCESS) {
+			printf("StartTimerTrigger: AxcKeSetCommandData32(ch%ld, %lu, %ld) failed,"
+				   " code %lu - the pulse count cannot be bounded on this board\n",
+				   ch, dwCountCmd, cfg.lTriggerCount, dwCode);
+			return false;
+		}
+
+		DWORD dwGotCount = 0;
+		if (AXT_RT_SUCCESS == AxcKeGetCommandData32(ch, dwCountCmd, &dwGotCount) &&
+			dwGotCount != (DWORD)cfg.lTriggerCount) {
+			printf("StartTimerTrigger: wrote %ld pulses to command %lu, reads back %lu\n",
+				   cfg.lTriggerCount, dwCountCmd, dwGotCount);
+			return false;
+		}
+	}
+
 	if (g_pfnCountClear != NULL) {
 		g_pfnCountClear(ch);
 	}
@@ -681,10 +801,20 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 	// Configured, not started. Enabling here would start the pulse train while
 	// the stage is still approaching, and in this mode the hardware has no
 	// block to keep those pulses out of the image.
-	printf("Timer trigger ch%ld : %lu Hz, period %.3f us, pulse %.2f us (%.1f %% duty)."
-		   " Not started - the window is opened by position from the cycle.\n",
-		   ch, dwFreq, dPeriodUS, cfg.dPulseWidthUS,
-		   cfg.dPulseWidthUS / dPeriodUS * 100.0);
+	if (cfg.lTriggerCount > 0) {
+		printf("Timer trigger ch%ld : %lu Hz, period %.3f us, pulse %.2f us (%.1f %% duty),"
+			   " stopping after exactly %ld pulses. Not started - the cycle opens the"
+			   " window at the block entry.\n",
+			   ch, dwFreq, dPeriodUS, cfg.dPulseWidthUS,
+			   cfg.dPulseWidthUS / dPeriodUS * 100.0, cfg.lTriggerCount);
+	}
+	else {
+		printf("Timer trigger ch%ld : %lu Hz, period %.3f us, pulse %.2f us (%.1f %% duty),"
+			   " free running. Not started - the cycle opens and closes the window,"
+			   " so both edges carry one pass of jitter.\n",
+			   ch, dwFreq, dPeriodUS, cfg.dPulseWidthUS,
+			   cfg.dPulseWidthUS / dPeriodUS * 100.0);
+	}
 
 	ReportChannelConfig(ch, "timer armed");
 	return true;

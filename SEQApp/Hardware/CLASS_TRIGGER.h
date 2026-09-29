@@ -58,6 +58,10 @@ struct PERIODIC_TRIG_CFG
 								// alongside the pulse width so the period and duty
 								// appear in the log; in timer mode it IS the
 								// setting, and must be a whole number of Hz
+	// Timer mode only: stop after exactly this many pulses, using the board's
+	// own pulse counter (Timer Mode (Count) in Ajinextek's guide). 0 leaves it
+	// free running, and then the caller has to switch it off itself.
+	long   lTriggerCount;
 	DWORD  dwTriggerLevel;		// 0 = low active, 1 = high active
 	DWORD  dwDirectionCheck;	// 0 = both directions, 1 = count up only, 2 = count down only
 	bool   bEncReverse;			// reverse the encoder count direction
@@ -72,6 +76,7 @@ struct PERIODIC_TRIG_CFG
 		, dScanEnd(0.0)
 		, dPulseWidthUS(2.0)
 		, dLineRateHz(0.0)
+		, lTriggerCount(0)
 		, dwTriggerLevel(1)
 		, dwDirectionCheck(1)
 		, bEncReverse(false)
