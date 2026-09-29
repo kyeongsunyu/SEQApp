@@ -396,7 +396,24 @@ AxcTriggerSetEnable           (ch, 1);      // 활성화
 (High active + push-pull이므로 논리 반전 없음)
 
 > periodic mode(0x03)와 `SetBlock`/`SetPosPeriod`는 AXC 헤더에 SIO-HPC4 전용으로 명시되어 확실합니다.
-> `AxcTriggerSetTriggerOutCount` / `AxcTriggerReadTriggerCount`는 헤더상 SIO-HPC4 명시가 없어 **지원 여부 확인 필요**.
+
+### ★ 실측 — 이 보드에서 쓸 수 없는 읽기 API 2종 (2026-09-29)
+
+스캔 로그에서 확인된 값입니다. **둘의 원인이 서로 다르며, 대응도 다릅니다.**
+
+| API | 증상 | 원인 | 새 AXL로 해결되는가 |
+|---|---|---|---|
+| `AxcTriggerReadTriggerCount` | `GetProcAddress` 실패 | 설치된 **AXL 4.2.0.2의 export에 없음** (`Library/`의 AXL.dll에는 5개 모두 존재) | **예** — AXL 교체로 복구 |
+| `AxcStatusGetChannel` | `1054` 반환 | **`AXT_RT_NOT_SUPPORT_VERSION` (Unsupported Hardware)** — SIO-HPC4L이 구현하지 않음 | **아니오** — 보드 문제 |
+
+`AxcStatusGetChannel`은 `AXC.h`에 `// API for SIO-CN2CH only` 표기가 **없습니다.** 그럼에도
+SIO-HPC4L은 거부합니다. `AxcMotSetMoveUnitPerPulse`와 같은 종류의 함정이며, 다만 그쪽은
+*성공을 반환하고 아무것도 하지 않은* 반면 이쪽은 정직하게 에러를 돌려줍니다.
+
+**결론 — 현재 구성(SIO-HPC4L + AXL 4.2.0.2)에서는 출력 펄스에 대한 소프트웨어 검증 수단이
+하나도 없습니다.** 개수도(`ReadTriggerCount` 부재), 핀 레벨도(`StatusGetChannel` 미지원)
+읽을 수 없습니다. V-3 검증은 AXL 교체 전까지 **스코프 또는 카메라 Strobe OUT 계수로만**
+가능합니다.
 
 ### 주의 — SIO-HPC4에는 등간격 거리 트리거 모드가 없습니다
 
@@ -443,7 +460,11 @@ Ez-ML 전용 하네스를 아진 보드용 하네스로 교체해야 합니다. 
 | V-6 | 이미지 검증 | 격자 타깃 스캔 → 스캔방향/어레이방향 치수비 | 종횡비 오차 = ε |
 
 **V-3이 핵심입니다.** 실제 피치 = 이동거리 / 트리거수 이고, 설계값과의 차이가 곧 ε입니다. 이미지 촬상보다 빠르고 정량적입니다.
-(API 미지원 시 카메라 Strobe OUT 또는 HPC4L 출력선을 카운터로 계수)
+
+> **2026-09-29 현재 V-3은 소프트웨어로 불가능합니다.** `AxcTriggerReadTriggerCount`가
+> 설치된 AXL 4.2.0.2에 없습니다(8절 실측 표 참조). 카메라 Strobe OUT 또는 HPC4L
+> 출력선을 외부 카운터로 계수하십시오. AXL을 `Library/`의 버전으로 교체하면
+> 이 항목은 소프트웨어로 되돌아옵니다.
 
 ---
 

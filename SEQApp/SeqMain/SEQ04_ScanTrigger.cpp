@@ -293,6 +293,23 @@ static void ScanTriggerLogCounter(const char* pszWhen)
 }
 
 //////////////////////////////////////////////////////////////////////////
+// The AXL return codes that turn up on this path, by name. A bare number in a
+// log is something the reader has to go and look up, and the one that matters
+// here - 1054 - says the board refused the call rather than that the call went
+// wrong, which is a different thing to do about it.
+static const char* ScanTriggerAxlError(DWORD dwCode)
+{
+	switch (dwCode) {
+	case AXT_RT_SUCCESS:                return "SUCCESS";
+	case AXT_RT_OPEN_ERROR:             return "AXT_RT_OPEN_ERROR, the library is not open";
+	case AXT_RT_NOT_OPEN:               return "AXT_RT_NOT_OPEN";
+	case AXT_RT_NOT_SUPPORT_VERSION:    return "AXT_RT_NOT_SUPPORT_VERSION, unsupported hardware";
+	default:                            break;
+	}
+	return "see AXT_FUNC_RESULT in AXHS.h";
+}
+
+//////////////////////////////////////////////////////////////////////////
 // Once, at arming: what the board will not be able to tell us about this scan,
 // and why. Said here so the rows that follow can carry only what changes.
 static void ScanTriggerLogReadbackLimits(void)
@@ -313,12 +330,22 @@ static void ScanTriggerLogReadbackLimits(void)
 	bool  bOut  = false;
 	DWORD dwRet = 0;
 	if (!AjinTrigger->ReadOutputState(SCANTRIGGER_CHANNEL, &bOut, &dwRet)) {
-		// Not the missing optional calls: AxcStatusGetChannel is an ordinary
-		// counter API and is not headed CN2CH-only. Print what it returned
-		// rather than guessing why.
-		ScanTriggerLogPrintf("[SCANTRIGGER] the trigger output line cannot be read back:"
-			   " AxcStatusGetChannel(%ld) returned %lu. The out column is left off.\n",
-			   SCANTRIGGER_CHANNEL, (unsigned long)dwRet);
+		ScanTriggerLogPrintf("[SCANTRIGGER] trigger output line not readable:"
+			   " AxcStatusGetChannel(%ld) returned %lu (%s).\n",
+			   SCANTRIGGER_CHANNEL, (unsigned long)dwRet, ScanTriggerAxlError(dwRet));
+
+		if (dwRet == AXT_RT_NOT_SUPPORT_VERSION) {
+			// Measured on this machine. AXC.h does not head this one
+			// "API for SIO-CN2CH only", but the SIO-HPC4L refuses it all the
+			// same - the same trap AxcMotSetMoveUnitPerPulse set, except that
+			// one returned success and did nothing.
+			//
+			// This is the board, not the library, so a newer AXL will not
+			// bring it back - unlike the trigger count above, which is simply
+			// missing from this AXL's exports.
+			ScanTriggerLogPrintf("[SCANTRIGGER]  the SIO-HPC4L does not implement it,"
+				   " so the output pin has no software readback at all on this board.\n");
+		}
 	}
 }
 
@@ -587,6 +614,8 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 		   SCANTRIGGER_CHANNEL, SCANTRIGGER_TEST_PULSES,
 		   SCANTRIGGER_TEST_HALF_MS, SCANTRIGGER_TEST_HALF_MS);
 
+	ScanTriggerLogReadbackLimits();
+
 	sprintf(strFileLog, "Scan trigger output self test, %d pulses", SCANTRIGGER_TEST_PULSES);
 	LOG_TRACE(strFileLog);
 }
@@ -637,15 +666,26 @@ void CSeqMain::ScanTriggerC(void)
 		const bool bSet = AjinTrigger->ForceOutput(SCANTRIGGER_CHANNEL, g_bScanTriggerTestHigh);
 
 		// Read the line back the way the board sees it, so the log stands on
-		// its own when nobody has a scope on the connector.
+		// its own when nobody has a scope on the connector. On a board that
+		// refuses AxcStatusGetChannel there is nothing to read and the scope is
+		// the whole test, which is said once at the start rather than as "n/a"
+		// against every pulse.
 		bool bSeen = false;
 		const bool bRead = AjinTrigger->ReadOutputState(SCANTRIGGER_CHANNEL, &bSeen);
 
 		if (g_bScanTriggerTestHigh) {
-			ScanTriggerLogPrintf("[SCANTRIGGER] test pulse %d/%d : driven HIGH%s, board reports %s\n",
-				   (g_nScanTriggerTestStep / 2) + 1, SCANTRIGGER_TEST_PULSES,
-				   bSet ? "" : " (AxcTriggerSetOutput REFUSED)",
-				   bRead ? (bSeen ? "HIGH" : "low") : "n/a");
+			if (bRead) {
+				ScanTriggerLogPrintf("[SCANTRIGGER] test pulse %d/%d : driven HIGH%s,"
+					   " board reports %s\n",
+					   (g_nScanTriggerTestStep / 2) + 1, SCANTRIGGER_TEST_PULSES,
+					   bSet ? "" : " (AxcTriggerSetOutput REFUSED)",
+					   bSeen ? "HIGH" : "low");
+			}
+			else {
+				ScanTriggerLogPrintf("[SCANTRIGGER] test pulse %d/%d : driven HIGH%s\n",
+					   (g_nScanTriggerTestStep / 2) + 1, SCANTRIGGER_TEST_PULSES,
+					   bSet ? "" : " (AxcTriggerSetOutput REFUSED)");
+			}
 		}
 
 		g_nScanTriggerTestStep++;
