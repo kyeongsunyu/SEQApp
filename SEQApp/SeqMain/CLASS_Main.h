@@ -522,10 +522,6 @@ public:
 	// Commissioning only: drives the trigger output pin directly so it can be
 	// probed, with no encoder, no comparator and no stage motion involved.
 	void ScanTriggerOutputTestM(void);
-	// The cycle's log, so the MMI can show it without a console. Fill flattens
-	// the ring into the shared memory block; Clear is the MMI's RESET button.
-	void ScanTriggerLogFill(_scantriggerlog* pOut);
-	void ScanTriggerLogClear(void);
 #pragma endregion
 
 	//////////////////////////////////////////////////////////////////////////

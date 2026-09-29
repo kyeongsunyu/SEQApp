@@ -455,39 +455,6 @@ using _scantriggerdisplay = struct
 	int    nState;               // current cycle state, SCANTRIGGER_STATE
 	int    nTriggerCount;        // triggers counted, -1 when unavailable
 };
-//-------------------------------//
-// The scan cycle's own log, so it can be read without a console.
-//
-// Everything the cycle prints goes here as well as to stdout. The console is
-// still the full record - the trigger hardware class prints there only - but a
-// scan that went wrong is diagnosed from these lines, and on the machine nobody
-// has the console window in front of them.
-//
-// A line is 192 characters because the longest thing the cycle says is a
-// sentence of advice, not a number: "the counter barely moved. The encoder is
-// not reaching this channel - check the encoder input wiring and
-// AxcSignalSetEncSource / AxcSignalSetEncInputMethod." Cutting those in half
-// would lose exactly the part worth reading.
-//
-// 56 lines holds a whole scan with room to spare: a cycle prints about fifteen
-// fixed lines plus one every 200 ms while the stage moves.
-//
-// SEQ keeps a ring, but what it sends is flattened: szLine[0..uCount-1] in the
-// order they were written, with uFirstSeq saying which line szLine[0] is. The
-// MMI therefore does no ring arithmetic - it appends every line whose sequence
-// number it has not seen, and a gap in the numbers is how it knows the ring
-// overwrote lines it never collected.
-#define SCANTRIGGER_LOG_LINE_LEN 192
-#define SCANTRIGGER_LOG_LINES     56
-
-using _scantriggerlog = struct
-{
-	unsigned int uSeq;           // lines written since SEQ started; 0 = nothing yet
-	unsigned int uCount;         // lines in szLine[], at most SCANTRIGGER_LOG_LINES
-	unsigned int uFirstSeq;      // sequence number of szLine[0]
-	unsigned int uReserved[5];
-	char szLine[SCANTRIGGER_LOG_LINES][SCANTRIGGER_LOG_LINE_LEN];
-};
 using _arg = union
 {
     BYTE		Buffer[12000];
@@ -534,7 +501,6 @@ using _arg = union
 	_rearpkcenteroffset RearPkCenterOffset;
 	_scantriggerrecipe  ScanTriggerRecipe;
 	_scantriggerdisplay ScanTriggerDisplay;
-	_scantriggerlog     ScanTriggerLog;
 };
 
 //-------------------------------//
@@ -627,8 +593,6 @@ enum TCmdType {
 	CMD_WRITE_SCANTRIGGER_START,
 	CMD_WRITE_SCANTRIGGER_STOP,
 	CMD_WRITE_SCANTRIGGER_TEST,
-	CMD_READ_SCANTRIGGER_LOG,
-	CMD_WRITE_SCANTRIGGER_LOG_CLEAR,
 
 	CMD_PROGRAMEXIT	= 199,
 };
