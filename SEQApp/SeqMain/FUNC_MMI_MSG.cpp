@@ -471,6 +471,16 @@ void CSeqMain::MMI_MessageCommunication(void)
 				ScanTriggerOutputTestM();
 				break;
 			}
+			case CMD_READ_SCANTRIGGER_LOG:
+			{
+				ScanTriggerLogFill(&Mmi2Seq.Arg.ScanTriggerLog);
+				break;
+			}
+			case CMD_WRITE_SCANTRIGGER_LOG_CLEAR:
+			{
+				ScanTriggerLogClear();
+				break;
+			}
 			case CMD_WRITE_LOAD_CNT_CLEAR:
 			{
 				MachineStatus.UnitInCnt = 0;

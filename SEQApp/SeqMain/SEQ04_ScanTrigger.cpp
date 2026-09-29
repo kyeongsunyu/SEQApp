@@ -1,6 +1,8 @@
 #include "..\pch.h"
 #include "CLASS_Main.h"
 #include "DEFINE_GVX.h"
+#include <stdarg.h>
+#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Line scan trigger cycle.
@@ -136,6 +138,120 @@ static int       g_nScanTriggerTestStep = 0;
 static bool      g_bScanTriggerTestHigh = false;
 
 //////////////////////////////////////////////////////////////////////////
+// The cycle's log, kept so the MMI can show it.
+//
+// On the machine nobody has the console window in front of them, and a scan
+// that went wrong is diagnosed from these lines - which way the counter ran,
+// how far it travelled against what was commanded, how many pulses came out.
+// Everything the cycle prints therefore goes into a ring as well as to stdout.
+//
+// Written by the cycle thread and read by the MMI communication thread, which
+// is a separate one - see THREAD_MMI.cpp - so the ring needs a lock. The lock
+// is a static object rather than a lazily initialised CRITICAL_SECTION on
+// purpose: static construction happens before either thread exists, so there is
+// no first-call race to get wrong.
+class CScanLogLock
+{
+public:
+	CScanLogLock(void)  { InitializeCriticalSection(&m_cs); }
+	~CScanLogLock(void) { DeleteCriticalSection(&m_cs); }
+	void Enter(void)    { EnterCriticalSection(&m_cs); }
+	void Leave(void)    { LeaveCriticalSection(&m_cs); }
+private:
+	CRITICAL_SECTION m_cs;
+};
+static CScanLogLock g_ScanLogLock;
+
+// Line number k of all the lines ever written lives at k % LINES, and
+// g_uScanLogSeq is how many have been written. That is the whole ring: there is
+// no head index to keep in step with a count, and the MMI is told the sequence
+// numbers rather than positions, so it can tell "nothing new" from "the ring
+// overwrote lines I never collected".
+static char         g_szScanLogRing[SCANTRIGGER_LOG_LINES][SCANTRIGGER_LOG_LINE_LEN];
+static unsigned int g_uScanLogSeq = 0;
+
+static void ScanTriggerLogPrintf(const char* pszFormat, ...)
+{
+	va_list args;
+
+	// The console gets the line in full. The ring gets as much of it as one
+	// fixed size line holds, because it is a block in shared memory and the
+	// console is not.
+	va_start(args, pszFormat);
+	vprintf(pszFormat, args);
+	va_end(args);
+
+	char szLine[SCANTRIGGER_LOG_LINE_LEN];
+	va_start(args, pszFormat);
+	_vsnprintf_s(szLine, sizeof(szLine), _TRUNCATE, pszFormat, args);
+	va_end(args);
+
+	// One call is one line on the MMI, so a newline inside the text - the
+	// trailing one every one of these has, above all - must not become a blank
+	// row there that the console does not show.
+	for (char* p = szLine; *p != '\0'; p++) {
+		if (*p == '\n' || *p == '\r') {
+			*p = ' ';
+		}
+	}
+	size_t nLen = strlen(szLine);
+	while (nLen > 0 && szLine[nLen - 1] == ' ') {
+		szLine[--nLen] = '\0';
+	}
+
+	g_ScanLogLock.Enter();
+	strcpy_s(g_szScanLogRing[g_uScanLogSeq % SCANTRIGGER_LOG_LINES],
+			 SCANTRIGGER_LOG_LINE_LEN, szLine);
+	g_uScanLogSeq++;
+	g_ScanLogLock.Leave();
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Flatten the ring for the MMI: szLine[0..uCount-1] in the order they were
+// written, and uFirstSeq saying which line szLine[0] is. Doing it here rather
+// than sending the ring raw means the MMI needs no ring arithmetic, and a
+// change of ring size does not change what the MMI has to understand.
+void CSeqMain::ScanTriggerLogFill(_scantriggerlog* pOut)
+{
+	if (pOut == NULL) {
+		return;
+	}
+	memset(pOut, 0, sizeof(_scantriggerlog));
+
+	g_ScanLogLock.Enter();
+
+	const unsigned int uSeq   = g_uScanLogSeq;
+	const unsigned int uCount = (uSeq < SCANTRIGGER_LOG_LINES)
+									? uSeq : SCANTRIGGER_LOG_LINES;
+	const unsigned int uFirst = uSeq - uCount;
+
+	pOut->uSeq      = uSeq;
+	pOut->uCount    = uCount;
+	pOut->uFirstSeq = uFirst;
+
+	for (unsigned int i = 0; i < uCount; i++) {
+		strcpy_s(pOut->szLine[i], SCANTRIGGER_LOG_LINE_LEN,
+				 g_szScanLogRing[(uFirst + i) % SCANTRIGGER_LOG_LINES]);
+	}
+
+	g_ScanLogLock.Leave();
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Throw the log away, from the MMI's RESET button. The sequence goes back to
+// zero, which is also how the MMI knows to empty its own list rather than
+// waiting for lines it will never be sent.
+void CSeqMain::ScanTriggerLogClear(void)
+{
+	g_ScanLogLock.Enter();
+	g_uScanLogSeq = 0;
+	memset(g_szScanLogRing, 0, sizeof(g_szScanLogRing));
+	g_ScanLogLock.Leave();
+
+	printf("[SCANTRIGGER] log cleared from the MMI\n");
+}
+
+//////////////////////////////////////////////////////////////////////////
 // One line of "what is the counter doing right now". Called while the scan
 // runs and again at each end of it.
 static void ScanTriggerLogCounter(const char* pszWhen)
@@ -163,7 +279,7 @@ static void ScanTriggerLogCounter(const char* pszWhen)
 		strcpy(szCount, "n/a");
 	}
 
-	printf("[SCANTRIGGER] %-8s enc %.0f counts = %.4f mm%s  triggers %s  out %s\n",
+	ScanTriggerLogPrintf("[SCANTRIGGER] %-8s enc %.0f counts = %.4f mm%s  triggers %s  out %s\n",
 		   (pszWhen != NULL) ? pszWhen : "",
 		   dPos, dPos * SCANTRIGGER_ENC_UNIT_MM, bPos ? "" : " (read failed)",
 		   szCount,
@@ -313,7 +429,7 @@ void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 0;
 
-	printf("[SCANTRIGGER] aborted: %s\n", (pszWhy != NULL) ? pszWhy : "");
+	ScanTriggerLogPrintf("[SCANTRIGGER] aborted: %s\n", (pszWhy != NULL) ? pszWhy : "");
 	sprintf(strFileLog, "Scan aborted: %s", (pszWhy != NULL) ? pszWhy : "");
 	LOG_TRACE(strFileLog);
 }
@@ -324,24 +440,24 @@ void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 void CSeqMain::ScanTriggerM(void)
 {
 	if (bit.ScanTriggerRun) {
-		printf("[SCANTRIGGER] already running\n");
+		ScanTriggerLogPrintf("[SCANTRIGGER] already running\n");
 		return;
 	}
 
 	const int nCode = ScanTriggerValidate();
 	if (nCode != SCANTRIGGER_VALIDATE_OK) {
-		printf("[SCANTRIGGER] recipe refused, code %d\n", nCode);
+		ScanTriggerLogPrintf("[SCANTRIGGER] recipe refused, code %d\n", nCode);
 		return;
 	}
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (!pAxis->imrs) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_NOT_HOMED;
-		printf("[SCANTRIGGER] axis %u has not been homed\n", ScanTriggerRecipe.uAxisNo);
+		ScanTriggerLogPrintf("[SCANTRIGGER] axis %u has not been homed\n", ScanTriggerRecipe.uAxisNo);
 		return;
 	}
 	if (!pAxis->IsStop) {
-		printf("[SCANTRIGGER] axis %u is still moving\n", ScanTriggerRecipe.uAxisNo);
+		ScanTriggerLogPrintf("[SCANTRIGGER] axis %u is still moving\n", ScanTriggerRecipe.uAxisNo);
 		return;
 	}
 
@@ -349,7 +465,7 @@ void CSeqMain::ScanTriggerM(void)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 1;
 
-	printf("[SCANTRIGGER] move %.4f -> %.4f mm [idx %d..%d],"
+	ScanTriggerLogPrintf("[SCANTRIGGER] move %.4f -> %.4f mm [idx %d..%d],"
 		   " trigger %.4f .. %.4f mm [idx %d..%d], run-up %.3f mm, run-out %.3f mm\n",
 		   ScanTriggerDisplay.dMotionStart, ScanTriggerDisplay.dMotionEnd,
 		   SCANTRIGGER_IDX_MOTION_START, SCANTRIGGER_IDX_MOTION_END,
@@ -358,7 +474,7 @@ void CSeqMain::ScanTriggerM(void)
 		   ScanTriggerDisplay.dTrigStart - ScanTriggerDisplay.dMotionStart,
 		   ScanTriggerDisplay.dMotionEnd - ScanTriggerDisplay.dTrigEnd);
 
-	printf("[SCANTRIGGER] pitch %.4f mm (%.0f counts), %.1f mm/s -> %.0f Hz,"
+	ScanTriggerLogPrintf("[SCANTRIGGER] pitch %.4f mm (%.0f counts), %.1f mm/s -> %.0f Hz,"
 		   " %.2f us pulse, %d lines, %.3f s\n",
 		   ScanTriggerRecipe.dPitch, ScanTriggerDisplay.dPitchCounts,
 		   ScanTriggerDisplay.dSpeed, ScanTriggerDisplay.dLineRate,
@@ -370,7 +486,7 @@ void CSeqMain::ScanTriggerM(void)
 		const double dRunUp  = ScanTriggerDisplay.dTrigStart - ScanTriggerDisplay.dMotionStart;
 		const double dNeeded = ScanTriggerDisplay.dSpeed / 10.0;   // v^2 / (2 * v*5)
 		if (dRunUp < dNeeded) {
-			printf("[SCANTRIGGER] WARNING: run-up is %.3f mm but reaching %.1f mm/s needs"
+			ScanTriggerLogPrintf("[SCANTRIGGER] WARNING: run-up is %.3f mm but reaching %.1f mm/s needs"
 				   " %.3f mm. The first lines will be taken while still accelerating.\n",
 				   dRunUp, ScanTriggerDisplay.dSpeed, dNeeded);
 		}
@@ -393,11 +509,11 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 	// A second press during a test restarts it rather than being refused - the
 	// operator is at the scope and pressing it again means "do that again".
 	if (bit.ScanTriggerRun && g_nScanTriggerState != SCANTRIGGER_OUTPUT_TEST) {
-		printf("[SCANTRIGGER] output test refused, a scan is running\n");
+		ScanTriggerLogPrintf("[SCANTRIGGER] output test refused, a scan is running\n");
 		return;
 	}
 	if (AjinTrigger == NULL || AjinTrigger->GetChannelCount() <= SCANTRIGGER_CHANNEL) {
-		printf("[SCANTRIGGER] output test refused, no counter channel %ld\n",
+		ScanTriggerLogPrintf("[SCANTRIGGER] output test refused, no counter channel %ld\n",
 			   SCANTRIGGER_CHANNEL);
 		return;
 	}
@@ -408,7 +524,7 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 	// said nothing about the wiring. Nothing moves during the test, and
 	// periodic mode only fires on encoder movement, so enabling is safe.
 	if (!AjinTrigger->BeginOutputTest(SCANTRIGGER_CHANNEL)) {
-		printf("[SCANTRIGGER] output test refused, the output stage could not be enabled\n");
+		ScanTriggerLogPrintf("[SCANTRIGGER] output test refused, the output stage could not be enabled\n");
 		return;
 	}
 	AjinTrigger->ReportChannelConfig(SCANTRIGGER_CHANNEL, "output test, line enabled");
@@ -422,7 +538,7 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 	g_nScanTriggerLastCount = -1;
 	bit.ScanTriggerRun = 1;
 
-	printf("[SCANTRIGGER] output self test on channel %ld : %d pulses, %lld ms high"
+	ScanTriggerLogPrintf("[SCANTRIGGER] output self test on channel %ld : %d pulses, %lld ms high"
 		   " and %lld ms low. Probe CON1 pin 1-2 now; the stage does not move.\n",
 		   SCANTRIGGER_CHANNEL, SCANTRIGGER_TEST_PULSES,
 		   SCANTRIGGER_TEST_HALF_MS, SCANTRIGGER_TEST_HALF_MS);
@@ -455,13 +571,13 @@ void CSeqMain::ScanTriggerC(void)
 									SCANTRIGGER_TEST_BURST_HZ);
 
 			AjinTrigger->EndOutputTest(SCANTRIGGER_CHANNEL);
-			printf("[SCANTRIGGER] output self test finished, %d pulses driven.\n",
+			ScanTriggerLogPrintf("[SCANTRIGGER] output self test finished, %d pulses driven.\n",
 				   SCANTRIGGER_TEST_PULSES);
-			printf("[SCANTRIGGER]  scope showed them -> output stage and wiring are good,"
+			ScanTriggerLogPrintf("[SCANTRIGGER]  scope showed them -> output stage and wiring are good,"
 				   " the fault is in the encoder or the comparator.\n");
-			printf("[SCANTRIGGER]  scope flat        -> wrong pin, wrong channel, or the"
+			ScanTriggerLogPrintf("[SCANTRIGGER]  scope flat        -> wrong pin, wrong channel, or the"
 				   " output stage. No trigger setting can fix that.\n");
-			printf("[SCANTRIGGER]  the trigger polarity was restored to active high.\n");
+			ScanTriggerLogPrintf("[SCANTRIGGER]  the trigger polarity was restored to active high.\n");
 
 			// DONE rather than IDLE: the MMI stops following the panel on DONE,
 			// and clearing the run bit means the switch below never sees this
@@ -482,7 +598,7 @@ void CSeqMain::ScanTriggerC(void)
 		const bool bRead = AjinTrigger->ReadOutputState(SCANTRIGGER_CHANNEL, &bSeen);
 
 		if (g_bScanTriggerTestHigh) {
-			printf("[SCANTRIGGER] test pulse %d/%d : driven HIGH%s, board reports %s\n",
+			ScanTriggerLogPrintf("[SCANTRIGGER] test pulse %d/%d : driven HIGH%s, board reports %s\n",
 				   (g_nScanTriggerTestStep / 2) + 1, SCANTRIGGER_TEST_PULSES,
 				   bSet ? "" : " (AxcTriggerSetOutput REFUSED)",
 				   bRead ? (bSeen ? "HIGH" : "low") : "n/a");
@@ -649,28 +765,28 @@ void CSeqMain::ScanTriggerC(void)
 			const double dEncTravel = (dEncEnd - g_dScanTriggerEncArm) * SCANTRIGGER_ENC_UNIT_MM;
 			const double dCmdTravel = ScanTriggerDisplay.dMotionEnd - ScanTriggerDisplay.dMotionStart;
 
-			printf("[SCANTRIGGER] counter travelled %.4f mm, the stage was told to travel"
+			ScanTriggerLogPrintf("[SCANTRIGGER] counter travelled %.4f mm, the stage was told to travel"
 				   " %.4f mm\n", dEncTravel, dCmdTravel);
 
 			if (fabs(dEncTravel) < dCmdTravel * 0.01) {
-				printf("[SCANTRIGGER]  the counter barely moved. The encoder is not reaching"
+				ScanTriggerLogPrintf("[SCANTRIGGER]  the counter barely moved. The encoder is not reaching"
 					   " this channel - check the encoder input wiring and"
 					   " AxcSignalSetEncSource / AxcSignalSetEncInputMethod.\n");
 			}
 			else if (dEncTravel < 0.0) {
-				printf("[SCANTRIGGER]  the counter ran DOWN while the block is armed for the"
+				ScanTriggerLogPrintf("[SCANTRIGGER]  the counter ran DOWN while the block is armed for the"
 					   " up direction, so the comparator rejected every position."
 					   " Set bEncReverse, or arm the other direction.\n");
 			}
 			else if (fabs(dEncTravel - dCmdTravel) > dCmdTravel * 0.05) {
-				printf("[SCANTRIGGER]  counter travel is %.1f %% of the commanded travel,"
+				ScanTriggerLogPrintf("[SCANTRIGGER]  counter travel is %.1f %% of the commanded travel,"
 					   " so the counter unit does not match the encoder.\n",
 					   dEncTravel / dCmdTravel * 100.0);
 			}
 		}
 
 		if (ScanTriggerDisplay.nTriggerCount == 0) {
-			printf("[SCANTRIGGER]  zero triggers emitted. Run the output self test to"
+			ScanTriggerLogPrintf("[SCANTRIGGER]  zero triggers emitted. Run the output self test to"
 				   " separate the output stage from the comparator.\n");
 		}
 
@@ -692,7 +808,7 @@ void CSeqMain::ScanTriggerC(void)
 		pAxis->Decel = pAxis->Accel;
 		pAxis->MTSAMove((int)(ScanTriggerDisplay.dMotionStart * dRate + 0.5));
 
-		printf("[SCANTRIGGER] returning to the scan start position, %.3f mm\n",
+		ScanTriggerLogPrintf("[SCANTRIGGER] returning to the scan start position, %.3f mm\n",
 			   ScanTriggerDisplay.dMotionStart);
 
 		g_bScanTriggerMoving = false;
@@ -726,7 +842,7 @@ void CSeqMain::ScanTriggerC(void)
 	case SCANTRIGGER_DONE:
 		bit.ScanTriggerRun = 0;
 		if (ScanTriggerDisplay.nTriggerCount >= 0) {
-			printf("[SCANTRIGGER] finished, %d triggers (expected %d, %+.2f %%)\n",
+			ScanTriggerLogPrintf("[SCANTRIGGER] finished, %d triggers (expected %d, %+.2f %%)\n",
 				   ScanTriggerDisplay.nTriggerCount, ScanTriggerDisplay.nLineCount,
 				   (ScanTriggerDisplay.nLineCount > 0)
 					   ? ((double)ScanTriggerDisplay.nTriggerCount
@@ -734,11 +850,11 @@ void CSeqMain::ScanTriggerC(void)
 					   : 0.0);
 		}
 		else {
-			printf("[SCANTRIGGER] finished, expected %d triggers"
+			ScanTriggerLogPrintf("[SCANTRIGGER] finished, expected %d triggers"
 				   " (this AXL has no AxcTriggerReadTriggerCount)\n",
 				   ScanTriggerDisplay.nLineCount);
 		}
-		printf("[SCANTRIGGER] parked at the scan start position, %.3f mm\n",
+		ScanTriggerLogPrintf("[SCANTRIGGER] parked at the scan start position, %.3f mm\n",
 			   ScanTriggerDisplay.dMotionStart);
 
 		sprintf(strFileLog, "%s", "Scan finished");
