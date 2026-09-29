@@ -145,7 +145,11 @@ public:
 
 	// Bit 2 of AxcStatusGetChannel - the trigger output line as the board
 	// sees it, which is the closest thing to an oscilloscope in software.
-	bool ReadOutputState(long lChannelNo, bool* pbOn);
+	//
+	// pdwCode, when given, comes back with what AxcStatusGetChannel returned.
+	// A caller that only prints "n/a" on failure leaves nobody able to tell a
+	// board that cannot report the line from a channel number that is wrong.
+	bool ReadOutputState(long lChannelNo, bool* pbOn, DWORD* pdwCode = NULL);
 
 	// Drive the trigger output directly, ignoring the encoder entirely. This
 	// identifies the pin on a scope and proves the output stage on its own,

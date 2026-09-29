@@ -271,19 +271,55 @@ static void ScanTriggerLogCounter(const char* pszWhen)
 		ScanTriggerDisplay.nTriggerCount = (int)lCount;
 	}
 
-	char szCount[32];
+	// A column the board cannot fill is left out rather than printed as "n/a".
+	// Neither of these changes during a scan - the call is there or it is not -
+	// so twenty rows of "n/a" say the same thing twenty times, push the encoder
+	// counts that do change off the side of the panel, and make an absence that
+	// was explained once at arming look like a fresh failure on every line.
+	char szTail[64];
+	szTail[0] = '\0';
+
 	if (bCount) {
-		sprintf(szCount, "%ld", lCount);
+		sprintf(szTail + strlen(szTail), "  triggers %ld", lCount);
 	}
-	else {
-		strcpy(szCount, "n/a");
+	if (bOutOk) {
+		sprintf(szTail + strlen(szTail), "  out %s", bOut ? "HIGH" : "low");
 	}
 
-	ScanTriggerLogPrintf("[SCANTRIGGER] %-8s enc %.0f counts = %.4f mm%s  triggers %s  out %s\n",
+	ScanTriggerLogPrintf("[SCANTRIGGER] %-8s enc %.0f counts = %.4f mm%s%s\n",
 		   (pszWhen != NULL) ? pszWhen : "",
 		   dPos, dPos * SCANTRIGGER_ENC_UNIT_MM, bPos ? "" : " (read failed)",
-		   szCount,
-		   bOutOk ? (bOut ? "HIGH" : "low") : "n/a");
+		   szTail);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Once, at arming: what the board will not be able to tell us about this scan,
+// and why. Said here so the rows that follow can carry only what changes.
+static void ScanTriggerLogReadbackLimits(void)
+{
+	if (AjinTrigger == NULL) return;
+
+	// Two lines rather than one: a log line is 192 characters in the block the
+	// MMI reads, and the console would then be showing a sentence the panel
+	// silently cut in half.
+	if (!CAjinTrigger::HasTriggerCountApi()) {
+		ScanTriggerLogPrintf("[SCANTRIGGER] trigger count not readable:"
+			   " this AXL has no AxcTriggerReadTriggerCount.\n");
+		ScanTriggerLogPrintf("[SCANTRIGGER]  the expected count is reported instead, so only"
+			   " a scope separates a scan that emitted nothing from one that emitted"
+			   " every line.\n");
+	}
+
+	bool  bOut  = false;
+	DWORD dwRet = 0;
+	if (!AjinTrigger->ReadOutputState(SCANTRIGGER_CHANNEL, &bOut, &dwRet)) {
+		// Not the missing optional calls: AxcStatusGetChannel is an ordinary
+		// counter API and is not headed CN2CH-only. Print what it returned
+		// rather than guessing why.
+		ScanTriggerLogPrintf("[SCANTRIGGER] the trigger output line cannot be read back:"
+			   " AxcStatusGetChannel(%ld) returned %lu. The out column is left off.\n",
+			   SCANTRIGGER_CHANNEL, (unsigned long)dwRet);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -683,6 +719,7 @@ void CSeqMain::ScanTriggerC(void)
 		g_dScanTriggerEncArm = 0.0;
 		AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &g_dScanTriggerEncArm);
 		g_nScanTriggerLastCount = -1;
+		ScanTriggerLogReadbackLimits();
 		ScanTriggerLogCounter("armed");
 
 		g_tmScanTriggerLog.SetTime();
@@ -841,6 +878,12 @@ void CSeqMain::ScanTriggerC(void)
 
 	case SCANTRIGGER_DONE:
 		bit.ScanTriggerRun = 0;
+
+		// Parked first, then the verdict. The log is read as the story of the
+		// cycle, and the cycle parks before it is finished.
+		ScanTriggerLogPrintf("[SCANTRIGGER] parked at the scan start position, %.3f mm\n",
+			   ScanTriggerDisplay.dMotionStart);
+
 		if (ScanTriggerDisplay.nTriggerCount >= 0) {
 			ScanTriggerLogPrintf("[SCANTRIGGER] finished, %d triggers (expected %d, %+.2f %%)\n",
 				   ScanTriggerDisplay.nTriggerCount, ScanTriggerDisplay.nLineCount,
@@ -851,11 +894,9 @@ void CSeqMain::ScanTriggerC(void)
 		}
 		else {
 			ScanTriggerLogPrintf("[SCANTRIGGER] finished, expected %d triggers"
-				   " (this AXL has no AxcTriggerReadTriggerCount)\n",
+				   " (the board could not be asked how many it emitted)\n",
 				   ScanTriggerDisplay.nLineCount);
 		}
-		ScanTriggerLogPrintf("[SCANTRIGGER] parked at the scan start position, %.3f mm\n",
-			   ScanTriggerDisplay.dMotionStart);
 
 		sprintf(strFileLog, "%s", "Scan finished");
 		LOG_TRACE(strFileLog);

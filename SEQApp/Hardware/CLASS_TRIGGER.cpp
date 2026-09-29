@@ -599,13 +599,20 @@ bool CAjinTrigger::SetTriggerOutPortMask(long lChannelNo, DWORD dwMask)
 	return (AXT_RT_SUCCESS == g_pfnSetOutport(lChannelNo, dwMask));
 }
 
-bool CAjinTrigger::ReadOutputState(long lChannelNo, bool* pbOn)
+bool CAjinTrigger::ReadOutputState(long lChannelNo, bool* pbOn, DWORD* pdwCode)
 {
+	if (pdwCode != NULL) {
+		*pdwCode = 0;
+	}
 	if (!IsChannelValid(lChannelNo) || pbOn == NULL) {
 		return false;
 	}
 	DWORD dwStatus = 0;
-	if (AXT_RT_SUCCESS != AxcStatusGetChannel(lChannelNo, &dwStatus)) {
+	const DWORD dwRet = AxcStatusGetChannel(lChannelNo, &dwStatus);
+	if (pdwCode != NULL) {
+		*pdwCode = dwRet;
+	}
+	if (AXT_RT_SUCCESS != dwRet) {
 		return false;
 	}
 	// AXC.h, AxcStatusGetChannel : bit 2 is the trigger output status.
