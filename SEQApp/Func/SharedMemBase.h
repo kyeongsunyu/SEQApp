@@ -379,6 +379,27 @@ enum SCANTRIGGER_VALIDATE
                                               // for the line period the speed gives
 	SCANTRIGGER_VALIDATE_INDEXPOS      = 12,  // motor index 50..53 are not in order,
                                               // or the trigger block has no length
+	SCANTRIGGER_VALIDATE_LINERATE      = 13,  // timer mode: the line rate the pitch and
+                                              // speed give is outside 1 Hz .. 500 kHz
+};
+//-------------------------------//
+// How the pulses are generated. The choice is a trade, not a preference:
+//
+//   PERIODIC  the counter compares the encoder and emits one pulse every N
+//             counts. The pitch is exact and holds however the velocity
+//             wanders, but N is a whole number of counts, so with a 1 um
+//             encoder the pitch can only be a whole number of micrometres.
+//             18.1 um is not reachable and is refused rather than rounded.
+//
+//   TIMER     the counter free runs at a set frequency and the encoder is not
+//             involved at all. Any pitch can be asked for - the quantisation
+//             is gone - but the pitch is only v / f while the stage actually
+//             holds v, so velocity error goes straight into the image, and
+//             the block edges are found by software rather than by hardware.
+enum SCANTRIGGER_MODE
+{
+	SCANTRIGGER_MODE_PERIODIC = 0,   // AxcTriggerSetFunction(ch, 0x03)
+	SCANTRIGGER_MODE_TIMER    = 1,   // AxcTriggerSetFunction(ch, 0x01)
 };
 //-------------------------------//
 // Cycle progress, reported in _scantriggerdisplay.nState.
@@ -423,6 +444,7 @@ using _scantriggerrecipe = struct
 	double dPitch;               // mm   (5 um = 0.005)
 	double dSpeed;               // mm/s, entered
 	double dPulseWidthUS;        // us,   entered
+	unsigned int uTriggerMode;   // SCANTRIGGER_MODE
 
 	// Reserved. The cycle runs at constant velocity through the trigger block,
 	// so these are carried but not used yet. Present now so that adding the
@@ -433,7 +455,8 @@ using _scantriggerrecipe = struct
 
 	// Grows and shrinks with the fields above so the struct keeps its size, and
 	// a build that disagrees about one of them still agrees about the rest.
-	unsigned int uReserved[10];
+	// uTriggerMode came out of here, which is what it was for.
+	unsigned int uReserved[9];
 };
 //-------------------------------//
 // Everything SEQ computes from the recipe. Kept on one side only so the two
@@ -454,6 +477,23 @@ using _scantriggerdisplay = struct
 	int    nValidateCode;        // 0 = accepted, see SCANTRIGGER_VALIDATE_*
 	int    nState;               // current cycle state, SCANTRIGGER_STATE
 	int    nTriggerCount;        // triggers counted, -1 when unavailable
+
+	// What the chosen mode can actually deliver, which is the whole reason for
+	// having two of them.
+	//
+	// PERIODIC rounds the pitch to a whole encoder count, so asking for 18.1 um
+	// with a 1 um encoder gives 18.0 um - a 100 nm error, every line, in the
+	// same direction. That is why it is refused rather than accepted quietly.
+	//
+	// TIMER sets an integer number of Hz, so the pitch lands on v / f. SEQ then
+	// trims the speed to pitch x f, which removes the quantisation entirely:
+	// dPitchErrorNM comes back 0 and dSpeedAdjusted says what the stage is
+	// actually being asked to run at. What is left is velocity error, which no
+	// number here can show.
+	int    nTriggerMode;         // SCANTRIGGER_MODE actually programmed
+	double dPitchAchieved;       // mm,   what the hardware will really emit
+	double dPitchErrorNM;        // nm,   achieved - requested
+	double dSpeedAdjusted;       // mm/s, the speed that makes the pitch exact
 };
 using _arg = union
 {

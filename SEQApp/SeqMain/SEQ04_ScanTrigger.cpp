@@ -85,6 +85,12 @@ static const double SCANTRIGGER_PULSE_DEFAULT_US = 10.0;
 // A scan longer than this is a data entry mistake, not a recipe.
 static const int    SCANTRIGGER_MAX_LINES = 2000000;
 
+// AxcTriggerSetFreq, from AXC.h: "Unit : Hz, Range : 1Hz ~ 500 kHz". In timer
+// mode this is the only quantised quantity in the whole setup, which is the
+// point of the mode - see ScanTriggerSolveTimer() below.
+static const double SCANTRIGGER_TIMER_FREQ_MIN = 1.0;
+static const double SCANTRIGGER_TIMER_FREQ_MAX = 500000.0;
+
 // How long the axis must read stopped before the trigger is armed. Guards
 // against arming while the stage is still ringing down.
 static const LONGLONG SCANTRIGGER_SETTLE_MS = 200;
@@ -119,6 +125,15 @@ static CRtTimer  g_tmScanTriggerLog;
 // Set once the axis has actually been seen moving in SCANTRIGGER_WAIT_END.
 static bool      g_bScanTriggerMoving = false;
 static CRtTimer  g_tmScanTriggerMoveStart;
+
+// Timer mode only: whether the free running pulse train is currently enabled,
+// and where the counter stood when it was switched. In periodic mode the
+// hardware opens and closes the window from the block and none of this exists;
+// here it is a software decision taken once per cycle pass, so record what it
+// actually caught rather than what it was aiming at.
+static bool      g_bScanTriggerTimerOn   = false;
+static double    g_dScanTriggerTimerOnAt  = 0.0;
+static double    g_dScanTriggerTimerOffAt = 0.0;
 
 // Counter position when the block was armed, so the travel the counter saw can
 // be compared against the travel that was commanded.
@@ -242,6 +257,51 @@ static double ScanTriggerPulseWidthUS(void)
 }
 
 //////////////////////////////////////////////////////////////////////////
+static bool ScanTriggerIsTimerMode(void)
+{
+	return (ScanTriggerRecipe.uTriggerMode == (unsigned int)SCANTRIGGER_MODE_TIMER);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Timer mode: what rate to program, and what it does to the pitch.
+//
+// The pitch is v / f and f has to be a whole number of Hz, so the obvious way
+// round - keep the entered speed, round the rate - leaves a pitch error of
+// about pitch^2 / v per Hz of rounding. At 18 um and 200 mm/s that is 1.6 nm,
+// which is already far below anything the optics can see.
+//
+// But it does not have to be there at all. The speed is a free parameter: the
+// operator entered it to fix the tact time, not to a nanometre. So round the
+// rate, then set the speed to pitch x rate. The pitch comes out exactly as
+// asked, the speed moves by at most one part in f - 0.009 % at 11 kHz - and
+// the quantisation term is gone rather than merely small.
+//
+// What is left is velocity error, and no arithmetic here can do anything about
+// that: in this mode the pitch is right only while the stage actually holds
+// the speed. That is the trade against periodic mode, where the encoder keeps
+// the pitch right no matter what the velocity does.
+static void ScanTriggerSolveTimer(double dPitchMM, double dSpeedMMS,
+								  double* dpRateHz, double* dpSpeedMMS,
+								  double* dpAchievedMM, double* dpErrorNM)
+{
+	const double dIdeal   = dSpeedMMS / dPitchMM;
+	const double dRounded = floor(dIdeal + 0.5);
+
+	*dpRateHz     = dRounded;
+	*dpSpeedMMS   = dPitchMM * dRounded;    // exactly dPitchMM per pulse
+	*dpAchievedMM = dPitchMM;
+	*dpErrorNM    = 0.0;
+
+	// Only if the rate could not be programmed at all does the pitch have to
+	// give instead, and then the caller refuses rather than running it.
+	if (dRounded < SCANTRIGGER_TIMER_FREQ_MIN || dRounded > SCANTRIGGER_TIMER_FREQ_MAX) {
+		*dpSpeedMMS   = dSpeedMMS;
+		*dpAchievedMM = (dRounded > 0.0) ? (dSpeedMMS / dRounded) : 0.0;
+		*dpErrorNM    = (*dpAchievedMM - dPitchMM) * 1.0e6;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
 // A motor index position in mm. PositionArray holds pulses, because the MMI
 // multiplies by the pulse rate before sending the table.
 static double ScanTriggerIndexMM(const CAjinMotor* pAxis, int nIdx)
@@ -312,24 +372,54 @@ int CSeqMain::ScanTriggerValidate(void)
 
 	// speed = pitch x line rate, entered from the speed end. The camera is then
 	// set from a line rate nobody had to work out by hand.
+	ScanTriggerDisplay.nTriggerMode = (int)ScanTriggerRecipe.uTriggerMode;
 	ScanTriggerDisplay.dSpeed       = ScanTriggerRecipe.dSpeed;
 	ScanTriggerDisplay.dLineRate    = ScanTriggerDisplay.dSpeed / ScanTriggerRecipe.dPitch;
-	ScanTriggerDisplay.dScanTime    = dLength / ScanTriggerDisplay.dSpeed;
-	ScanTriggerDisplay.nLineCount   = (int)(dLength / ScanTriggerRecipe.dPitch + 0.5);
 
 	// The comparator counts whole encoder counts. A fractional pitch is
 	// rounded, and that error repeats for the whole scan rather than
-	// cancelling out.
+	// cancelling out. Reported in both modes, because it is the number that
+	// says why one of them had to be chosen.
 	ScanTriggerDisplay.dPitchCounts = ScanTriggerRecipe.dPitch / SCANTRIGGER_ENC_UNIT_MM;
 	const double dNearest = floor(ScanTriggerDisplay.dPitchCounts + 0.5);
 	ScanTriggerDisplay.bPitchIsInteger =
 		(dNearest >= 1.0 &&
 		 fabs(ScanTriggerDisplay.dPitchCounts - dNearest) <= dNearest * 1e-6);
 
-	if (!ScanTriggerDisplay.bPitchIsInteger) {
-		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_PITCH_FRACTION;
-		return ScanTriggerDisplay.nValidateCode;
+	if (ScanTriggerIsTimerMode()) {
+		// The encoder is not in the loop, so the pitch is not tied to its 1 um
+		// step and bPitchIsInteger is reported but not enforced. The rate is
+		// rounded to a whole Hz and the speed trimmed to suit, which leaves the
+		// pitch exactly as asked - see ScanTriggerSolveTimer().
+		ScanTriggerSolveTimer(ScanTriggerRecipe.dPitch, ScanTriggerRecipe.dSpeed,
+							  &ScanTriggerDisplay.dLineRate,
+							  &ScanTriggerDisplay.dSpeedAdjusted,
+							  &ScanTriggerDisplay.dPitchAchieved,
+							  &ScanTriggerDisplay.dPitchErrorNM);
+
+		if (ScanTriggerDisplay.dLineRate < SCANTRIGGER_TIMER_FREQ_MIN ||
+			ScanTriggerDisplay.dLineRate > SCANTRIGGER_TIMER_FREQ_MAX) {
+			ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_LINERATE;
+			return ScanTriggerDisplay.nValidateCode;
+		}
+
+		// From here on the scan runs at the trimmed speed, not the entered one.
+		ScanTriggerDisplay.dSpeed = ScanTriggerDisplay.dSpeedAdjusted;
 	}
+	else {
+		ScanTriggerDisplay.dSpeedAdjusted  = ScanTriggerRecipe.dSpeed;
+		ScanTriggerDisplay.dPitchAchieved  = dNearest * SCANTRIGGER_ENC_UNIT_MM;
+		ScanTriggerDisplay.dPitchErrorNM   =
+			(ScanTriggerDisplay.dPitchAchieved - ScanTriggerRecipe.dPitch) * 1.0e6;
+
+		if (!ScanTriggerDisplay.bPitchIsInteger) {
+			ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_PITCH_FRACTION;
+			return ScanTriggerDisplay.nValidateCode;
+		}
+	}
+
+	ScanTriggerDisplay.dScanTime  = dLength / ScanTriggerDisplay.dSpeed;
+	ScanTriggerDisplay.nLineCount = (int)(dLength / ScanTriggerDisplay.dPitchAchieved + 0.5);
 	if (ScanTriggerDisplay.nLineCount <= 0 || ScanTriggerDisplay.nLineCount > SCANTRIGGER_MAX_LINES) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_LINECOUNT;
 		return ScanTriggerDisplay.nValidateCode;
@@ -361,8 +451,12 @@ int CSeqMain::ScanTriggerValidate(void)
 void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 {
 	if (AjinTrigger != NULL) {
+		// Both modes stop the same way - AxcTriggerSetEnable(ch, 0) - but the
+		// timer's own flag has to come down with it, or the next cycle starts
+		// believing its window is already open.
 		AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
 	}
+	g_bScanTriggerTimerOn = false;
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (pAxis != NULL && !pAxis->IsStop) {
@@ -418,11 +512,31 @@ void CSeqMain::ScanTriggerM(void)
 		   ScanTriggerDisplay.dTrigStart - ScanTriggerDisplay.dMotionStart,
 		   ScanTriggerDisplay.dMotionEnd - ScanTriggerDisplay.dTrigEnd);
 
-	printf("[SCANTRIGGER] pitch %.4f mm (%.0f counts), %.1f mm/s -> %.0f Hz,"
+	printf("[SCANTRIGGER] %s mode, pitch %.4f mm (%.4f counts), %.4f mm/s -> %.0f Hz,"
 		   " %.2f us pulse, %d lines, %.3f s\n",
+		   ScanTriggerIsTimerMode() ? "TIMER" : "PERIODIC",
 		   ScanTriggerRecipe.dPitch, ScanTriggerDisplay.dPitchCounts,
 		   ScanTriggerDisplay.dSpeed, ScanTriggerDisplay.dLineRate,
 		   ScanTriggerPulseWidthUS(), ScanTriggerDisplay.nLineCount, ScanTriggerDisplay.dScanTime);
+
+	// What the mode does to the number the operator actually cares about.
+	if (ScanTriggerIsTimerMode()) {
+		printf("[SCANTRIGGER] timer: rate rounded to a whole %.0f Hz and the speed trimmed"
+			   " %.4f -> %.4f mm/s, so the pitch is exactly %.6f mm.\n",
+			   ScanTriggerDisplay.dLineRate,
+			   ScanTriggerRecipe.dSpeed, ScanTriggerDisplay.dSpeedAdjusted,
+			   ScanTriggerDisplay.dPitchAchieved);
+		printf("[SCANTRIGGER]  the encoder no longer holds the pitch: a %.2f %% velocity"
+			   " error is a %.1f nm pitch error, against %.2f nm per Hz of rate.\n",
+			   0.1, ScanTriggerRecipe.dPitch * 0.001 * 1.0e6,
+			   (ScanTriggerDisplay.dLineRate > 0.0)
+				   ? (ScanTriggerDisplay.dPitchAchieved / ScanTriggerDisplay.dLineRate * 1.0e6)
+				   : 0.0);
+	}
+	else if (fabs(ScanTriggerDisplay.dPitchErrorNM) > 0.5) {
+		printf("[SCANTRIGGER] periodic: the pitch rounds to %.6f mm, %+.1f nm per line.\n",
+			   ScanTriggerDisplay.dPitchAchieved, ScanTriggerDisplay.dPitchErrorNM);
+	}
 
 	// The distance the stage has to get up to speed in, against the distance it
 	// needs. Accel is set to Speed * 5 in the RUN state below.
@@ -618,7 +732,7 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dwEncoderInput   = (DWORD)SCANTRIGGER_CHANNEL;
 		cfg.dwTriggerOutPort = SCANTRIGGER_OUTPORT;
 		cfg.dMoveUnitPerPulse= SCANTRIGGER_ENC_UNIT_MM;
-		cfg.dPitch           = ScanTriggerRecipe.dPitch;
+		cfg.dPitch           = ScanTriggerDisplay.dPitchAchieved;
 		cfg.dScanStart       = ScanTriggerDisplay.dTrigStart;
 		cfg.dScanEnd         = ScanTriggerDisplay.dTrigEnd;
 		cfg.dPulseWidthUS    = ScanTriggerPulseWidthUS();
@@ -627,7 +741,26 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dwDirectionCheck = 1;          // count up only, the scan direction
 		cfg.bEncReverse      = SCANTRIGGER_ENC_REVERSE;
 
-		if (!AjinTrigger->StartPeriodicTrigger(cfg)) {
+		g_bScanTriggerTimerOn    = false;
+		g_dScanTriggerTimerOnAt  = 0.0;
+		g_dScanTriggerTimerOffAt = 0.0;
+
+		if (ScanTriggerIsTimerMode()) {
+			// Configured but not started: the pulse train free runs, so
+			// enabling it here would fire it all the way in from the approach.
+			// The counter is still preset and still read, but only so this
+			// cycle can open the window at dTrigStart and close it at dTrigEnd
+			// - which is the guarantee this mode gives up.
+			if (!AjinTrigger->StartTimerTrigger(cfg)) {
+				ScanTriggerAbort("StartTimerTrigger refused the configuration");
+				break;
+			}
+			printf("[SCANTRIGGER] timer mode: the encoder does not gate the output."
+				   " The window is opened and closed by this cycle, so its edges carry"
+				   " one pass of jitter, and the pitch holds only while the stage holds"
+				   " %.4f mm/s.\n", ScanTriggerDisplay.dSpeed);
+		}
+		else if (!AjinTrigger->StartPeriodicTrigger(cfg)) {
 			ScanTriggerAbort("StartPeriodicTrigger refused the configuration");
 			break;
 		}
@@ -693,11 +826,45 @@ void CSeqMain::ScanTriggerC(void)
 		// so say so now rather than after the whole scan has been made.
 		{
 			double dNow = 0.0;
-			if (AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dNow) &&
-				(dNow - g_dScanTriggerEncArm) < -SCANTRIGGER_WRONG_WAY_COUNTS) {
+			const bool bGotPos = AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dNow);
+
+			if (bGotPos && (dNow - g_dScanTriggerEncArm) < -SCANTRIGGER_WRONG_WAY_COUNTS) {
 				ScanTriggerAbort("the counter is running away from the block;"
 								 " the encoder direction is inverted");
 				break;
+			}
+
+			// Timer mode has no block. The hardware will free run from the
+			// moment it is enabled, so this is where the window is opened and
+			// closed, one cycle pass at a time. The counter is read anyway for
+			// the log, so the comparison costs nothing - but the edges land
+			// wherever the pass happened to fall, which is the accuracy this
+			// mode trades away and is why the position at each switch is
+			// recorded and reported at the end.
+			if (bGotPos && ScanTriggerIsTimerMode()) {
+				const double dPosMM = dNow * SCANTRIGGER_ENC_UNIT_MM;
+
+				if (!g_bScanTriggerTimerOn) {
+					if (dPosMM >= ScanTriggerDisplay.dTrigStart &&
+						dPosMM <  ScanTriggerDisplay.dTrigEnd) {
+						if (AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, true)) {
+							g_bScanTriggerTimerOn   = true;
+							g_dScanTriggerTimerOnAt = dPosMM;
+							ScanTriggerLogCounter("trig on");
+						}
+						else {
+							ScanTriggerAbort("the timer could not be started at the"
+											 " block entry");
+							break;
+						}
+					}
+				}
+				else if (dPosMM >= ScanTriggerDisplay.dTrigEnd) {
+					AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, false);
+					g_bScanTriggerTimerOn    = false;
+					g_dScanTriggerTimerOffAt = dPosMM;
+					ScanTriggerLogCounter("trig off");
+				}
 			}
 		}
 
@@ -708,6 +875,18 @@ void CSeqMain::ScanTriggerC(void)
 
 	case SCANTRIGGER_DISARM:
 	{
+		// Timer mode: the stage stopped before the software saw it reach
+		// dTrigEnd, so the pulse train is still running. Shut it off before
+		// anything else.
+		if (ScanTriggerIsTimerMode() && g_bScanTriggerTimerOn) {
+			double dNow = 0.0;
+			AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, false);
+			g_bScanTriggerTimerOn = false;
+			if (AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dNow)) {
+				g_dScanTriggerTimerOffAt = dNow * SCANTRIGGER_ENC_UNIT_MM;
+			}
+		}
+
 		long lCount = 0;
 		g_nScanTriggerLastCount =
 			AjinTrigger->ReadTriggerCount(SCANTRIGGER_CHANNEL, &lCount) ? (int)lCount : -1;
@@ -748,7 +927,32 @@ void CSeqMain::ScanTriggerC(void)
 				   " separate the output stage from the comparator.\n");
 		}
 
-		AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
+		// What the software window actually caught, against what was asked
+		// for. In periodic mode the hardware guarantees these are the block
+		// edges; in timer mode they are wherever the cycle pass fell, and the
+		// difference is the line count this scan is uncertain by.
+		if (ScanTriggerIsTimerMode()) {
+			const double dSpanMM = g_dScanTriggerTimerOffAt - g_dScanTriggerTimerOnAt;
+			const double dWantMM = ScanTriggerDisplay.dTrigEnd - ScanTriggerDisplay.dTrigStart;
+
+			printf("[SCANTRIGGER] timer window %.4f .. %.4f mm = %.4f mm,"
+				   " asked for %.4f .. %.4f mm = %.4f mm\n",
+				   g_dScanTriggerTimerOnAt, g_dScanTriggerTimerOffAt, dSpanMM,
+				   ScanTriggerDisplay.dTrigStart, ScanTriggerDisplay.dTrigEnd, dWantMM);
+
+			if (ScanTriggerDisplay.dPitchAchieved > 0.0) {
+				printf("[SCANTRIGGER]  that is %.0f lines against the %d expected,"
+					   " %+.0f from the window edges alone\n",
+					   dSpanMM / ScanTriggerDisplay.dPitchAchieved,
+					   ScanTriggerDisplay.nLineCount,
+					   (dSpanMM - dWantMM) / ScanTriggerDisplay.dPitchAchieved);
+			}
+
+			AjinTrigger->StopTimerTrigger(SCANTRIGGER_CHANNEL);
+		}
+		else {
+			AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
+		}
 		g_nScanTriggerState = SCANTRIGGER_RETURN;
 		break;
 	}

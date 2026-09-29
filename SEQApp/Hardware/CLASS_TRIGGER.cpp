@@ -552,6 +552,163 @@ bool CAjinTrigger::StopPeriodicTrigger(long lChannelNo)
 	return (AXT_RT_SUCCESS == AxcTriggerSetEnable(lChannelNo, 0));
 }
 
+//==========================================================================
+//  Timer mode - AxcTriggerSetFunction(ch, 0x01)
+//
+//  The counter runs a free running oscillator onto the trigger pin. Nothing
+//  about the encoder, the block or the direction is consulted, so every
+//  position guarantee periodic mode gives is gone: the pitch is whatever the
+//  stage travels between two pulses, and it is right only while the stage
+//  holds the speed it was commanded.
+//
+//  What it buys is the one thing periodic mode cannot do. AxcTriggerSetFreq
+//  takes a whole number of Hz over 1 Hz .. 500 kHz, and that is the only
+//  quantised quantity in the mode - the encoder's 1 um step is not involved.
+//  So a pitch periodic mode has to refuse, 18.1 um among them, is reachable
+//  here: pick an integer rate and run the stage at pitch x rate.
+//==========================================================================
+
+// AxcTriggerSetFreq, from AXC.h: "Unit : Hz, Range : 1Hz ~ 500 kHz".
+static const double TIMER_FREQ_MIN_HZ = 1.0;
+static const double TIMER_FREQ_MAX_HZ = 500000.0;
+
+bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
+{
+	long ch = cfg.lChannelNo;
+
+	if (!IsChannelValid(ch)) {
+		printf("StartTimerTrigger: channel %ld out of range (0..%ld)\n",
+			   ch, lCntChannelCounts - 1);
+		return false;
+	}
+	if (cfg.dPulseWidthUS < 1.0) {
+		printf("StartTimerTrigger: pulse width %.3f us is under the 1 us camera minimum\n",
+			   cfg.dPulseWidthUS);
+		return false;
+	}
+
+	// The rate has to be a whole number of Hz because that is what the call
+	// takes. Refuse a fractional one here rather than letting the DWORD cast
+	// truncate it: the caller is supposed to have chosen an integer and
+	// trimmed the speed to suit, and silently keeping the wrong one of the two
+	// would put the pitch out by the part that was dropped.
+	const double dRounded = floor(cfg.dLineRateHz + 0.5);
+	if (cfg.dLineRateHz < TIMER_FREQ_MIN_HZ || cfg.dLineRateHz > TIMER_FREQ_MAX_HZ) {
+		printf("StartTimerTrigger: line rate %.3f Hz is outside the %.0f Hz .. %.0f Hz"
+			   " AxcTriggerSetFreq range\n",
+			   cfg.dLineRateHz, TIMER_FREQ_MIN_HZ, TIMER_FREQ_MAX_HZ);
+		return false;
+	}
+	if (fabs(cfg.dLineRateHz - dRounded) > 1e-6) {
+		printf("StartTimerTrigger: line rate %.6f Hz is not a whole number of Hz;"
+			   " AxcTriggerSetFreq cannot express it\n", cfg.dLineRateHz);
+		return false;
+	}
+	const DWORD dwFreq = (DWORD)dRounded;
+
+	// The period has to have room for the pulse, or the output never returns
+	// low between lines.
+	const double dPeriodUS = 1.0e6 / dRounded;
+	if (cfg.dPulseWidthUS >= dPeriodUS) {
+		printf("StartTimerTrigger: pulse %.2f us does not fit in the %.2f us period"
+			   " %lu Hz gives\n", cfg.dPulseWidthUS, dPeriodUS, dwFreq);
+		return false;
+	}
+
+	if (AXT_RT_SUCCESS != AxcTriggerSetEnable(ch, 0)) {
+		return false;
+	}
+
+	//< Timer mode. 0x01 for SIO-HPC4, per the AxcTriggerSetFunction comment
+	//  block in AXC.h; 0x03 is the periodic mode used elsewhere in this file.
+	DWORD dwCode = AxcTriggerSetFunction(ch, 0x01);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("StartTimerTrigger: AxcTriggerSetFunction(ch%ld, 0x01) failed, code %lu.\n"
+			   "  Timer mode is documented for SIO-HPC4 but has not been confirmed on"
+			   " this board - a refusal here is that answer.\n", ch, dwCode);
+		return false;
+	}
+
+	//< The register 0x16 write the periodic path needs. Whether timer mode
+	//  needs it is not known - the EzSpy trace that found it was of a periodic
+	//  setup - but it is the bit that connects the comparator to the output
+	//  stage and setting it twice is harmless.
+	WORD wTrigReg = 0;
+	if (AXT_RT_SUCCESS == AxcKeGetCommandData16(ch, 22, &wTrigReg)) {
+		AxcKeSetCommandData16(ch, 150, (WORD)(wTrigReg | 0x0002));
+	}
+
+	dwCode = AxcTriggerSetFreq(ch, dwFreq);
+	if (dwCode != AXT_RT_SUCCESS) {
+		printf("StartTimerTrigger: AxcTriggerSetFreq(ch%ld, %lu) failed, code %lu\n",
+			   ch, dwFreq, dwCode);
+		return false;
+	}
+	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, cfg.dPulseWidthUS)) {
+		printf("StartTimerTrigger: AxcTriggerSetTime(ch%ld, %.3f) failed\n",
+			   ch, cfg.dPulseWidthUS);
+		return false;
+	}
+
+	//< Read the rate back. Timer mode has no block to check, so this is the
+	//  only thing standing between a call that returned success and a board
+	//  that quietly kept its old frequency.
+	DWORD dwGotFreq = 0;
+	if (AXT_RT_SUCCESS == AxcTriggerGetFreq(ch, &dwGotFreq) && dwGotFreq != dwFreq) {
+		printf("StartTimerTrigger: wrote %lu Hz, the board reads back %lu Hz.\n"
+			   "  The pitch would be out by a factor of %.4f.\n",
+			   dwFreq, dwGotFreq,
+			   (dwGotFreq > 0) ? ((double)dwFreq / (double)dwGotFreq) : 0.0);
+		return false;
+	}
+
+	if (g_pfnSetOutport != NULL) {
+		DWORD dwPortCode = g_pfnSetOutport(ch, cfg.dwTriggerOutPort);
+		if (dwPortCode != AXT_RT_SUCCESS) {
+			printf("StartTimerTrigger: AxcTriggerSetTriggerOutport(ch%ld, 0x%lX) failed,"
+				   " code %lu\n", ch, cfg.dwTriggerOutPort, dwPortCode);
+			return false;
+		}
+	}
+	if (AXT_RT_SUCCESS != AxcTriggerSetLevel(ch, cfg.dwTriggerLevel)) {
+		return false;
+	}
+
+	if (g_pfnCountClear != NULL) {
+		g_pfnCountClear(ch);
+	}
+
+	// Configured, not started. Enabling here would start the pulse train while
+	// the stage is still approaching, and in this mode the hardware has no
+	// block to keep those pulses out of the image.
+	printf("Timer trigger ch%ld : %lu Hz, period %.3f us, pulse %.2f us (%.1f %% duty)."
+		   " Not started - the window is opened by position from the cycle.\n",
+		   ch, dwFreq, dPeriodUS, cfg.dPulseWidthUS,
+		   cfg.dPulseWidthUS / dPeriodUS * 100.0);
+
+	ReportChannelConfig(ch, "timer armed");
+	return true;
+}
+
+// Open and close the window. In periodic mode the hardware does this from the
+// block; here it is a software decision, and its jitter is one cycle of
+// whatever calls it.
+bool CAjinTrigger::SetTimerRunning(long lChannelNo, bool bRun)
+{
+	if (!IsChannelValid(lChannelNo)) {
+		return false;
+	}
+	return (AXT_RT_SUCCESS == AxcTriggerSetEnable(lChannelNo, bRun ? 1 : 0));
+}
+
+bool CAjinTrigger::StopTimerTrigger(long lChannelNo)
+{
+	if (!IsChannelValid(lChannelNo)) {
+		return false;
+	}
+	return (AXT_RT_SUCCESS == AxcTriggerSetEnable(lChannelNo, 0));
+}
+
 bool CAjinTrigger::ResetScanOrigin(long lChannelNo, double dPos)
 {
 	if (!IsChannelValid(lChannelNo)) {

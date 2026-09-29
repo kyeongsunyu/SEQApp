@@ -54,8 +54,10 @@ struct PERIODIC_TRIG_CFG
 	double dScanStart;			// trigger block lower position
 	double dScanEnd;			// trigger block upper position
 	double dPulseWidthUS;		// pulse width [us], used as given; minimum 1.0
-	double dLineRateHz;			// line rate, reported alongside the pulse width so
-								// the period and duty appear in the log
+	double dLineRateHz;			// line rate. In periodic mode this is reported
+								// alongside the pulse width so the period and duty
+								// appear in the log; in timer mode it IS the
+								// setting, and must be a whole number of Hz
 	DWORD  dwTriggerLevel;		// 0 = low active, 1 = high active
 	DWORD  dwDirectionCheck;	// 0 = both directions, 1 = count up only, 2 = count down only
 	bool   bEncReverse;			// reverse the encoder count direction
@@ -116,6 +118,30 @@ public:
 	// position buffer and the number of triggers per scan is unbounded.
 	bool StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg);
 	bool StopPeriodicTrigger(long lChannelNo);
+
+	// ---- timer mode -----------------------------------------------------
+	// AxcTriggerSetFunction(ch, 0x01). The counter free runs at dLineRateHz
+	// and the encoder is not consulted at all, so the pitch is whatever the
+	// stage happens to travel between two pulses.
+	//
+	// The point of it is that dLineRateHz is the only quantised quantity -
+	// AxcTriggerSetFreq takes a whole number of Hz, 1 Hz to 500 kHz - so the
+	// pitch is not tied to the encoder's 1 um step. A pitch periodic mode has
+	// to refuse can be run here exactly, by choosing an integer rate and
+	// letting the caller trim the speed to match.
+	//
+	// The cost is that nothing about the position is enforced any more. These
+	// fields are read: lChannelNo, dwTriggerOutPort, dLineRateHz,
+	// dPulseWidthUS, dwTriggerLevel. The block, the pitch, the encoder input
+	// and the direction check are all ignored, because the hardware ignores
+	// them in this mode - the caller has to open and close the window itself.
+	//
+	// Configures but does NOT start: the pulse train would otherwise begin
+	// while the stage is still approaching. Call SetTimerRunning() to open and
+	// close the window.
+	bool StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg);
+	bool SetTimerRunning(long lChannelNo, bool bRun);
+	bool StopTimerTrigger(long lChannelNo);
 
 	// Zero (or preset) the counter before a scan so the block positions in
 	// PERIODIC_TRIG_CFG are relative to the scan origin.
