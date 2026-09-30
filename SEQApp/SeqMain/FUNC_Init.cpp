@@ -289,6 +289,7 @@ void CSeqMain::InitSequence(void)
 	bit.TestMode = 0;
 	bit.AllReset = 0;
 	bit.TenkeyJogMove = 0;
+	bit.ScanTriggerRun = 0;
 	bit.LotEndCntClear = 1;
 	bit.DeviceDataReceived = 0;
 
