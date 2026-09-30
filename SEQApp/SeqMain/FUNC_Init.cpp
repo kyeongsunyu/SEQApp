@@ -65,17 +65,8 @@ void CSeqMain::InitMotor(void)
 	// Load Motor Config data
 	Load_Motor_Parameter();
 
-	// Both axes are in use. totalAxisCnt is what every per-axis loop and check
-	// runs on, so this one number decides how much of MTAxis[] is live:
-	// initialisation, homing, the driver alarm and servo off checks all take
-	// their range from it. It was held at 1 while the second drive was not
-	// connected; drop it back only if that drive is removed again.
 	totalAxisCnt = 2;
 
-	// The axis count is fixed here while the board decides how many axes really
-	// exist. When the two disagree every AXM call on the surplus axes fails, and
-	// they fail quietly - the setters below discard their return codes. Say so
-	// once at startup instead of leaving it to be discovered on the machine.
 	long lBoardAxisCount = 0;
 	DWORD dwAxisCode = AxmInfoGetAxisCount(&lBoardAxisCount);
 	if (dwAxisCode != AXT_RT_SUCCESS) {
@@ -177,7 +168,7 @@ void CSeqMain::InitMotor(void)
 		MTAxis[j]->SetActualPosition(0);
 	}
 	//AxmSignalSetLimit(0, SLOWDOWN_STOP, LOW, LOW);
-	MTStageX->DfltWorking = STAGE_X_WAIT;
+	MTStageX->DfltWorking = STAGE_X_SCAN_START;
 	MTStageY->DfltWorking = STAGE_Y_WAIT;
 	
 	//////////////////////////////////////////////////////////////////////////

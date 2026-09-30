@@ -137,10 +137,6 @@ void CSeqMain::JogMoveIndex(int axisno, int idx)
 #pragma region AXIS01 MTStageX
 void CSeqMain::MTStageXHomeM(void)
 {
-	// MTHOMERDY, not MTRDY. MTRDY requires imrs, which only becomes 1 after a
-	// home completes, so the first home after power up could never be issued.
-	// Accepting a home needs the axis idle, drive ready and servo on - nothing
-	// about whether it has already found its origin.
 	if (MTHOMERDY(MTStageX)) {
 		MTStageX->imrs = 0;
 		MTStageX->NxtPos = 0;
@@ -149,7 +145,6 @@ void CSeqMain::MTStageXHomeM(void)
 }
 void CSeqMain::MTStageYHomeM(void)
 {
-	// Same reason as MTStageXHomeM().
 	if (MTHOMERDY(MTStageY)) {
 		MTStageY->imrs = 0;
 		MTStageY->NxtPos = 0;
@@ -161,14 +156,17 @@ void CSeqMain::MTStageYHomeM(void)
 void CSeqMain::MTStageXMoveM(void)
 {
 	if (MTRDY(MTStageX)) {
-		if (MTCEP(MTStageX, STAGE_X_WAIT)) {
-			MTMOVE(MTStageX, STAGE_X_PRE_WORK, AUTOSPEED);
+		if (MTCEP(MTStageX, STAGE_X_SCAN_START)) {
+			MTMOVE(MTStageX, STAGE_X_TRIGGER_START, AUTOSPEED);
 		}
-		else if (MTCEP(MTStageX, STAGE_X_PRE_WORK)) {
-			MTMOVE(MTStageX, STAGE_X_WORK, AUTOSPEED);
+		else if (MTCEP(MTStageX, STAGE_X_TRIGGER_START)) {
+			MTMOVE(MTStageX, STAGE_X_TRIGGER_END, AUTOSPEED);
 		}
-		else if (MTCEP(MTStageX, STAGE_X_WORK)) {
-			MTMOVE(MTStageX, STAGE_X_WAIT, AUTOSPEED);
+		else if (MTCEP(MTStageX, STAGE_X_TRIGGER_END)) {
+			MTMOVE(MTStageX, STAGE_X_SCAN_END, AUTOSPEED);
+		}
+		else if (MTCEP(MTStageX, STAGE_X_SCAN_END)) {
+			MTMOVE(MTStageX, STAGE_X_SCAN_START, AUTOSPEED);
 		}
 	}
 }
