@@ -144,7 +144,21 @@ public:
 	// Configures but does NOT start: the pulse train would otherwise begin
 	// while the stage is still approaching. Call SetTimerRunning() to open and
 	// close the window.
-	bool StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg);
+	// dpActualRateHz comes back with the rate the board actually took, which is
+	// not the one asked for: AxcTriggerSetFreq is documented in Hz, but the
+	// hardware divides a fixed clock, so the reachable rates are C/N for whole
+	// N. Measured on this board, 253,485 Hz was answered with 253,807.11 Hz -
+	// C/N with N = 394 on a 100 MHz clock.
+	//
+	// The gap between rate points is f/N, which is 0.25 % at 253 kHz and
+	// 0.06 % at 64 kHz. That is the pitch error if it is ignored, so the caller
+	// runs the stage at pitch x this rate instead of at the speed it asked for,
+	// and the pitch comes out exact again.
+	//
+	// This function searches downward so the rate it settles on is at or below
+	// the one requested, which keeps the resulting speed inside what the
+	// operator entered.
+	bool StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg, double* dpActualRateHz = NULL);
 	bool SetTimerRunning(long lChannelNo, bool bRun);
 	bool StopTimerTrigger(long lChannelNo);
 

@@ -683,8 +683,11 @@ static const double TIMER_FREQ_MIN_HZ = 1.0;
 static const double TIMER_FREQ_MAX_HZ = 500000.0;
 
 
-bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
+bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg, double* dpActualRateHz)
 {
+	if (dpActualRateHz != NULL) {
+		*dpActualRateHz = 0.0;
+	}
 	long ch = cfg.lChannelNo;
 
 	if (!IsChannelValid(ch)) {
@@ -713,25 +716,6 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 	if (fabs(cfg.dLineRateHz - dRounded) > 1e-6) {
 		printf("StartTimerTrigger: line rate %.6f Hz is not a whole number of Hz;"
 			   " AxcTriggerSetFreq cannot express it\n", cfg.dLineRateHz);
-		return false;
-	}
-	const DWORD dwFreq = (DWORD)dRounded;
-
-	// The period has to have room for the pulse, or the output never returns
-	// low between lines.
-	//
-	// Ajinextek's counter trigger guide puts a number on how much room: the
-	// period should be at least twice the distance travelled while the pulse
-	// is high, which is the same as saying the duty must stay under 50 %. Its
-	// worked example runs a 1000 us pulse at a period equal to the pulse and
-	// gets 21 of 50 triggers; at half the speed, so half the duty, it gets all
-	// 50. The caller's own cap is 40 %, which is inside this.
-	const double dPeriodUS = 1.0e6 / dRounded;
-	if (cfg.dPulseWidthUS >= dPeriodUS * 0.5) {
-		printf("StartTimerTrigger: pulse %.2f us is %.0f %% of the %.2f us period %lu Hz"
-			   " gives. Ajinextek's guide puts the limit at 50 %%, above which triggers"
-			   " are dropped rather than merged.\n",
-			   cfg.dPulseWidthUS, cfg.dPulseWidthUS / dPeriodUS * 100.0, dPeriodUS, dwFreq);
 		return false;
 	}
 
@@ -777,12 +761,79 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 		return false;
 	}
 
-	dwCode = AxcTriggerSetFreq(ch, dwFreq);
-	if (dwCode != AXT_RT_SUCCESS) {
-		printf("StartTimerTrigger: AxcTriggerSetFreq(ch%ld, %lu) failed, code %lu\n",
-			   ch, dwFreq, dwCode);
+	//< The rate, and what the board is willing to give.
+	//
+	//  AxcTriggerSetFreq takes whole Hz, but whole Hz is not what comes out:
+	//  the hardware divides a fixed clock, so its reachable rates are C/N for
+	//  integer N. Asking for 253,485 Hz on this board answers 253,807.11 -
+	//  which is 100 MHz / 394 - and the gap to the next point down is 642 Hz,
+	//  0.25 %.
+	//
+	//  That difference was being treated as a fault and the scan refused. It is
+	//  not a fault, it is the hardware's resolution, and the answer to it is to
+	//  run the stage at a speed that suits the rate the board can actually give
+	//  rather than to insist on a rate it cannot.
+	//
+	//  Search downward, because the rate has to end up at or below the one
+	//  asked for: the caller derived it from the speed the operator entered,
+	//  and overshooting it would run the stage faster than they allowed. The
+	//  step is relative because the grid is - the spacing is f/N - and it
+	//  doubles because N is not known from here.
+	double dGotHz  = 0.0;
+	double dReqHz  = dRounded;
+	double dMargin = 0.0005;
+
+	for (int nTry = 0; nTry < 8; nTry++) {
+		const DWORD dwTry = (DWORD)floor(dReqHz + 0.5);
+
+		dwCode = AxcTriggerSetFreq(ch, dwTry);
+		if (dwCode != AXT_RT_SUCCESS) {
+			printf("StartTimerTrigger: AxcTriggerSetFreq(ch%ld, %lu) failed, code %lu\n",
+				   ch, dwTry, dwCode);
+			return false;
+		}
+
+		DWORD dwGot = 0;
+		if (AXT_RT_SUCCESS != AxcTriggerGetFreq(ch, &dwGot) || dwGot == 0) {
+			// Nothing to read back means nothing to correct against; take the
+			// write at its word and say so.
+			printf("[TRIGGER] ch%ld : AxcTriggerGetFreq unavailable, assuming %lu Hz."
+				   " The pitch cannot be corrected for the board's rate grid.\n",
+				   ch, dwTry);
+			dGotHz = (double)dwTry;
+			break;
+		}
+
+		dGotHz = (double)dwGot;
+		if (dGotHz <= dRounded + 0.5) {
+			break;                       // at or below what was asked for
+		}
+
+		dReqHz = dGotHz * (1.0 - dMargin);
+		dMargin *= 2.0;
+	}
+
+	if (dGotHz <= 0.0) {
+		printf("StartTimerTrigger: no usable rate could be set on ch%ld\n", ch);
 		return false;
 	}
+	if (fabs(dGotHz - dRounded) > dRounded * 0.05) {
+		// A grid step is a fraction of a percent. Five percent out is not the
+		// grid, it is the board doing something else entirely.
+		printf("StartTimerTrigger: asked for %.0f Hz and the board settled on %.2f Hz,"
+			   " %.1f %% away. That is far too big to be its rate grid.\n",
+			   dRounded, dGotHz, (dGotHz / dRounded - 1.0) * 100.0);
+		return false;
+	}
+
+	const double dPeriodUS = 1.0e6 / dGotHz;
+
+	if (fabs(dGotHz - dRounded) > 0.5) {
+		printf("[TRIGGER] ch%ld : asked %.0f Hz, the board gives %.2f Hz (%+.4f %%)."
+			   " The stage speed is corrected to suit, so the pitch stays exact.\n",
+			   ch, dRounded, dGotHz, (dGotHz / dRounded - 1.0) * 100.0);
+	}
+
 	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, cfg.dPulseWidthUS)) {
 		printf("StartTimerTrigger: AxcTriggerSetTime(ch%ld, %.3f) failed\n",
 			   ch, cfg.dPulseWidthUS);
@@ -792,16 +843,21 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 		return false;
 	}
 
-	//< Read the rate back. Timer mode has no block to check, so this is the
-	//  only thing standing between a call that returned success and a board
-	//  that quietly kept its old frequency.
-	DWORD dwGotFreq = 0;
-	if (AXT_RT_SUCCESS == AxcTriggerGetFreq(ch, &dwGotFreq) && dwGotFreq != dwFreq) {
-		printf("StartTimerTrigger: wrote %lu Hz, the board reads back %lu Hz.\n"
-			   "  The pitch would be out by a factor of %.4f.\n",
-			   dwFreq, dwGotFreq,
-			   (dwGotFreq > 0) ? ((double)dwFreq / (double)dwGotFreq) : 0.0);
+	//< The pulse has to fit the period the board actually settled on, not the
+	//  one that was asked for. Ajinextek's guide puts the limit at 50 % duty
+	//  and shows triggers being DROPPED above it - 21 of 50 in its example -
+	//  so this is checked against the real rate rather than the requested one.
+	if (cfg.dPulseWidthUS >= dPeriodUS * 0.5) {
+		printf("StartTimerTrigger: pulse %.2f us is %.0f %% of the %.3f us period"
+			   " %.2f Hz gives. Ajinextek's guide puts the limit at 50 %%, above"
+			   " which triggers are dropped rather than merged.\n",
+			   cfg.dPulseWidthUS, cfg.dPulseWidthUS / dPeriodUS * 100.0,
+			   dPeriodUS, dGotHz);
 		return false;
+	}
+
+	if (dpActualRateHz != NULL) {
+		*dpActualRateHz = dGotHz;
 	}
 
 	if (g_pfnSetOutport != NULL) {
@@ -857,17 +913,17 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 	// the stage is still approaching, and in this mode the hardware has no
 	// block to keep those pulses out of the image.
 	if (cfg.lTriggerCount > 0) {
-		printf("Timer trigger ch%ld : %lu Hz, period %.3f us, pulse %.2f us (%.1f %% duty),"
+		printf("Timer trigger ch%ld : %.2f Hz, period %.3f us, pulse %.2f us (%.1f %% duty),"
 			   " stopping after exactly %ld pulses. Not started - the cycle opens the"
 			   " window at the block entry.\n",
-			   ch, dwFreq, dPeriodUS, cfg.dPulseWidthUS,
+			   ch, dGotHz, dPeriodUS, cfg.dPulseWidthUS,
 			   cfg.dPulseWidthUS / dPeriodUS * 100.0, cfg.lTriggerCount);
 	}
 	else {
-		printf("Timer trigger ch%ld : %lu Hz, period %.3f us, pulse %.2f us (%.1f %% duty),"
+		printf("Timer trigger ch%ld : %.2f Hz, period %.3f us, pulse %.2f us (%.1f %% duty),"
 			   " free running. Not started - the cycle opens and closes the window,"
 			   " so both edges carry one pass of jitter.\n",
-			   ch, dwFreq, dPeriodUS, cfg.dPulseWidthUS,
+			   ch, dGotHz, dPeriodUS, cfg.dPulseWidthUS,
 			   cfg.dPulseWidthUS / dPeriodUS * 100.0);
 	}
 

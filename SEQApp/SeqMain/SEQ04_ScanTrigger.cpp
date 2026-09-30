@@ -140,6 +140,14 @@ static CRtTimer  g_tmScanTriggerMoveStart;
 // hardware opens and closes the window from the block and none of this exists;
 // here it is a software decision taken once per cycle pass, so record what it
 // actually caught rather than what it was aiming at.
+// The rate the board actually took, once ARM has asked it. Zero until then.
+//
+// It has to live outside ScanTriggerDisplay because ScanTriggerValidate() wipes
+// that struct and rebuilds it from the recipe on every MMI poll - so a speed
+// corrected at ARM would be overwritten a few milliseconds later, and RUN would
+// command the uncorrected one.
+static double    g_dScanTriggerTimerHz   = 0.0;
+
 static bool      g_bScanTriggerTimerOn   = false;
 static double    g_dScanTriggerTimerOnAt  = 0.0;
 static double    g_dScanTriggerTimerOffAt = 0.0;
@@ -406,6 +414,17 @@ int CSeqMain::ScanTriggerValidate(void)
 							  &ScanTriggerDisplay.dPitchAchieved,
 							  &ScanTriggerDisplay.dPitchErrorNM);
 
+		// Once the board has been asked, what it gave beats what was computed.
+		// AxcTriggerSetFreq takes whole Hz but the hardware divides a fixed
+		// clock, so the rates it can actually produce are C/N - 253,807.11 Hz
+		// where 253,485 was asked for. The pitch stays exact by running the
+		// stage at pitch x the rate the board really has.
+		if (g_dScanTriggerTimerHz > 0.0) {
+			ScanTriggerDisplay.dLineRate      = g_dScanTriggerTimerHz;
+			ScanTriggerDisplay.dSpeedAdjusted =
+				ScanTriggerDisplay.dPitchAchieved * g_dScanTriggerTimerHz;
+		}
+
 		if (ScanTriggerDisplay.dLineRate < SCANTRIGGER_TIMER_FREQ_MIN ||
 			ScanTriggerDisplay.dLineRate > SCANTRIGGER_TIMER_FREQ_MAX) {
 			ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_LINERATE;
@@ -490,6 +509,7 @@ void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 		AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
 	}
 	g_bScanTriggerTimerOn = false;
+	g_dScanTriggerTimerHz = 0.0;
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (pAxis != NULL && !pAxis->IsStop) {
@@ -537,6 +557,10 @@ void CSeqMain::ScanTriggerM(void)
 	g_nScanTriggerState = SCANTRIGGER_GOTO_START;
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 1;
+
+	// Not known until ARM asks the board, and the last cycle's answer must not
+	// be carried into a recipe with a different rate.
+	g_dScanTriggerTimerHz = 0.0;
 
 	printf("[SCANTRIGGER] move %.4f -> %.4f mm [idx %d..%d],"
 		   " trigger %.4f .. %.4f mm [idx %d..%d], run-up %.3f mm, run-out %.3f mm\n",
@@ -791,9 +815,36 @@ void CSeqMain::ScanTriggerC(void)
 			// The counter is still preset and still read, but only so this
 			// cycle can open the window at dTrigStart and close it at dTrigEnd
 			// - which is the guarantee this mode gives up.
-			if (!AjinTrigger->StartTimerTrigger(cfg)) {
+			double dActualHz = 0.0;
+			if (!AjinTrigger->StartTimerTrigger(cfg, &dActualHz)) {
 				ScanTriggerAbort("StartTimerTrigger refused the configuration");
 				break;
+			}
+
+			// The board's rate grid is coarser than whole Hz, so the rate it
+			// settled on is not the one asked for. Run the stage at the speed
+			// that rate implies and the pitch is exact again; keep the entered
+			// speed and it would be out by the grid step, which is 0.25 % at
+			// 253 kHz - 2 nm on a 0.789 um pixel, and a quarter of a percent
+			// on the image's length.
+			if (dActualHz > 0.0) {
+				g_dScanTriggerTimerHz = dActualHz;
+
+				const double dNewSpeed = ScanTriggerDisplay.dPitchAchieved * dActualHz;
+
+				if (dNewSpeed * dRate > (double)pAxis->MaxSpeed) {
+					ScanTriggerAbort("the speed the board's rate needs is beyond the axis");
+					break;
+				}
+
+				printf("[SCANTRIGGER] board rate %.2f Hz: running at %.4f mm/s"
+					   " instead of %.4f mm/s so the pitch stays %.6f um\n",
+					   dActualHz, dNewSpeed, ScanTriggerDisplay.dSpeed,
+					   ScanTriggerDisplay.dPitchAchieved * 1000.0);
+
+				ScanTriggerDisplay.dLineRate      = dActualHz;
+				ScanTriggerDisplay.dSpeed         = dNewSpeed;
+				ScanTriggerDisplay.dSpeedAdjusted = dNewSpeed;
 			}
 			printf("[SCANTRIGGER] timer mode: the encoder does not gate the output."
 				   " The board stops itself after %d pulses, so the line count is exact;"
