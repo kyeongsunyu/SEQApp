@@ -1023,11 +1023,21 @@ void CSeqMain::ScanTriggerC(void)
 						}
 					}
 				}
-				else if (dPosMM >= ScanTriggerDisplay.dTrigEnd) {
-					// The board has already stopped itself at the programmed
-					// pulse count by now. Switching it off here is what keeps
-					// a miscount from running on past the block, and costs
-					// nothing when there was not one.
+				else if (ScanTriggerDisplay.nLineCount <= 0 &&
+						 dPosMM >= ScanTriggerDisplay.dTrigEnd) {
+					// Only when the board is NOT counting the pulses itself.
+					//
+					// With Timer Mode (Count) the board stops after exactly
+					// nLineCount pulses, and closing the window on position cut
+					// that short: the window opened 0.191 mm late, so the last
+					// pulses were still to come when the stage reached Trig End,
+					// and 130 of 126,743 lines were thrown away. That is the
+					// size error this mode exists to prevent - a window that
+					// opens late should shift the image, not shorten it.
+					//
+					// The run-out past Trig End is there to absorb exactly this.
+					// DISARM switches the trigger off when the move ends, which
+					// is the backstop.
 					AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, false);
 					g_bScanTriggerTimerOn    = false;
 					g_dScanTriggerTimerOffAt = dPosMM;
@@ -1121,32 +1131,27 @@ void CSeqMain::ScanTriggerC(void)
 					   dSpanMM / ScanTriggerDisplay.dPitchAchieved,
 					   dSpanMM - dWantMM);
 
-				// The one measurement timer mode does allow.
+				// There was a "measured mean pitch" line here and it measured
+				// nothing. It divided the window span by the number of lines
+				// the span contains - which is the span divided by the pitch -
+				// so it returned the pitch it was given and reported +0.00 nm
+				// every time, whatever the stage did. A number that cannot come
+				// out wrong is not a measurement.
 				//
-				// The encoder cannot set the pitch here, but it can still say
-				// what the pitch turned out to be: the board emitted a known
-				// number of pulses and the counter says how far the stage went
-				// while it did. Dividing one by the other gives the mean pitch
-				// actually achieved - and because the division is over a whole
-				// scan, one encoder count of uncertainty spreads across every
-				// line, so a 100 mm scan at this pitch resolves the mean to
-				// well under a nanometre.
+				// The real one needs the count of pulses the board actually
+				// emitted, against the distance travelled while it emitted
+				// them. This AXL has no AxcTriggerReadTriggerCount, so the
+				// count is known only as the number programmed, and the
+				// distance only between two software switch points that do not
+				// coincide with the first and last pulse. Neither end is tight
+				// enough to divide.
 				//
-				// This is what stands in for the trigger count readback this
-				// AXL does not have, and it measures the thing that actually
-				// matters in this mode: whether the stage held its speed.
-				const double dLines = dSpanMM / ScanTriggerDisplay.dPitchAchieved;
-				if (dLines >= 1.0) {
-					const double dMeasuredMM = dSpanMM / dLines;
-					printf("[SCANTRIGGER]  measured mean pitch %.6f um against the"
-						   " %.6f um asked for, %+.2f nm (%+.4f %%) - this is the"
-						   " stage's speed holding, which is the only thing setting"
-						   " the pitch in this mode\n",
-						   dMeasuredMM * 1000.0,
-						   ScanTriggerDisplay.dPitchAchieved * 1000.0,
-						   (dMeasuredMM - ScanTriggerDisplay.dPitchAchieved) * 1.0e6,
-						   (dMeasuredMM / ScanTriggerDisplay.dPitchAchieved - 1.0) * 100.0);
-				}
+				// So it is not claimed. In this mode the pitch is the commanded
+				// speed divided by the board's rate, and how well the stage
+				// held that speed is measured with a scope on the trigger
+				// output or by replacing the AXL.
+				printf("[SCANTRIGGER]  the achieved pitch cannot be measured from here:"
+					   " this AXL cannot report how many triggers were emitted\n");
 			}
 
 			AjinTrigger->StopTimerTrigger(SCANTRIGGER_CHANNEL);
