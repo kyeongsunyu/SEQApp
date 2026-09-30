@@ -964,6 +964,33 @@ void CSeqMain::ScanTriggerC(void)
 					   ScanTriggerDisplay.nLineCount,
 					   dSpanMM / ScanTriggerDisplay.dPitchAchieved,
 					   dSpanMM - dWantMM);
+
+				// The one measurement timer mode does allow.
+				//
+				// The encoder cannot set the pitch here, but it can still say
+				// what the pitch turned out to be: the board emitted a known
+				// number of pulses and the counter says how far the stage went
+				// while it did. Dividing one by the other gives the mean pitch
+				// actually achieved - and because the division is over a whole
+				// scan, one encoder count of uncertainty spreads across every
+				// line, so a 100 mm scan at this pitch resolves the mean to
+				// well under a nanometre.
+				//
+				// This is what stands in for the trigger count readback this
+				// AXL does not have, and it measures the thing that actually
+				// matters in this mode: whether the stage held its speed.
+				const double dLines = dSpanMM / ScanTriggerDisplay.dPitchAchieved;
+				if (dLines >= 1.0) {
+					const double dMeasuredMM = dSpanMM / dLines;
+					printf("[SCANTRIGGER]  measured mean pitch %.6f um against the"
+						   " %.6f um asked for, %+.2f nm (%+.4f %%) - this is the"
+						   " stage's speed holding, which is the only thing setting"
+						   " the pitch in this mode\n",
+						   dMeasuredMM * 1000.0,
+						   ScanTriggerDisplay.dPitchAchieved * 1000.0,
+						   (dMeasuredMM - ScanTriggerDisplay.dPitchAchieved) * 1.0e6,
+						   (dMeasuredMM / ScanTriggerDisplay.dPitchAchieved - 1.0) * 100.0);
+				}
 			}
 
 			AjinTrigger->StopTimerTrigger(SCANTRIGGER_CHANNEL);

@@ -387,6 +387,48 @@ static bool TriggerRegApply(long lChannelNo, const char* pszWhen)
 	return true;
 }
 
+// AxcTriggerSetTime takes microseconds, and Ajinextek's counter trigger guide
+// documents its range as [10 .. 50,000] - in the SIO-CN2CH section, with no
+// range given for SIO-HPC4. This machine runs 5 us pulses, so either the floor
+// does not apply here or the board has been quietly rounding them up all along.
+//
+// It matters more than it looks. A pulse silently widened to 10 us is 64 % duty
+// at 64 kHz, and the guide's own worked example shows that above 50 % the board
+// DROPS triggers rather than merging them - 21 of 50 in its measurement. The
+// caller would have validated the width it asked for and got an image missing a
+// third of its lines, with nothing in any log to say why.
+//
+// So read it back. One call, and it turns a silent clamp into a refusal.
+static bool CheckPulseWidth(long ch, double dAskedUS, double dPeriodUS)
+{
+	double dGotUS = 0.0;
+	if (AXT_RT_SUCCESS != AxcTriggerGetTime(ch, &dGotUS)) {
+		printf("[TRIGGER] ch%ld : AxcTriggerGetTime failed, the pulse width cannot be"
+			   " confirmed\n", ch);
+		return true;      // not knowing is not the same as knowing it is wrong
+	}
+	if (fabs(dGotUS - dAskedUS) <= 0.05) {
+		return true;
+	}
+
+	printf("[TRIGGER] ch%ld : asked for a %.3f us pulse, the board holds %.3f us.\n",
+		   ch, dAskedUS, dGotUS);
+
+	if (dPeriodUS > 0.0) {
+		printf("[TRIGGER]  that is %.1f %% duty instead of %.1f %%.\n",
+			   dGotUS / dPeriodUS * 100.0, dAskedUS / dPeriodUS * 100.0);
+
+		if (dGotUS >= dPeriodUS * 0.5) {
+			printf("[TRIGGER]  above 50 %% the board drops triggers rather than merging"
+				   " them, so this scan would come out short. Refusing.\n");
+			return false;
+		}
+	}
+	printf("[TRIGGER]  still inside the duty limit, so the scan runs - but the pitch"
+		   " is set by the rate, not by this, and the image is unaffected.\n");
+	return true;
+}
+
 bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 {
 	long ch = cfg.lChannelNo;
@@ -520,6 +562,10 @@ bool CAjinTrigger::StartPeriodicTrigger(const PERIODIC_TRIG_CFG& cfg)
 	}
 	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, dPulseUS)) {
 		printf("StartPeriodicTrigger: AxcTriggerSetTime(ch%ld, %.3f) failed\n", ch, dPulseUS);
+		return false;
+	}
+	if (!CheckPulseWidth(ch, dPulseUS,
+						 (cfg.dLineRateHz > 0.0) ? (1.0e6 / cfg.dLineRateHz) : 0.0)) {
 		return false;
 	}
 	if (AXT_RT_SUCCESS != AxcTriggerSetBlockUpperPos(ch, dUpperCnt)) {
@@ -734,6 +780,9 @@ bool CAjinTrigger::StartTimerTrigger(const PERIODIC_TRIG_CFG& cfg)
 	if (AXT_RT_SUCCESS != AxcTriggerSetTime(ch, cfg.dPulseWidthUS)) {
 		printf("StartTimerTrigger: AxcTriggerSetTime(ch%ld, %.3f) failed\n",
 			   ch, cfg.dPulseWidthUS);
+		return false;
+	}
+	if (!CheckPulseWidth(ch, cfg.dPulseWidthUS, dPeriodUS)) {
 		return false;
 	}
 
