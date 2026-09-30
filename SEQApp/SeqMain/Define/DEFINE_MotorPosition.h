@@ -7,18 +7,14 @@
 //////////////////////////////////////////////////////////////////////////
 
 // Axis 01:MTStageX
-#define STAGE_X_WAIT										50
-#define STAGE_X_PRE_WORK									51
-#define STAGE_X_WORK										52
+#define STAGE_X_SCAN_START									50
+#define STAGE_X_TRIGGER_START								51
+#define STAGE_X_TRIGGER_END                                 52
+#define STAGE_X_SCAN_END                                    53
 
 // Axis 02:MTStageY
 #define STAGE_Y_WAIT										50
 #define STAGE_Y_PRE_WORK									51
 #define STAGE_Y_WORK										52
-
-// Axis 03:MTStageZ
-#define STAGE_Z_UP											50
-#define STAGE_Z_PRE_AUTOFOCUS							51
-#define STAGE_Z_AUTOFOCUS								52
 
 #endif
