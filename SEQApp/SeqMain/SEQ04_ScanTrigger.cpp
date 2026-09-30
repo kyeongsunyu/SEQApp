@@ -140,13 +140,21 @@ static CRtTimer  g_tmScanTriggerMoveStart;
 // hardware opens and closes the window from the block and none of this exists;
 // here it is a software decision taken once per cycle pass, so record what it
 // actually caught rather than what it was aiming at.
-// The rate the board actually took, once ARM has asked it. Zero until then.
+// The rate the board actually took, and the request that produced it. Zero
+// until ARM has asked it for the first time.
 //
-// It has to live outside ScanTriggerDisplay because ScanTriggerValidate() wipes
-// that struct and rebuilds it from the recipe on every MMI poll - so a speed
-// corrected at ARM would be overwritten a few milliseconds later, and RUN would
-// command the uncorrected one.
-static double    g_dScanTriggerTimerHz   = 0.0;
+// These have to live outside ScanTriggerDisplay because ScanTriggerValidate()
+// wipes that struct and rebuilds it from the recipe on every MMI poll - so a
+// speed corrected at ARM would be overwritten a few milliseconds later, and RUN
+// would command the uncorrected one.
+//
+// The pair is kept rather than just the answer, so the answer can be reused:
+// once the board has been asked for a rate, the same request gets the same
+// grid point, and SET can show the real speed straight away instead of the
+// estimate. A different request invalidates it, which is what the comparison
+// below is for - the board has to be asked again.
+static double    g_dScanTriggerTimerReqHz = 0.0;
+static double    g_dScanTriggerTimerHz    = 0.0;
 
 static bool      g_bScanTriggerTimerOn   = false;
 static double    g_dScanTriggerTimerOnAt  = 0.0;
@@ -277,6 +285,20 @@ static double ScanTriggerPulseWidthUS(void)
 static bool ScanTriggerIsTimerMode(void)
 {
 	return (ScanTriggerRecipe.uTriggerMode == (unsigned int)SCANTRIGGER_MODE_TIMER);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// The rate this recipe asks the board for, in whole Hz. Used as the key the
+// board's answer is remembered against, so it has to come from the recipe
+// rather than from ScanTriggerDisplay - once an answer has been cached, the
+// display carries the answer, and keying on that would pair the answer with
+// itself and never notice the recipe changing.
+static double ScanTriggerRequestedHz(void)
+{
+	if (ScanTriggerRecipe.dPitch <= 0.0) {
+		return 0.0;
+	}
+	return floor(ScanTriggerRecipe.dSpeed / ScanTriggerRecipe.dPitch + 0.5);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -419,7 +441,11 @@ int CSeqMain::ScanTriggerValidate(void)
 		// clock, so the rates it can actually produce are C/N - 253,807.11 Hz
 		// where 253,485 was asked for. The pitch stays exact by running the
 		// stage at pitch x the rate the board really has.
-		if (g_dScanTriggerTimerHz > 0.0) {
+		// ...but only the answer to THIS request. A recipe change moves the
+		// request to a different grid point, and the old answer would then be
+		// a speed the stage is not going to run at.
+		if (g_dScanTriggerTimerHz > 0.0 &&
+			fabs(ScanTriggerRequestedHz() - g_dScanTriggerTimerReqHz) < 0.5) {
 			ScanTriggerDisplay.dLineRate      = g_dScanTriggerTimerHz;
 			ScanTriggerDisplay.dSpeedAdjusted =
 				ScanTriggerDisplay.dPitchAchieved * g_dScanTriggerTimerHz;
@@ -513,7 +539,6 @@ void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 		AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
 	}
 	g_bScanTriggerTimerOn = false;
-	g_dScanTriggerTimerHz = 0.0;
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (pAxis != NULL && !pAxis->IsStop) {
@@ -563,9 +588,9 @@ void CSeqMain::ScanTriggerM(void)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 1;
 
-	// Not known until ARM asks the board, and the last cycle's answer must not
-	// be carried into a recipe with a different rate.
-	g_dScanTriggerTimerHz = 0.0;
+	// The last cycle's answer is kept. It is only used when the request matches
+	// the one that produced it, so a recipe with a different rate falls back to
+	// the estimate until ARM has asked the board again.
 
 	printf("[SCANTRIGGER] move %.4f -> %.4f mm [idx %d..%d],"
 		   " trigger %.4f .. %.4f mm [idx %d..%d], run-up %.3f mm, run-out %.3f mm\n",
@@ -800,7 +825,12 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dScanStart       = ScanTriggerDisplay.dTrigStart;
 		cfg.dScanEnd         = ScanTriggerDisplay.dTrigEnd;
 		cfg.dPulseWidthUS    = ScanTriggerPulseWidthUS();
-		cfg.dLineRateHz      = ScanTriggerDisplay.dLineRate;
+		// Whole Hz, because that is what AxcTriggerSetFreq takes. Once an answer
+		// has been cached, dLineRate carries the board's own rate - 253164.56 -
+		// which is not a whole number, and passing it straight through had
+		// StartTimerTrigger refusing the second run of a recipe that had just
+		// worked. Rounding lands on the same grid point the board gave.
+		cfg.dLineRateHz      = floor(ScanTriggerDisplay.dLineRate + 0.5);
 		// Timer mode only: the board stops itself after this many pulses, so
 		// the number of lines is exact however late the cycle closes the
 		// window. Ignored by the periodic path, which gets its end from the
@@ -833,7 +863,11 @@ void CSeqMain::ScanTriggerC(void)
 			// 253 kHz - 2 nm on a 0.789 um pixel, and a quarter of a percent
 			// on the image's length.
 			if (dActualHz > 0.0) {
-				g_dScanTriggerTimerHz = dActualHz;
+				// Remember what was asked as well as what came back, so the
+				// next SET of the same recipe can show the real speed without
+				// having to touch the board again.
+				g_dScanTriggerTimerReqHz = ScanTriggerRequestedHz();
+				g_dScanTriggerTimerHz    = dActualHz;
 
 				const double dNewSpeed = ScanTriggerDisplay.dPitchAchieved * dActualHz;
 
