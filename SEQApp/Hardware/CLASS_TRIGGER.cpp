@@ -1137,6 +1137,7 @@ void CAjinTrigger::ReportChannelConfig(long lChannelNo, const char* pszWhen)
 	double dPeriod = 0.0, dTime = 0.0, dPos = 0.0;
 	DWORD  dwMethod = 0, dwSource = 0, dwReverse = 0, dwFunc = 0;
 	DWORD  dwDir = 0, dwLevel = 0, dwEnable = 0, dwOutport = 0, dwStatus = 0;
+	DWORD  dwFreq = 0;
 	WORD   wReg = 0;
 	long   lCount = 0;
 
@@ -1152,7 +1153,17 @@ void CAjinTrigger::ReportChannelConfig(long lChannelNo, const char* pszWhen)
 	AxcTriggerGetLevel         (lChannelNo, &dwLevel);
 	AxcTriggerGetEnable        (lChannelNo, &dwEnable);
 	AxcStatusGetActPos         (lChannelNo, &dPos);
-	AxcKeGetCommandData16      (lChannelNo, 22, &wReg);
+	AxcKeGetCommandData16      (lChannelNo, TriggerRegReadCmd(lChannelNo), &wReg);
+	AxcTriggerGetFreq          (lChannelNo, &dwFreq);
+
+	//< Command 22 is channel 0's and channel 1's; channels 2 and 3 read 54, and
+	//  asking 22 on them reports channel 0's register. Ask TriggerRegReadCmd,
+	//  the same way the arm path does.
+	//
+	//  The mode comes from the board, not from what the caller meant to set:
+	//  0x01 is timer, 0x03 is position period. Several fields below only mean
+	//  something in one of the two, and this decides which ones get printed.
+	const bool bTimerMode = (dwFunc == 0x01);
 
 	printf("[TRIGGER] ===== channel %ld, read back from the board (%s) =====\n",
 		   lChannelNo, (pszWhen != NULL) ? pszWhen : "");
@@ -1161,13 +1172,37 @@ void CAjinTrigger::ReportChannelConfig(long lChannelNo, const char* pszWhen)
 	printf("[TRIGGER]  unit/count  %.6f                 want 1.000000 (counts)\n", dUnit);
 	printf("[TRIGGER]  enc method  %-4lu source %-4lu reverse %lu   want 3 / 0 / 0\n",
 		   dwMethod, dwSource, dwReverse);
-	printf("[TRIGGER]  function    %-4lu                       want 3 (periodic)\n", dwFunc);
-	printf("[TRIGGER]  block       %.0f .. %.0f counts  pitch %.0f  period %.0f\n",
-		   dLower, dUpper, dPitch, dPeriod);
-	printf("[TRIGGER]  dir check   %-4lu pulse %.3f us  level %lu   want 1 / >=1 / 1\n",
-		   dwDir, dTime, dwLevel);
-	printf("[TRIGGER]  enable      %-4lu register 0x16 0x%04X       want 1 / bit1 set\n",
-		   dwEnable, (unsigned int)wReg);
+	printf("[TRIGGER]  function    %-4lu                       want %s\n",
+		   dwFunc, bTimerMode ? "1 (timer)" : "3 (periodic)");
+	if (bTimerMode) {
+		//< There is no block and no pitch in this mode: the rate is a clock
+		//  divider and the pulse count is the only bound. Printing the periodic
+		//  fields here reported whatever the last periodic arm had left in them
+		//  and read as a misconfiguration.
+		printf("[TRIGGER]  rate        %lu Hz (period %.3f us)\n",
+			   dwFreq, (dwFreq > 0) ? (1.0e6 / (double)dwFreq) : 0.0);
+
+		DWORD dwCount = 0;
+		if (AXT_RT_SUCCESS == AxcKeGetCommandData32(lChannelNo,
+				(DWORD)(244 + lChannelNo), &dwCount)) {
+			printf("[TRIGGER]  pulse count %lu%s\n", dwCount,
+				   (dwCount == 0)
+					   ? "   <-- free running, the cycle closes the window" : "");
+		}
+	}
+	else {
+		printf("[TRIGGER]  block       %.0f .. %.0f counts  pitch %.0f  period %.0f\n",
+			   dLower, dUpper, dPitch, dPeriod);
+	}
+	// The direction check gates the block, so it means nothing in timer mode -
+	// asking for 1 there sent people looking for a setting that does not apply.
+	printf("[TRIGGER]  dir check   %-4lu pulse %.3f us  level %lu   want %s\n",
+		   dwDir, dTime, dwLevel,
+		   bTimerMode ? "n/a / >=1 / 1" : "1 / >=1 / 1");
+	printf("[TRIGGER]  enable      %-4lu register %lu = 0x%04X   want 1 / bit1 set,"
+		   " mode bits[5:4]=%u\n",
+		   dwEnable, TriggerRegReadCmd(lChannelNo), (unsigned int)wReg,
+		   (unsigned int)((wReg >> 4) & 0x3));
 
 	if (g_pfnGetOutport != NULL && g_pfnGetOutport(lChannelNo, &dwOutport) == AXT_RT_SUCCESS) {
 		// A mask of 0 routes the comparator to no pin at all, which looks
@@ -1179,8 +1214,11 @@ void CAjinTrigger::ReportChannelConfig(long lChannelNo, const char* pszWhen)
 		printf("[TRIGGER]  out port    not readable on this AXL\n");
 	}
 
+	// The block gates the output in position period mode only. In timer mode the
+	// encoder position is context, never a reason the train cannot fire, and the
+	// warning claimed otherwise on every timer-mode scan.
 	printf("[TRIGGER]  enc pos     %.0f counts%s\n", dPos,
-		   (dPos < dLower || dPos > dUpper)
+		   (!bTimerMode && (dPos < dLower || dPos > dUpper))
 			   ? "   <-- OUTSIDE THE BLOCK, no trigger can fire here" : "");
 
 	const DWORD dwStatCode = AxcStatusGetChannel(lChannelNo, &dwStatus);
