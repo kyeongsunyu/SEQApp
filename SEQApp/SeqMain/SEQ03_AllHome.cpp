@@ -144,6 +144,7 @@ void CSeqMain::AllHomeM(void)
 	// Motor bMTAxisHomeFinished clear..
 	for (int mtno = 0; mtno < totalAxisCnt; mtno++) {
 		MTAxis[mtno+1]->imrs = 0;
+		MTAxis[mtno+1]->OriginFound = 0;   // until this home finishes
 		bMTAxisHomeFinished[mtno] = false;
 	}
 	bit.AllHome = 1;

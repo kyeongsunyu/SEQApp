@@ -139,6 +139,7 @@ void CSeqMain::MTStageXHomeM(void)
 {
 	if (MTHOMERDY(MTStageX)) {
 		MTStageX->imrs = 0;
+		MTStageX->OriginFound = 0;   // until this home finishes
 		MTStageX->NxtPos = 0;
 		MTStageX->omove = 1;
 	}
@@ -147,6 +148,7 @@ void CSeqMain::MTStageYHomeM(void)
 {
 	if (MTHOMERDY(MTStageY)) {
 		MTStageY->imrs = 0;
+		MTStageY->OriginFound = 0;   // until this home finishes
 		MTStageY->NxtPos = 0;
 		MTStageY->omove = 1;
 	}

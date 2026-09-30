@@ -146,7 +146,13 @@ static CRtTimer  g_tmScanTriggerMoveStart;
 // that struct and rebuilds it from the recipe on every MMI poll - so a speed
 // corrected at ARM would be overwritten a few milliseconds later, and RUN would
 // command the uncorrected one.
-static double    g_dScanTriggerTimerHz   = 0.0;
+//
+// It is the ONLY number the panel shows that is not derived from the recipe
+// currently loaded, so its lifetime has to be exactly the recipe's. It used to
+// be guarded by comparing the rate the recipe asks for against the rate that
+// produced it, which is a derived test standing in for the real event: a new
+// recipe. ScanTriggerSetRecipe() now clears it outright, so it can only ever
+// describe the recipe that is loaded, and the comparison is gone.
 
 static bool      g_bScanTriggerTimerOn   = false;
 static double    g_dScanTriggerTimerOnAt  = 0.0;
@@ -349,6 +355,12 @@ int CSeqMain::ScanTriggerValidate(void)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	ScanTriggerDisplay.nTriggerCount = g_nScanTriggerLastCount;
 
+	// Echoed before any test can return early, so the panel can always see which
+	// recipe the numbers beside it came from - including on a refusal.
+	ScanTriggerDisplay.dRecipePitch   = ScanTriggerRecipe.dPitch;
+	ScanTriggerDisplay.dRecipeSpeed   = ScanTriggerRecipe.dSpeed;
+	ScanTriggerDisplay.dRecipePulseUS = ScanTriggerRecipe.dPulseWidthUS;
+
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (pAxis == NULL) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_AXIS;
@@ -419,6 +431,9 @@ int CSeqMain::ScanTriggerValidate(void)
 		// clock, so the rates it can actually produce are C/N - 253,807.11 Hz
 		// where 253,485 was asked for. The pitch stays exact by running the
 		// stage at pitch x the rate the board really has.
+		//
+		// Cleared by ScanTriggerSetRecipe(), so this is always this recipe's
+		// answer or nothing.
 		if (g_dScanTriggerTimerHz > 0.0) {
 			ScanTriggerDisplay.dLineRate      = g_dScanTriggerTimerHz;
 			ScanTriggerDisplay.dSpeedAdjusted =
@@ -484,7 +499,11 @@ int CSeqMain::ScanTriggerValidate(void)
 	//
 	// ScanTriggerM() still tests them too: an axis can be homed when SET is
 	// pressed and jogged away from home before START is.
-	if (!pAxis->imrs) {
+	// OriginFound, not imrs. imrs means "at a known index position" and any jog
+	// clears it, so gating on it refused every scan that followed an operator
+	// nudging the stage to look at something - while the absolute coordinates
+	// the scan actually uses were perfectly valid the whole time.
+	if (!pAxis->OriginFound) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_NOT_HOMED;
 		return ScanTriggerDisplay.nValidateCode;
 	}
@@ -500,6 +519,52 @@ int CSeqMain::ScanTriggerValidate(void)
 }
 
 //////////////////////////////////////////////////////////////////////////
+// A recipe from the MMI.
+//
+// Everything the panel shows is derived from these four numbers, so when the
+// panel disagrees with what was typed, this is the line that says which side is
+// wrong - and the one way a recipe can be dropped is printed right beside it.
+void CSeqMain::ScanTriggerSetRecipe(const _scantriggerrecipe& rcp)
+{
+	// Not while a scan is running: the cycle reads the recipe every pass, so
+	// swapping it mid-scan moves the target out from under it.
+	if (bit.ScanTriggerRun) {
+		printf("[SCANTRIGGER] recipe IGNORED, a scan is running -"
+			   " the panel is still showing the old one\n");
+		return;
+	}
+
+	ScanTriggerRecipe = rcp;
+
+	// The board's measured rate belongs to the recipe that was loaded when it
+	// was measured. Anything the panel shows from here has to come from the new
+	// one, or it is a set of numbers that agree with each other and with
+	// nothing the operator typed - which is exactly how a lost recipe write
+	// reads on screen, and took three rounds to tell apart from a real fault.
+	g_dScanTriggerTimerHz = 0.0;
+
+	printf("[SCANTRIGGER] recipe: %s, pitch %.6f mm, speed %.4f mm/s,"
+		   " pulse %.2f us, axis %u\n",
+		   ScanTriggerIsTimerMode() ? "TIMER" : "PERIODIC",
+		   ScanTriggerRecipe.dPitch, ScanTriggerRecipe.dSpeed,
+		   ScanTriggerRecipe.dPulseWidthUS, ScanTriggerRecipe.uAxisNo);
+
+	ScanTriggerValidate();
+
+	// A new recipe means the last cycle's verdict is no longer what the panel
+	// should be reporting. Leaving the state at DONE let the next poll
+	// overwrite this SET's result with the previous run's, a few milliseconds
+	// after SET had written it - so the screen said DONE where it should have
+	// said OK, and the operator had no way to tell a fresh SET from a stale
+	// one.
+	if (g_nScanTriggerState == SCANTRIGGER_DONE ||
+		g_nScanTriggerState == SCANTRIGGER_ABORTED) {
+		g_nScanTriggerState = SCANTRIGGER_IDLE;
+		ScanTriggerDisplay.nState = g_nScanTriggerState;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
 void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 {
 	if (AjinTrigger != NULL) {
@@ -509,7 +574,6 @@ void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 		AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
 	}
 	g_bScanTriggerTimerOn = false;
-	g_dScanTriggerTimerHz = 0.0;
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (pAxis != NULL && !pAxis->IsStop) {
@@ -542,9 +606,10 @@ void CSeqMain::ScanTriggerM(void)
 	}
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
-	if (!pAxis->imrs) {
+	if (!pAxis->OriginFound) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_NOT_HOMED;
-		printf("[SCANTRIGGER] axis %u has not been homed\n", ScanTriggerRecipe.uAxisNo);
+		printf("[SCANTRIGGER] axis %u has not found its origin since power up\n",
+			   ScanTriggerRecipe.uAxisNo);
 		return;
 	}
 	if (!pAxis->IsStop) {
@@ -558,9 +623,9 @@ void CSeqMain::ScanTriggerM(void)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 1;
 
-	// Not known until ARM asks the board, and the last cycle's answer must not
-	// be carried into a recipe with a different rate.
-	g_dScanTriggerTimerHz = 0.0;
+	// The last cycle's answer is kept. It is only used when the request matches
+	// the one that produced it, so a recipe with a different rate falls back to
+	// the estimate until ARM has asked the board again.
 
 	printf("[SCANTRIGGER] move %.4f -> %.4f mm [idx %d..%d],"
 		   " trigger %.4f .. %.4f mm [idx %d..%d], run-up %.3f mm, run-out %.3f mm\n",
@@ -795,7 +860,12 @@ void CSeqMain::ScanTriggerC(void)
 		cfg.dScanStart       = ScanTriggerDisplay.dTrigStart;
 		cfg.dScanEnd         = ScanTriggerDisplay.dTrigEnd;
 		cfg.dPulseWidthUS    = ScanTriggerPulseWidthUS();
-		cfg.dLineRateHz      = ScanTriggerDisplay.dLineRate;
+		// Whole Hz, because that is what AxcTriggerSetFreq takes. Once an answer
+		// has been cached, dLineRate carries the board's own rate - 253164.56 -
+		// which is not a whole number, and passing it straight through had
+		// StartTimerTrigger refusing the second run of a recipe that had just
+		// worked. Rounding lands on the same grid point the board gave.
+		cfg.dLineRateHz      = floor(ScanTriggerDisplay.dLineRate + 0.5);
 		// Timer mode only: the board stops itself after this many pulses, so
 		// the number of lines is exact however late the cycle closes the
 		// window. Ignored by the periodic path, which gets its end from the
@@ -953,11 +1023,21 @@ void CSeqMain::ScanTriggerC(void)
 						}
 					}
 				}
-				else if (dPosMM >= ScanTriggerDisplay.dTrigEnd) {
-					// The board has already stopped itself at the programmed
-					// pulse count by now. Switching it off here is what keeps
-					// a miscount from running on past the block, and costs
-					// nothing when there was not one.
+				else if (ScanTriggerDisplay.nLineCount <= 0 &&
+						 dPosMM >= ScanTriggerDisplay.dTrigEnd) {
+					// Only when the board is NOT counting the pulses itself.
+					//
+					// With Timer Mode (Count) the board stops after exactly
+					// nLineCount pulses, and closing the window on position cut
+					// that short: the window opened 0.191 mm late, so the last
+					// pulses were still to come when the stage reached Trig End,
+					// and 130 of 126,743 lines were thrown away. That is the
+					// size error this mode exists to prevent - a window that
+					// opens late should shift the image, not shorten it.
+					//
+					// The run-out past Trig End is there to absorb exactly this.
+					// DISARM switches the trigger off when the move ends, which
+					// is the backstop.
 					AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, false);
 					g_bScanTriggerTimerOn    = false;
 					g_dScanTriggerTimerOffAt = dPosMM;
@@ -1051,32 +1131,27 @@ void CSeqMain::ScanTriggerC(void)
 					   dSpanMM / ScanTriggerDisplay.dPitchAchieved,
 					   dSpanMM - dWantMM);
 
-				// The one measurement timer mode does allow.
+				// There was a "measured mean pitch" line here and it measured
+				// nothing. It divided the window span by the number of lines
+				// the span contains - which is the span divided by the pitch -
+				// so it returned the pitch it was given and reported +0.00 nm
+				// every time, whatever the stage did. A number that cannot come
+				// out wrong is not a measurement.
 				//
-				// The encoder cannot set the pitch here, but it can still say
-				// what the pitch turned out to be: the board emitted a known
-				// number of pulses and the counter says how far the stage went
-				// while it did. Dividing one by the other gives the mean pitch
-				// actually achieved - and because the division is over a whole
-				// scan, one encoder count of uncertainty spreads across every
-				// line, so a 100 mm scan at this pitch resolves the mean to
-				// well under a nanometre.
+				// The real one needs the count of pulses the board actually
+				// emitted, against the distance travelled while it emitted
+				// them. This AXL has no AxcTriggerReadTriggerCount, so the
+				// count is known only as the number programmed, and the
+				// distance only between two software switch points that do not
+				// coincide with the first and last pulse. Neither end is tight
+				// enough to divide.
 				//
-				// This is what stands in for the trigger count readback this
-				// AXL does not have, and it measures the thing that actually
-				// matters in this mode: whether the stage held its speed.
-				const double dLines = dSpanMM / ScanTriggerDisplay.dPitchAchieved;
-				if (dLines >= 1.0) {
-					const double dMeasuredMM = dSpanMM / dLines;
-					printf("[SCANTRIGGER]  measured mean pitch %.6f um against the"
-						   " %.6f um asked for, %+.2f nm (%+.4f %%) - this is the"
-						   " stage's speed holding, which is the only thing setting"
-						   " the pitch in this mode\n",
-						   dMeasuredMM * 1000.0,
-						   ScanTriggerDisplay.dPitchAchieved * 1000.0,
-						   (dMeasuredMM - ScanTriggerDisplay.dPitchAchieved) * 1.0e6,
-						   (dMeasuredMM / ScanTriggerDisplay.dPitchAchieved - 1.0) * 100.0);
-				}
+				// So it is not claimed. In this mode the pitch is the commanded
+				// speed divided by the board's rate, and how well the stage
+				// held that speed is measured with a scope on the trigger
+				// output or by replacing the AXL.
+				printf("[SCANTRIGGER]  the achieved pitch cannot be measured from here:"
+					   " this AXL cannot report how many triggers were emitted\n");
 			}
 
 			AjinTrigger->StopTimerTrigger(SCANTRIGGER_CHANNEL);
@@ -1133,6 +1208,10 @@ void CSeqMain::ScanTriggerC(void)
 		break;
 
 	case SCANTRIGGER_DONE:
+		// The cycle is over. Clearing this is what lets the next recipe be
+		// set - ScanTriggerSetRecipe() refuses while it is up - so it is the
+		// first thing done here rather than something left to fall out of the
+		// state machine.
 		bit.ScanTriggerRun = 0;
 
 		// Parked first, then the verdict. The log is read as the story of the

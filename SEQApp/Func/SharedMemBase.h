@@ -496,6 +496,20 @@ using _scantriggerdisplay = struct
 	double dPitchAchieved;       // mm,   what the hardware will really emit
 	double dPitchErrorNM;        // nm,   achieved - requested
 	double dSpeedAdjusted;       // mm/s, the speed that makes the pitch exact
+
+	// The recipe these numbers were computed from, echoed straight back.
+	//
+	// Every other field here is derived, so a panel showing them cannot tell
+	// "this is my recipe's answer" from "this is the answer to a recipe SEQ
+	// still has because my SET never landed". The two look identical - a set of
+	// numbers that agree with each other and with nothing the operator typed -
+	// and telling them apart has needed a console every time.
+	//
+	// With the recipe echoed, the panel compares it against its own boxes and
+	// says so itself.
+	double dRecipePitch;         // mm
+	double dRecipeSpeed;         // mm/s
+	double dRecipePulseUS;       // us
 };
 using _arg = union
 {

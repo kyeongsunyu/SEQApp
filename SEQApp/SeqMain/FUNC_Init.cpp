@@ -146,6 +146,7 @@ void CSeqMain::InitMotor(void)
 		MTAxis[j]->CurArrpos = 0;
 		MTAxis[j]->NxtArrpos = 0;
 		MTAxis[j]->imrs = 0;
+		MTAxis[j]->OriginFound = 0;
 
 		MTAxis[j]->IsAlarm = 0;
 		MTAxis[j]->IsDRVRDY = 1;
@@ -279,6 +280,7 @@ void CSeqMain::InitSequence(void)
 	bit.TestMode = 0;
 	bit.AllReset = 0;
 	bit.TenkeyJogMove = 0;
+	bit.ScanTriggerRun = 0;
 	bit.LotEndCntClear = 1;
 	bit.DeviceDataReceived = 0;
 

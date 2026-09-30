@@ -237,6 +237,9 @@ void CSeqMain::AjinMotorC(CAjinMotor* Axis)
 			Axis->omove = 0;
 			if (Axis->fIMRS) {
 				Axis->imrs = 1;
+				// A home has completed. Unlike imrs, this survives the jogs
+				// that follow.
+				Axis->OriginFound = 1;
 				if (Axis->DfltWorking) {
 					Axis->NxtPos = Axis->DfltWorking;
 					Axis->SpeedDevide = FAST;

@@ -518,6 +518,9 @@ public:
 	// SCANTRIGGER_VALIDATE_OK when the
 	// recipe can be run. Safe to call whenever the MMI changes a value.
 	int  ScanTriggerValidate(void);
+	// Takes a recipe from the MMI, or says why it did not. Lives with the rest
+	// of the cycle because it has to reach the cycle's own state.
+	void ScanTriggerSetRecipe(const _scantriggerrecipe& rcp);
 	void ScanTriggerAbort(const char* pszWhy);
 	// Commissioning only: drives the trigger output pin directly so it can be
 	// probed, with no encoder, no comparator and no stage motion involved.
