@@ -280,25 +280,6 @@ static double ScanTriggerPulseWidthUS(void)
 }
 
 //////////////////////////////////////////////////////////////////////////
-// The emergency stop, as this cycle sees it.
-//
-// I01.09 is a B contact - normally closed - so BINON, which tests for 0, is
-// "the contact has opened", which is the button pressed. The input carried the
-// name idummy0109 until now, which is why the machine wide EMERON() macro has
-// never compiled and every call to it in this project is commented out. Only
-// iEMO is tested here; EMERON() also wants iEmptyEMO, which this machine does
-// not have.
-//
-// It fails towards stopping: an input that is not wired reads 0, which reads as
-// pressed, which refuses to scan. That is the safe direction, and the log says
-// EMO in so many words so a machine that has nothing on I01.09 says so on the
-// first attempt rather than misbehaving quietly.
-static bool ScanTriggerEmergency(void)
-{
-	return BINON(iEMO);
-}
-
-//////////////////////////////////////////////////////////////////////////
 static bool ScanTriggerIsTimerMode(void)
 {
 	return (ScanTriggerRecipe.uTriggerMode == (unsigned int)SCANTRIGGER_MODE_TIMER);
@@ -618,11 +599,6 @@ void CSeqMain::ScanTriggerM(void)
 		return;
 	}
 
-	if (ScanTriggerEmergency()) {
-		printf("[SCANTRIGGER] start refused, EMO is active\n");
-		return;
-	}
-
 	const int nCode = ScanTriggerValidate();
 	if (nCode != SCANTRIGGER_VALIDATE_OK) {
 		printf("[SCANTRIGGER] recipe refused, code %d\n", nCode);
@@ -759,15 +735,6 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 void CSeqMain::ScanTriggerC(void)
 {
 	if (!bit.ScanTriggerRun) return;
-
-	// Before anything else, including the output test: the cycle drives the
-	// stage and the trigger output, and an emergency stop has to end both.
-	// ScanTriggerAbort() stops the trigger, stops the axis and clears
-	// bit.ScanTriggerRun, which is what lets a recipe be set again afterwards.
-	if (ScanTriggerEmergency()) {
-		ScanTriggerAbort("EMO");
-		return;
-	}
 
 	// The output test moves nothing, so it runs before the axis checks below.
 	// It has to work on a machine whose axis is not homed or not even built -

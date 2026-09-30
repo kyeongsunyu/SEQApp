@@ -29,7 +29,7 @@ typedef struct {
 	IOTYPE idummy0107 : 1;								//-- 0107	I01.07	// Teach Mode Select Switch
 	IOTYPE idummy0108 : 1;								//-- 0108	I01.08	//
 	IOTYPE idummy0105 : 1;								//-- 0105	I01.05	// 
-	IOTYPE iEMO : 1;										//-- 0109	I01.09	// EMO Alarm,	Contact(B)
+	IOTYPE idummy0109 : 1;								//-- 0109	I01.09	// EMO Alarm,	Contact(B)
 	IOTYPE idummy0110 : 1;								//-- 0110	I01.10	//
 	IOTYPE idummy0111 : 1;								//-- 0111	I01.11	// Front Door Lock Check
 	IOTYPE idummy0112 : 1;								//-- 0112	I01.12	// Rear Door Lock Check
