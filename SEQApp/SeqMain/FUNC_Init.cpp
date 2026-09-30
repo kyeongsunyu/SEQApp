@@ -155,6 +155,7 @@ void CSeqMain::InitMotor(void)
 		MTAxis[j]->CurArrpos = 0;
 		MTAxis[j]->NxtArrpos = 0;
 		MTAxis[j]->imrs = 0;
+		MTAxis[j]->OriginFound = 0;
 
 		MTAxis[j]->IsAlarm = 0;
 		MTAxis[j]->IsDRVRDY = 1;

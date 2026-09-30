@@ -155,7 +155,21 @@ public:
 	unsigned short int moving : 1;
 	unsigned short int relative : 1;
 
+	// "This axis is sitting at a known index position." A home sets it, and so
+	// does any indexed move - but a jog CLEARS it, because a jog moves the axis
+	// off the index it was on. It is not "this axis has found its origin",
+	// even though a home is the move that first sets it.
 	unsigned short int imrs : 1;
+
+	// "This axis has found its origin since power up." Set when a home
+	// completes, cleared only by a fresh home being started or by init - a jog
+	// does not touch it, because jogging moves the axis without invalidating
+	// the coordinate system it was homed into.
+	//
+	// This is what an absolute move should be gated on. Gating on imrs means
+	// one jog after homing refuses every absolute move that follows, which is
+	// what it did to the scan cycle.
+	unsigned short int OriginFound : 1;
 	unsigned short int irdy : 1;
 	unsigned short int isend : 1;
 	unsigned short int idrvalm : 1;

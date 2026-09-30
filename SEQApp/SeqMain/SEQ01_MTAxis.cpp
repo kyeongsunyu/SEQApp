@@ -143,6 +143,7 @@ void CSeqMain::MTStageXHomeM(void)
 	// about whether it has already found its origin.
 	if (MTHOMERDY(MTStageX)) {
 		MTStageX->imrs = 0;
+		MTStageX->OriginFound = 0;   // until this home finishes
 		MTStageX->NxtPos = 0;
 		MTStageX->omove = 1;
 	}
@@ -152,6 +153,7 @@ void CSeqMain::MTStageYHomeM(void)
 	// Same reason as MTStageXHomeM().
 	if (MTHOMERDY(MTStageY)) {
 		MTStageY->imrs = 0;
+		MTStageY->OriginFound = 0;   // until this home finishes
 		MTStageY->NxtPos = 0;
 		MTStageY->omove = 1;
 	}

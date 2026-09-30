@@ -484,7 +484,11 @@ int CSeqMain::ScanTriggerValidate(void)
 	//
 	// ScanTriggerM() still tests them too: an axis can be homed when SET is
 	// pressed and jogged away from home before START is.
-	if (!pAxis->imrs) {
+	// OriginFound, not imrs. imrs means "at a known index position" and any jog
+	// clears it, so gating on it refused every scan that followed an operator
+	// nudging the stage to look at something - while the absolute coordinates
+	// the scan actually uses were perfectly valid the whole time.
+	if (!pAxis->OriginFound) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_NOT_HOMED;
 		return ScanTriggerDisplay.nValidateCode;
 	}
@@ -542,9 +546,10 @@ void CSeqMain::ScanTriggerM(void)
 	}
 
 	CAjinMotor* pAxis = ScanTriggerAxis();
-	if (!pAxis->imrs) {
+	if (!pAxis->OriginFound) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_NOT_HOMED;
-		printf("[SCANTRIGGER] axis %u has not been homed\n", ScanTriggerRecipe.uAxisNo);
+		printf("[SCANTRIGGER] axis %u has not found its origin since power up\n",
+			   ScanTriggerRecipe.uAxisNo);
 		return;
 	}
 	if (!pAxis->IsStop) {
