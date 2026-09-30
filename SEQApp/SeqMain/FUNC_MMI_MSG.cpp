@@ -436,14 +436,7 @@ void CSeqMain::MMI_MessageCommunication(void)
 			}
 			case CMD_WRITE_SCANTRIGGER_RECIPE:
 			{
-				// Refuse a change while a scan is running: the cycle reads the
-				// recipe every pass, so swapping it mid-scan changes the target
-				if (bit.ScanTriggerRun) {
-					printf("[SCANTRIGGER] recipe ignored, a scan is running\n");
-					break;
-				}
-				ScanTriggerRecipe = Mmi2Seq.Arg.ScanTriggerRecipe;
-				ScanTriggerValidate();
+				ScanTriggerSetRecipe(Mmi2Seq.Arg.ScanTriggerRecipe);
 				break;
 			}
 			case CMD_READ_SCANTRIGGER_DISPLAY:

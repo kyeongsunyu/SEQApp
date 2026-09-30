@@ -530,6 +530,45 @@ int CSeqMain::ScanTriggerValidate(void)
 }
 
 //////////////////////////////////////////////////////////////////////////
+// A recipe from the MMI.
+//
+// Everything the panel shows is derived from these four numbers, so when the
+// panel disagrees with what was typed, this is the line that says which side is
+// wrong - and the one way a recipe can be dropped is printed right beside it.
+void CSeqMain::ScanTriggerSetRecipe(const _scantriggerrecipe& rcp)
+{
+	// Not while a scan is running: the cycle reads the recipe every pass, so
+	// swapping it mid-scan moves the target out from under it.
+	if (bit.ScanTriggerRun) {
+		printf("[SCANTRIGGER] recipe IGNORED, a scan is running -"
+			   " the panel is still showing the old one\n");
+		return;
+	}
+
+	ScanTriggerRecipe = rcp;
+
+	printf("[SCANTRIGGER] recipe: %s, pitch %.6f mm, speed %.4f mm/s,"
+		   " pulse %.2f us, axis %u\n",
+		   ScanTriggerIsTimerMode() ? "TIMER" : "PERIODIC",
+		   ScanTriggerRecipe.dPitch, ScanTriggerRecipe.dSpeed,
+		   ScanTriggerRecipe.dPulseWidthUS, ScanTriggerRecipe.uAxisNo);
+
+	ScanTriggerValidate();
+
+	// A new recipe means the last cycle's verdict is no longer what the panel
+	// should be reporting. Leaving the state at DONE let the next poll
+	// overwrite this SET's result with the previous run's, a few milliseconds
+	// after SET had written it - so the screen said DONE where it should have
+	// said OK, and the operator had no way to tell a fresh SET from a stale
+	// one.
+	if (g_nScanTriggerState == SCANTRIGGER_DONE ||
+		g_nScanTriggerState == SCANTRIGGER_ABORTED) {
+		g_nScanTriggerState = SCANTRIGGER_IDLE;
+		ScanTriggerDisplay.nState = g_nScanTriggerState;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
 void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 {
 	if (AjinTrigger != NULL) {
