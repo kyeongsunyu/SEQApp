@@ -452,6 +452,30 @@ int CSeqMain::ScanTriggerValidate(void)
 		return ScanTriggerDisplay.nValidateCode;
 	}
 
+	// The machine's state, not the recipe's - but tested here all the same,
+	// and last, so the derived numbers above are still filled in and visible
+	// beside the refusal.
+	//
+	// These two used to be tested only in ScanTriggerM(), which runs on START.
+	// SET therefore reported a recipe that was perfectly good and START then
+	// refused it, printing the reason to SEQ's console and nowhere else - so
+	// the screen said the recipe was accepted, the button did nothing, and
+	// there was no way to find out why without the console. Testing them at SET
+	// puts the answer where the operator is looking.
+	//
+	// ScanTriggerM() still tests them too: an axis can be homed when SET is
+	// pressed and jogged away from home before START is.
+	if (!pAxis->imrs) {
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_NOT_HOMED;
+		return ScanTriggerDisplay.nValidateCode;
+	}
+	if (!pAxis->IsStop && !bit.ScanTriggerRun) {
+		// Not while a scan is running: the cycle moves the axis itself, and
+		// re-reading the display mid-scan must not turn that into a refusal.
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_MOVING;
+		return ScanTriggerDisplay.nValidateCode;
+	}
+
 	ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_OK;
 	return ScanTriggerDisplay.nValidateCode;
 }
@@ -504,6 +528,8 @@ void CSeqMain::ScanTriggerM(void)
 		return;
 	}
 	if (!pAxis->IsStop) {
+		// Leave the reason where the MMI can read it, not only on the console.
+		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_MOVING;
 		printf("[SCANTRIGGER] axis %u is still moving\n", ScanTriggerRecipe.uAxisNo);
 		return;
 	}

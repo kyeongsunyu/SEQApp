@@ -381,6 +381,8 @@ enum SCANTRIGGER_VALIDATE
                                               // or the trigger block has no length
 	SCANTRIGGER_VALIDATE_LINERATE      = 13,  // timer mode: the line rate the pitch and
                                               // speed give is outside 1 Hz .. 500 kHz
+	SCANTRIGGER_VALIDATE_MOVING        = 14,  // the axis is still moving, so the cycle
+                                              // cannot take it over
 };
 //-------------------------------//
 // How the pulses are generated. The choice is a trade, not a preference:
