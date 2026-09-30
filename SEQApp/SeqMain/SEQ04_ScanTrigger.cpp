@@ -355,6 +355,12 @@ int CSeqMain::ScanTriggerValidate(void)
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	ScanTriggerDisplay.nTriggerCount = g_nScanTriggerLastCount;
 
+	// Echoed before any test can return early, so the panel can always see which
+	// recipe the numbers beside it came from - including on a refusal.
+	ScanTriggerDisplay.dRecipePitch   = ScanTriggerRecipe.dPitch;
+	ScanTriggerDisplay.dRecipeSpeed   = ScanTriggerRecipe.dSpeed;
+	ScanTriggerDisplay.dRecipePulseUS = ScanTriggerRecipe.dPulseWidthUS;
+
 	CAjinMotor* pAxis = ScanTriggerAxis();
 	if (pAxis == NULL) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_AXIS;
