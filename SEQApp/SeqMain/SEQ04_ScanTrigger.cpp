@@ -71,10 +71,19 @@ static const int    SCANTRIGGER_IDX_MOTION_END   = 53;
 // Counter channel and trigger output the camera is wired to.
 static const long   SCANTRIGGER_CHANNEL = 0;
 static const DWORD  SCANTRIGGER_OUTPORT = 0x1;
-// Bounds on the pulse width the operator enters. The floor is the shortest
-// pulse a camera input can be relied on to see at all; the ceiling is a
-// fraction of the line period, so the output cannot end up high for more of
-// the line than it is low.
+// Bounds on the pulse width the operator enters.
+//
+// The floor is the board's, measured 2026-09-30: the SIO-HPC4L emits pulses
+// down to 1 us. Ajinextek's counter trigger guide gives [10 .. 50,000] us for
+// AxcTriggerSetTime, but that is in its SIO-CN2CH section and does not apply
+// here - which matters, because at a 64 kHz line rate a 15.625 us period leaves
+// no room for a 10 us pulse.
+//
+// The ceiling is a fraction of the line period. The guide asks for a period of
+// at least twice the distance travelled while the pulse is high - 50 % duty -
+// and its worked example gets 21 of 50 triggers at 100 % and 50 of 50 at 50 %,
+// so above the limit triggers are DROPPED, not merged. 40 % keeps a margin
+// inside that.
 static const double SCANTRIGGER_PULSE_MIN_US   = 1.0;
 static const double SCANTRIGGER_PULSE_MAX_DUTY = 0.4;
 

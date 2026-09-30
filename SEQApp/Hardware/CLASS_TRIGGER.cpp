@@ -387,18 +387,22 @@ static bool TriggerRegApply(long lChannelNo, const char* pszWhen)
 	return true;
 }
 
-// AxcTriggerSetTime takes microseconds, and Ajinextek's counter trigger guide
-// documents its range as [10 .. 50,000] - in the SIO-CN2CH section, with no
-// range given for SIO-HPC4. This machine runs 5 us pulses, so either the floor
-// does not apply here or the board has been quietly rounding them up all along.
+// Ajinextek's counter trigger guide documents AxcTriggerSetTime as
+// [10 .. 50,000] us - but in its SIO-CN2CH section, with no range given for
+// SIO-HPC4. Whether that floor applied here was an open question, and at a
+// 15.625 us period it was a blocking one: a pulse silently widened from 1 us to
+// 10 us is 64 % duty, and the guide's own measurement shows the board DROPS
+// triggers above 50 % rather than merging them - 21 of 50 in its example. An
+// image would have come out missing a third of its lines with nothing anywhere
+// to say why.
 //
-// It matters more than it looks. A pulse silently widened to 10 us is 64 % duty
-// at 64 kHz, and the guide's own worked example shows that above 50 % the board
-// DROPS triggers rather than merging them - 21 of 50 in its measurement. The
-// caller would have validated the width it asked for and got an image missing a
-// third of its lines, with nothing in any log to say why.
+// Measured on this machine, 2026-09-30: the SIO-HPC4L takes pulse widths down
+// to 1 us. The CN2CH floor does not apply. SCANTRIGGER_PULSE_MIN_US is 1.0,
+// which is now the measured floor rather than a guess at one.
 //
-// So read it back. One call, and it turns a silent clamp into a refusal.
+// The readback stays. It costs one call, it is the only thing between a width
+// the caller validated and a width the board actually holds, and the next board
+// or the next AXL need not behave like this one.
 static bool CheckPulseWidth(long ch, double dAskedUS, double dPeriodUS)
 {
 	double dGotUS = 0.0;
@@ -411,6 +415,8 @@ static bool CheckPulseWidth(long ch, double dAskedUS, double dPeriodUS)
 		return true;
 	}
 
+	// 1 us is confirmed to go through on this board, so a mismatch here is the
+	// board doing something unexpected rather than the known CN2CH floor.
 	printf("[TRIGGER] ch%ld : asked for a %.3f us pulse, the board holds %.3f us.\n",
 		   ch, dAskedUS, dGotUS);
 
