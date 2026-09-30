@@ -153,6 +153,7 @@ static CRtTimer  g_tmScanTriggerMoveStart;
 // produced it, which is a derived test standing in for the real event: a new
 // recipe. ScanTriggerSetRecipe() now clears it outright, so it can only ever
 // describe the recipe that is loaded, and the comparison is gone.
+static double    g_dScanTriggerTimerHz   = 0.0;
 
 static bool      g_bScanTriggerTimerOn   = false;
 static double    g_dScanTriggerTimerOnAt  = 0.0;
