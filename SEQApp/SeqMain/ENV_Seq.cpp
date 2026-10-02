@@ -20,4 +20,5 @@ void CSeqMain::Sequence(void)
 		bit.ComTestCucle = 0;
 	}
 
+	SeqEventWatch();
 }

@@ -95,6 +95,10 @@ public:
 	// FUNC_MMI_MSG.cpp
 	void InitComm(void);
 	void MMI_MessageCommunication(void);
+
+	// SEQ -> MMI events (SEQ_EVENT_CHANNEL in SharedMemBase.h).
+	bool PushSeqEvent(DWORD dwCode, int nArg0 = 0, int nArg1 = 0, int nArg2 = 0, int nArg3 = 0, const char* pszText = nullptr);
+	void SeqEventWatch(void);
 	void MMI_MessageMotorCommand(unsigned int cmdNo, int mtNo);
 	void MMI_MessageMotorCmdHomeFunc(unsigned int cmdNo, int mtNo);
 

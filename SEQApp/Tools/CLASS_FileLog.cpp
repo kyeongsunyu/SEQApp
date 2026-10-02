@@ -142,13 +142,11 @@ int CFileLog::LOG_MSG_P(int type, char* func, int line_no, char* format, ...)
 	va_end(args);
 
 	char head[512] = "";
-	char deleteHead[512] = "";
 
 	char* Path = "C:\\Work\\LOG\\SEQ\\";
 	char* logdate = Get_log_date();
 
 	sprintf(head, "%s%s%s%s%s", Path, MachineStatus.strDeviceName, "\\PROCESS\\",logdate, "\\");
-	sprintf(deleteHead, "%s%s%s", Path, MachineStatus.strDeviceName, "\\PROCESS\\");
 	CreateDir(head);
 
 	// log file
@@ -224,7 +222,8 @@ int CFileLog::LOG_MSG_P(int type, char* func, int line_no, char* format, ...)
 			seqMain->SendCopyDataToMMI(WM_SEQ_TO_MMI_SEQLOG, sizeof(SEQ_LOG), (void*)&seq_log);
 		}
 	}
-	Delete_Dated_File(deleteHead, 90);
+	// Old log files are deleted by MMI on the keep period set on System
+	// Data (CLogRetention), not here on every line.
 	return 0;
 }
 int CFileLog::LOG_MSG_E(int type, char* func, int line_no, char* format, ...)
@@ -239,12 +238,10 @@ int CFileLog::LOG_MSG_E(int type, char* func, int line_no, char* format, ...)
 	va_end(args);
 
 	char head[512] = "";
-	char deleteHead[512] = "";
 	char* Path = "C:\\Work\\LOG\\SEQ\\";
 	char* logdate = Get_log_date();
 
 	sprintf(head, "%s%s%s%s%s", Path, MachineStatus.strDeviceName, "\\ERROR\\", logdate, "\\");
-	sprintf(deleteHead, "%s%s%s", Path, MachineStatus.strDeviceName, "\\ERROR\\");
 	CreateDir(head);
 
 	// log file
@@ -319,7 +316,8 @@ int CFileLog::LOG_MSG_E(int type, char* func, int line_no, char* format, ...)
 			seqMain->SendCopyDataToMMI(WM_SEQ_TO_MMI_SEQLOG, sizeof(SEQ_LOG), (void*)&seq_log);
 		}
 	}
-	Delete_Dated_File(deleteHead, 90);
+	// Old log files are deleted by MMI on the keep period set on System
+	// Data (CLogRetention), not here on every line.
 	return 0;
 }
 //int CFileLog::LOG_MSG_E(int type, int errcode, char* format, ...)

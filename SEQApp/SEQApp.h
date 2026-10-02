@@ -23,6 +23,11 @@ public:
 // 재정의입니다.
 public:
 	virtual BOOL InitInstance();
+	virtual int ExitInstance();
+
+private:
+	// Held for the life of the process so a second SEQ can see this one.
+	HANDLE m_hInstanceMutex = nullptr;
 
 // 구현입니다.
 

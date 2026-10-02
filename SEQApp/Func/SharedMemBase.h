@@ -4,6 +4,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <string.h>
 
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
@@ -969,6 +970,173 @@ public:
 		ZeroMemory(pRxBuffer, sizeof(TMemCommand));
 		ZeroMemory(pTxBuffer, sizeof(TMemCommand));
 	}
+};
+
+//-------------------------------//
+// SEQ -> MMI events.
+//
+// The command channel above is half duplex: MMI writes a request, SEQ
+// answers in the same slot, and SEQ never starts a conversation. Anything
+// SEQ wants MMI to know had to wait for MMI to poll for it.
+//
+// This is a second, separate channel for that direction: a ring of event
+// records in its own named mapping, written by SEQ and read by MMI, with an
+// auto-reset named event set on every push so MMI can wait on it instead of
+// polling. It shares nothing with the command channel, so the existing
+// commands are untouched by it.
+//
+// One thread in each program uses its end: SEQ pushes, MMI pops. A ring MMI
+// has fallen SEQ_EVENT_SLOTS behind on drops the newest event and counts it
+// in nLost rather than overwriting events MMI has not read.
+//-------------------------------//
+enum SEQ_EVENT_CODE
+{
+	SEQ_EVENT_NONE              = 0,
+	SEQ_EVENT_ALARM             = 1,  // nArg[0] alarm code now on top (0 = clear), nArg[1] the one before
+	SEQ_EVENT_RUN_STATE         = 2,  // nArg[0] 1 = auto run, 0 = stopped
+	SEQ_EVENT_SYSTEM_INIT       = 3,  // nArg[0] dm.SystemInitialize now, nArg[1] before
+	SEQ_EVENT_SCANTRIGGER_STATE = 4,  // nArg[0] scan trigger state now, nArg[1] before
+	SEQ_EVENT_TEXT              = 5,  // strText: a line for the MMI log
+};
+
+#define SEQ_EVENT_SLOTS     256
+#define SEQ_EVENT_TEXT_LEN  128
+#define SEQ_EVENT_MAGIC     0x53455145UL   // "SEQE"
+#define SEQ_EVENT_MAP_NAME  L"/SMEMORY/SEQEVENT"
+#define SEQ_EVENT_SIGNAL    L"/EVENT/SEQEVENT"
+
+using _seqevent = struct
+{
+	DWORD dwSerial;                    // 1, 2, 3 ... in the order SEQ raised them
+	DWORD dwCode;                      // SEQ_EVENT_CODE
+	DWORD dwTick;                      // GetTickCount() in SEQ when raised
+	int   nArg[4];
+	char  strText[SEQ_EVENT_TEXT_LEN];
+};
+
+using TSeqEventRing = struct
+{
+	DWORD         dwMagic;             // SEQ_EVENT_MAGIC once set up
+	DWORD         dwSize;              // sizeof(TSeqEventRing): SEQ and DLL built from the same header
+	volatile LONG nWritten;            // events SEQ has put in, ever
+	volatile LONG nRead;               // events MMI has taken out, ever
+	volatile LONG nLost;               // events dropped on a full ring
+	_seqevent     Slot[SEQ_EVENT_SLOTS];
+};
+
+class SEQ_EVENT_CHANNEL
+{
+private:
+	HANDLE         hMap;
+	HANDLE         hSignal;
+	TSeqEventRing* pRing;
+
+public:
+	SEQ_EVENT_CHANNEL() : hMap(nullptr), hSignal(nullptr), pRing(nullptr) {}
+	~SEQ_EVENT_CHANNEL() { Close(); }
+
+	bool IsOpen() const { return pRing != nullptr; }
+
+	// SEQ opens with bConsumer false, MMI with true. Whichever comes first
+	// makes the ring. MMI starts reading from what SEQ writes next: events
+	// raised before MMI was there describe a state MMI reads anyway.
+	bool Open(bool bConsumer)
+	{
+		if (IsOpen()) return true;
+
+		hMap = CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, sizeof(TSeqEventRing), SEQ_EVENT_MAP_NAME);
+		if (hMap == nullptr) return false;
+		bool bMade = (GetLastError() != ERROR_ALREADY_EXISTS);
+
+		pRing = static_cast<TSeqEventRing*>(MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(TSeqEventRing)));
+		hSignal = CreateEventW(nullptr, FALSE, FALSE, SEQ_EVENT_SIGNAL);
+		if (pRing == nullptr || hSignal == nullptr)
+		{
+			Close();
+			return false;
+		}
+
+		if (bMade || pRing->dwMagic != SEQ_EVENT_MAGIC)
+		{
+			ZeroMemory(pRing, sizeof(TSeqEventRing));
+			pRing->dwSize = sizeof(TSeqEventRing);
+			InterlockedExchange((volatile LONG*)&pRing->dwMagic, (LONG)SEQ_EVENT_MAGIC);
+		}
+		else if (pRing->dwSize != sizeof(TSeqEventRing))
+		{
+			Close();
+			return false;
+		}
+
+		if (bConsumer)
+		{
+			InterlockedExchange(&pRing->nRead, pRing->nWritten);
+		}
+		return true;
+	}
+
+	void Close()
+	{
+		if (pRing != nullptr)   { UnmapViewOfFile(pRing); pRing = nullptr; }
+		if (hMap != nullptr)    { CloseHandle(hMap);      hMap = nullptr; }
+		if (hSignal != nullptr) { CloseHandle(hSignal);   hSignal = nullptr; }
+	}
+
+	// SEQ side.
+	bool Push(DWORD dwCode, int nArg0 = 0, int nArg1 = 0, int nArg2 = 0, int nArg3 = 0, const char* pszText = nullptr)
+	{
+		if (!IsOpen()) return false;
+
+		DWORD dwWritten = (DWORD)pRing->nWritten;
+		DWORD dwRead = (DWORD)pRing->nRead;
+		if (dwWritten - dwRead >= SEQ_EVENT_SLOTS)
+		{
+			InterlockedIncrement(&pRing->nLost);
+			return false;
+		}
+
+		_seqevent* e = &pRing->Slot[dwWritten % SEQ_EVENT_SLOTS];
+		e->dwSerial = dwWritten + 1;
+		e->dwCode = dwCode;
+		e->dwTick = GetTickCount();
+		e->nArg[0] = nArg0;
+		e->nArg[1] = nArg1;
+		e->nArg[2] = nArg2;
+		e->nArg[3] = nArg3;
+		if (pszText != nullptr) strncpy_s(e->strText, SEQ_EVENT_TEXT_LEN, pszText, _TRUNCATE);
+		else                    e->strText[0] = '\0';
+
+		// InterlockedExchange is a full fence: the record is complete before
+		// MMI can see the count move.
+		InterlockedExchange(&pRing->nWritten, (LONG)(dwWritten + 1));
+		SetEvent(hSignal);
+		return true;
+	}
+
+	// MMI side. False when there is nothing to read.
+	bool Pop(_seqevent& e)
+	{
+		if (!IsOpen()) return false;
+
+		// Reading the count through an interlocked call fences it, so the
+		// record read after it is the one SEQ finished writing.
+		DWORD dwRead = (DWORD)pRing->nRead;
+		DWORD dwWritten = (DWORD)InterlockedCompareExchange(&pRing->nWritten, 0, 0);
+		if (dwRead == dwWritten) return false;
+
+		e = pRing->Slot[dwRead % SEQ_EVENT_SLOTS];
+		InterlockedExchange(&pRing->nRead, (LONG)(dwRead + 1));
+		return true;
+	}
+
+	// MMI side: waits until SEQ pushes or the time runs out.
+	bool Wait(DWORD dwMilliseconds)
+	{
+		if (!IsOpen()) return false;
+		return WaitForSingleObject(hSignal, dwMilliseconds) == WAIT_OBJECT_0;
+	}
+
+	LONG Lost() const { return IsOpen() ? pRing->nLost : 0; }
 };
 
 //class CRTT_RUN_CHECK

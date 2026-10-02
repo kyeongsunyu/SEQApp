@@ -2,9 +2,16 @@
 #include "CLASS_Main.h"
 #include "DEFINE_GVX.h"
 
+#include <mutex>
+
 
 SHARED_MEMORY_BASE smemcomm;
 TMemCommand             Mmi2Seq, Seq2Mmi;
+
+// The SEQ end of the SEQ -> MMI event ring. Any thread may push through
+// PushSeqEvent(); the lock keeps them to one at a time, as the ring needs.
+SEQ_EVENT_CHANNEL seqevent;
+static std::mutex seqeventLock;
 
 unsigned short int  uConfigCount = 0;
 
@@ -20,6 +27,60 @@ void CSeqMain::InitComm(void)
 		printf("\nCommnucation Initialize OK....\n");
 	}
 	smemcomm.FlushInOutBuffer();
+
+	// MMI still works without it, polling as before, so a failure here is
+	// reported and the program goes on.
+	if (seqevent.Open(false)) {
+		printf("SEQ event channel OK....\n");
+	}
+	else {
+		printf("SEQ event channel failed [%lu]; MMI will only poll\n", GetLastError());
+	}
+}
+
+bool CSeqMain::PushSeqEvent(DWORD dwCode, int nArg0, int nArg1, int nArg2, int nArg3, const char* pszText)
+{
+	std::lock_guard<std::mutex> guard(seqeventLock);
+	return seqevent.Push(dwCode, nArg0, nArg1, nArg2, nArg3, pszText);
+}
+
+// Called at the end of every Sequence() scan. Compares what MMI shows the
+// operator with the last scan and pushes what changed, so MMI hears of an
+// alarm, a stop or the end of a scan when it happens rather than at its
+// next poll. The first scan only records the starting point.
+void CSeqMain::SeqEventWatch(void)
+{
+	static bool   bFirst = true;
+	static WORD   wLastAlarm = 0;
+	static int    nLastRun = 0;
+	static DMTYPE dwLastInit = 0;
+	static int    nLastScanState = 0;
+
+	WORD   wAlarm = errorcode[0];
+	int    nRun = bit.AutoRun ? 1 : 0;
+	DMTYPE dwInit = dm.SystemInitialize;
+	int    nScanState = ScanTriggerDisplay.nState;
+
+	if (!bFirst) {
+		if (wAlarm != wLastAlarm) {
+			PushSeqEvent(SEQ_EVENT_ALARM, wAlarm, wLastAlarm);
+		}
+		if (nRun != nLastRun) {
+			PushSeqEvent(SEQ_EVENT_RUN_STATE, nRun);
+		}
+		if (dwInit != dwLastInit) {
+			PushSeqEvent(SEQ_EVENT_SYSTEM_INIT, (int)dwInit, (int)dwLastInit);
+		}
+		if (nScanState != nLastScanState) {
+			PushSeqEvent(SEQ_EVENT_SCANTRIGGER_STATE, nScanState, nLastScanState);
+		}
+	}
+
+	bFirst = false;
+	wLastAlarm = wAlarm;
+	nLastRun = nRun;
+	dwLastInit = dwInit;
+	nLastScanState = nScanState;
 }
 
 //------------------------------------------------------------------------
