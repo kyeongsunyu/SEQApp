@@ -464,6 +464,31 @@ void CSeqMain::MMI_MessageCommunication(void)
 				ScanTriggerOutputTestM();
 				break;
 			}
+			case CMD_READ_SCANTRIGGER_COUNTER:
+			{
+				ScanTriggerReadCounter(Mmi2Seq.Arg.ScanTriggerCounter);
+				break;
+			}
+			case CMD_WRITE_SCANTRIGGER_CNTCLR:
+			{
+				Mmi2Seq.Arg.ScanTriggerCntClr.nResult =
+					ScanTriggerClearCounter(Mmi2Seq.Arg.ScanTriggerCntClr.nMode);
+				break;
+			}
+			case CMD_READ_SCANTRIGGER_HWCFG:
+			{
+				ScanTriggerGetHwCfg(Mmi2Seq.Arg.ScanTriggerHwCfg);
+				break;
+			}
+			case CMD_WRITE_SCANTRIGGER_HWCFG:
+			{
+				// Answered with what SEQ holds afterwards, accepted or not,
+				// so the screen compares rather than assumes.
+				const int nResult = ScanTriggerSetHwCfg(Mmi2Seq.Arg.ScanTriggerHwCfg);
+				ScanTriggerGetHwCfg(Mmi2Seq.Arg.ScanTriggerHwCfg);
+				Mmi2Seq.Arg.ScanTriggerHwCfg.nResult = nResult;
+				break;
+			}
 			case CMD_WRITE_LOAD_CNT_CLEAR:
 			{
 				MachineStatus.UnitInCnt = 0;

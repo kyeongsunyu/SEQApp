@@ -29,7 +29,7 @@
 // nearest pitches are 18 um and 19 um - and ScanTriggerValidate() below
 // refuses it with SCANTRIGGER_VALIDATE_PITCH_FRACTION rather than letting the
 // board round it silently.
-static const double SCANTRIGGER_ENC_UNIT_MM = 0.001;       // 1 um
+static const double SCANTRIGGER_DEFAULT_ENC_UNIT_MM = 0.001;   // 1 um
 
 // Reverse the counter input, so the counter agrees with the machine.
 //
@@ -43,11 +43,11 @@ static const double SCANTRIGGER_ENC_UNIT_MM = 0.001;       // 1 um
 // every position and the comparator never fires. Reversing it here makes the
 // counter count up over the same move, which is also what every position in
 // the recipe already assumes.
-static const bool   SCANTRIGGER_ENC_REVERSE = true;
+static const bool   SCANTRIGGER_DEFAULT_ENC_REVERSE = true;
 
 // How far the counter may run the wrong way before the scan is called off,
 // in counts. Large enough not to trip on a count of dither at the start.
-static const double SCANTRIGGER_WRONG_WAY_COUNTS = 200.0;
+static const double SCANTRIGGER_DEFAULT_WRONG_WAY_COUNTS = 200.0;
 
 // Where the scan geometry lives: four entries in the motor index table, which
 // the motor screen edits and the operator names. 50 and above are MOTOR_COMMON
@@ -69,8 +69,38 @@ static const int    SCANTRIGGER_IDX_TRIG_END     = 52;
 static const int    SCANTRIGGER_IDX_MOTION_END   = 53;
 
 // Counter channel and trigger output the camera is wired to.
-static const long   SCANTRIGGER_CHANNEL = 0;
-static const DWORD  SCANTRIGGER_OUTPORT = 0x1;
+static const long   SCANTRIGGER_DEFAULT_CHANNEL = 0;
+static const DWORD  SCANTRIGGER_DEFAULT_OUTPORT = 0x1;
+// The channel reads its own encoder input, the output is high active, and the
+// comparator counts only in the scan direction.
+static const DWORD  SCANTRIGGER_DEFAULT_ENCODER_INPUT   = 0;
+static const DWORD  SCANTRIGGER_DEFAULT_TRIGGER_LEVEL   = 1;
+static const DWORD  SCANTRIGGER_DEFAULT_DIRECTION_CHECK = 1;
+
+// The board settings the cycle actually uses. They start as the commissioned
+// values above, which is what every comment in this file is written about,
+// and the engineer screen can change them while the cycle is idle - for a
+// replacement scale, a camera moved to another output, or a second machine
+// wired differently. Nothing here is saved: SEQ comes up on the defaults and
+// the MMI sends its saved settings once it is connected.
+static _scantriggerhwcfg ScanTriggerHwDefaults(void)
+{
+	_scantriggerhwcfg cfg;
+	memset(&cfg, 0, sizeof(cfg));
+	cfg.nChannel        = (int)SCANTRIGGER_DEFAULT_CHANNEL;
+	cfg.uEncoderInput   = SCANTRIGGER_DEFAULT_ENCODER_INPUT;
+	cfg.uOutPortMask    = SCANTRIGGER_DEFAULT_OUTPORT;
+	cfg.dEncUnitMM      = SCANTRIGGER_DEFAULT_ENC_UNIT_MM;
+	cfg.bEncReverse     = SCANTRIGGER_DEFAULT_ENC_REVERSE ? 1 : 0;
+	cfg.uTriggerLevel   = SCANTRIGGER_DEFAULT_TRIGGER_LEVEL;
+	cfg.uDirectionCheck = SCANTRIGGER_DEFAULT_DIRECTION_CHECK;
+	cfg.dWrongWayCounts = SCANTRIGGER_DEFAULT_WRONG_WAY_COUNTS;
+	return cfg;
+}
+static _scantriggerhwcfg g_ScanTriggerHw = ScanTriggerHwDefaults();
+
+static long   ScanTriggerChannel(void)  { return (long)g_ScanTriggerHw.nChannel; }
+static double ScanTriggerEncUnitMM(void) { return g_ScanTriggerHw.dEncUnitMM; }
 // Bounds on the pulse width the operator enters.
 //
 // The floor is the board's, measured 2026-09-30: the SIO-HPC4L emits pulses
@@ -185,9 +215,9 @@ static void ScanTriggerLogCounter(const char* pszWhen)
 	long   lCount = 0;
 	bool   bOut   = false;
 
-	const bool bPos   = AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dPos);
-	const bool bCount = AjinTrigger->ReadTriggerCount(SCANTRIGGER_CHANNEL, &lCount);
-	const bool bOutOk = AjinTrigger->ReadOutputState(SCANTRIGGER_CHANNEL, &bOut);
+	const bool bPos   = AjinTrigger->GetActPos(ScanTriggerChannel(), &dPos);
+	const bool bCount = AjinTrigger->ReadTriggerCount(ScanTriggerChannel(), &lCount);
+	const bool bOutOk = AjinTrigger->ReadOutputState(ScanTriggerChannel(), &bOut);
 
 	if (bCount) {
 		g_nScanTriggerLastCount = (int)lCount;
@@ -211,7 +241,7 @@ static void ScanTriggerLogCounter(const char* pszWhen)
 
 	printf("[SCANTRIGGER] %-8s enc %.0f counts = %.4f mm%s%s\n",
 		   (pszWhen != NULL) ? pszWhen : "",
-		   dPos, dPos * SCANTRIGGER_ENC_UNIT_MM, bPos ? "" : " (read failed)",
+		   dPos, dPos * ScanTriggerEncUnitMM(), bPos ? "" : " (read failed)",
 		   szTail);
 }
 
@@ -249,10 +279,10 @@ static void ScanTriggerLogReadbackLimits(void)
 
 	bool  bOut  = false;
 	DWORD dwRet = 0;
-	if (!AjinTrigger->ReadOutputState(SCANTRIGGER_CHANNEL, &bOut, &dwRet)) {
+	if (!AjinTrigger->ReadOutputState(ScanTriggerChannel(), &bOut, &dwRet)) {
 		printf("[SCANTRIGGER] trigger output line not readable:"
 			   " AxcStatusGetChannel(%ld) returned %lu (%s).\n",
-			   SCANTRIGGER_CHANNEL, (unsigned long)dwRet, ScanTriggerAxlError(dwRet));
+			   ScanTriggerChannel(), (unsigned long)dwRet, ScanTriggerAxlError(dwRet));
 
 		if (dwRet == AXT_RT_NOT_SUPPORT_VERSION) {
 			// Measured on this machine. AXC.h does not head this one
@@ -410,7 +440,7 @@ int CSeqMain::ScanTriggerValidate(void)
 	// rounded, and that error repeats for the whole scan rather than
 	// cancelling out. Reported in both modes, because it is the number that
 	// says why one of them had to be chosen.
-	ScanTriggerDisplay.dPitchCounts = ScanTriggerRecipe.dPitch / SCANTRIGGER_ENC_UNIT_MM;
+	ScanTriggerDisplay.dPitchCounts = ScanTriggerRecipe.dPitch / ScanTriggerEncUnitMM();
 	const double dNearest = floor(ScanTriggerDisplay.dPitchCounts + 0.5);
 	ScanTriggerDisplay.bPitchIsInteger =
 		(dNearest >= 1.0 &&
@@ -452,7 +482,7 @@ int CSeqMain::ScanTriggerValidate(void)
 	}
 	else {
 		ScanTriggerDisplay.dSpeedAdjusted  = ScanTriggerRecipe.dSpeed;
-		ScanTriggerDisplay.dPitchAchieved  = dNearest * SCANTRIGGER_ENC_UNIT_MM;
+		ScanTriggerDisplay.dPitchAchieved  = dNearest * ScanTriggerEncUnitMM();
 		ScanTriggerDisplay.dPitchErrorNM   =
 			(ScanTriggerDisplay.dPitchAchieved - ScanTriggerRecipe.dPitch) * 1.0e6;
 
@@ -482,7 +512,7 @@ int CSeqMain::ScanTriggerValidate(void)
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_PULSEWIDTH;
 		return ScanTriggerDisplay.nValidateCode;
 	}
-	if (AjinTrigger == NULL || AjinTrigger->GetChannelCount() <= SCANTRIGGER_CHANNEL) {
+	if (AjinTrigger == NULL || AjinTrigger->GetChannelCount() <= ScanTriggerChannel()) {
 		ScanTriggerDisplay.nValidateCode = SCANTRIGGER_VALIDATE_NO_COUNTER;
 		return ScanTriggerDisplay.nValidateCode;
 	}
@@ -572,7 +602,7 @@ void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 		// Both modes stop the same way - AxcTriggerSetEnable(ch, 0) - but the
 		// timer's own flag has to come down with it, or the next cycle starts
 		// believing its window is already open.
-		AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
+		AjinTrigger->StopPeriodicTrigger(ScanTriggerChannel());
 	}
 	g_bScanTriggerTimerOn = false;
 
@@ -695,9 +725,9 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 		printf("[SCANTRIGGER] output test refused, a scan is running\n");
 		return;
 	}
-	if (AjinTrigger == NULL || AjinTrigger->GetChannelCount() <= SCANTRIGGER_CHANNEL) {
+	if (AjinTrigger == NULL || AjinTrigger->GetChannelCount() <= ScanTriggerChannel()) {
 		printf("[SCANTRIGGER] output test refused, no counter channel %ld\n",
-			   SCANTRIGGER_CHANNEL);
+			   ScanTriggerChannel());
 		return;
 	}
 
@@ -706,11 +736,11 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 	// version of this test disabled it first and the flat scope it produced
 	// said nothing about the wiring. Nothing moves during the test, and
 	// periodic mode only fires on encoder movement, so enabling is safe.
-	if (!AjinTrigger->BeginOutputTest(SCANTRIGGER_CHANNEL)) {
+	if (!AjinTrigger->BeginOutputTest(ScanTriggerChannel())) {
 		printf("[SCANTRIGGER] output test refused, the output stage could not be enabled\n");
 		return;
 	}
-	AjinTrigger->ReportChannelConfig(SCANTRIGGER_CHANNEL, "output test, line enabled");
+	AjinTrigger->ReportChannelConfig(ScanTriggerChannel(), "output test, line enabled");
 
 	g_nScanTriggerTestStep = 0;
 	g_bScanTriggerTestHigh = false;
@@ -723,7 +753,7 @@ void CSeqMain::ScanTriggerOutputTestM(void)
 
 	printf("[SCANTRIGGER] output self test on channel %ld : %d pulses, %lld ms high"
 		   " and %lld ms low. Probe CON1 pin 1-2 now; the stage does not move.\n",
-		   SCANTRIGGER_CHANNEL, SCANTRIGGER_TEST_PULSES,
+		   ScanTriggerChannel(), SCANTRIGGER_TEST_PULSES,
 		   SCANTRIGGER_TEST_HALF_MS, SCANTRIGGER_TEST_HALF_MS);
 
 	ScanTriggerLogReadbackLimits();
@@ -751,11 +781,11 @@ void CSeqMain::ScanTriggerC(void)
 			// width and level the scan uses, straight from the board's pulse
 			// generator, with nothing moving. Seeing these but not seeing a
 			// scan means only the position comparator is left to explain.
-			AjinTrigger->PulseBurst(SCANTRIGGER_CHANNEL,
+			AjinTrigger->PulseBurst(ScanTriggerChannel(),
 									SCANTRIGGER_TEST_BURST_PULSES,
 									SCANTRIGGER_TEST_BURST_HZ);
 
-			AjinTrigger->EndOutputTest(SCANTRIGGER_CHANNEL);
+			AjinTrigger->EndOutputTest(ScanTriggerChannel());
 			printf("[SCANTRIGGER] output self test finished, %d pulses driven.\n",
 				   SCANTRIGGER_TEST_PULSES);
 			printf("[SCANTRIGGER]  scope showed them -> output stage and wiring are good,"
@@ -775,7 +805,7 @@ void CSeqMain::ScanTriggerC(void)
 		}
 
 		g_bScanTriggerTestHigh = !g_bScanTriggerTestHigh;
-		const bool bSet = AjinTrigger->ForceOutput(SCANTRIGGER_CHANNEL, g_bScanTriggerTestHigh);
+		const bool bSet = AjinTrigger->ForceOutput(ScanTriggerChannel(), g_bScanTriggerTestHigh);
 
 		// Read the line back the way the board sees it, so the log stands on
 		// its own when nobody has a scope on the connector. On a board that
@@ -783,7 +813,7 @@ void CSeqMain::ScanTriggerC(void)
 		// the whole test, which is said once at the start rather than as "n/a"
 		// against every pulse.
 		bool bSeen = false;
-		const bool bRead = AjinTrigger->ReadOutputState(SCANTRIGGER_CHANNEL, &bSeen);
+		const bool bRead = AjinTrigger->ReadOutputState(ScanTriggerChannel(), &bSeen);
 
 		if (g_bScanTriggerTestHigh) {
 			if (bRead) {
@@ -846,17 +876,17 @@ void CSeqMain::ScanTriggerC(void)
 		// block limits mean anything.
 		// The counter works in raw encoder counts - AxcMotSetMoveUnitPerPulse is
 		// CN2CH-only and does nothing on this board - so the preset is in counts.
-		if (!AjinTrigger->ResetScanOrigin(SCANTRIGGER_CHANNEL,
-										  ScanTriggerDisplay.dMotionStart / SCANTRIGGER_ENC_UNIT_MM)) {
+		if (!AjinTrigger->ResetScanOrigin(ScanTriggerChannel(),
+										  ScanTriggerDisplay.dMotionStart / ScanTriggerEncUnitMM())) {
 			ScanTriggerAbort("could not preset the counter position");
 			break;
 		}
 
 		PERIODIC_TRIG_CFG cfg;
-		cfg.lChannelNo       = SCANTRIGGER_CHANNEL;
-		cfg.dwEncoderInput   = (DWORD)SCANTRIGGER_CHANNEL;
-		cfg.dwTriggerOutPort = SCANTRIGGER_OUTPORT;
-		cfg.dMoveUnitPerPulse= SCANTRIGGER_ENC_UNIT_MM;
+		cfg.lChannelNo       = ScanTriggerChannel();
+		cfg.dwEncoderInput   = g_ScanTriggerHw.uEncoderInput;
+		cfg.dwTriggerOutPort = g_ScanTriggerHw.uOutPortMask;
+		cfg.dMoveUnitPerPulse= ScanTriggerEncUnitMM();
 		cfg.dPitch           = ScanTriggerDisplay.dPitchAchieved;
 		cfg.dScanStart       = ScanTriggerDisplay.dTrigStart;
 		cfg.dScanEnd         = ScanTriggerDisplay.dTrigEnd;
@@ -872,9 +902,9 @@ void CSeqMain::ScanTriggerC(void)
 		// window. Ignored by the periodic path, which gets its end from the
 		// block.
 		cfg.lTriggerCount    = ScanTriggerDisplay.nLineCount;
-		cfg.dwTriggerLevel   = 1;
-		cfg.dwDirectionCheck = 1;          // count up only, the scan direction
-		cfg.bEncReverse      = SCANTRIGGER_ENC_REVERSE;
+		cfg.dwTriggerLevel   = g_ScanTriggerHw.uTriggerLevel;
+		cfg.dwDirectionCheck = g_ScanTriggerHw.uDirectionCheck;   // 1 = up only, the scan direction
+		cfg.bEncReverse      = (g_ScanTriggerHw.bEncReverse != 0);
 
 		g_bScanTriggerTimerOn    = false;
 		g_dScanTriggerTimerOnAt  = 0.0;
@@ -934,9 +964,9 @@ void CSeqMain::ScanTriggerC(void)
 		// against the counter at the end says whether the encoder was being
 		// read at all, and in which direction it counted - a block armed for
 		// one direction emits nothing while the count runs the other way.
-		AjinTrigger->ClearTriggerCount(SCANTRIGGER_CHANNEL);
+		AjinTrigger->ClearTriggerCount(ScanTriggerChannel());
 		g_dScanTriggerEncArm = 0.0;
-		AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &g_dScanTriggerEncArm);
+		AjinTrigger->GetActPos(ScanTriggerChannel(), &g_dScanTriggerEncArm);
 		g_nScanTriggerLastCount = -1;
 		ScanTriggerLogReadbackLimits();
 		ScanTriggerLogCounter("armed");
@@ -991,9 +1021,9 @@ void CSeqMain::ScanTriggerC(void)
 		// so say so now rather than after the whole scan has been made.
 		{
 			double dNow = 0.0;
-			const bool bGotPos = AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dNow);
+			const bool bGotPos = AjinTrigger->GetActPos(ScanTriggerChannel(), &dNow);
 
-			if (bGotPos && (dNow - g_dScanTriggerEncArm) < -SCANTRIGGER_WRONG_WAY_COUNTS) {
+			if (bGotPos && (dNow - g_dScanTriggerEncArm) < -g_ScanTriggerHw.dWrongWayCounts) {
 				ScanTriggerAbort("the counter is running away from the block;"
 								 " the encoder direction is inverted");
 				break;
@@ -1007,12 +1037,12 @@ void CSeqMain::ScanTriggerC(void)
 			// mode trades away and is why the position at each switch is
 			// recorded and reported at the end.
 			if (bGotPos && ScanTriggerIsTimerMode()) {
-				const double dPosMM = dNow * SCANTRIGGER_ENC_UNIT_MM;
+				const double dPosMM = dNow * ScanTriggerEncUnitMM();
 
 				if (!g_bScanTriggerTimerOn) {
 					if (dPosMM >= ScanTriggerDisplay.dTrigStart &&
 						dPosMM <  ScanTriggerDisplay.dTrigEnd) {
-						if (AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, true)) {
+						if (AjinTrigger->SetTimerRunning(ScanTriggerChannel(), true)) {
 							g_bScanTriggerTimerOn   = true;
 							g_dScanTriggerTimerOnAt = dPosMM;
 							ScanTriggerLogCounter("trig on");
@@ -1039,7 +1069,7 @@ void CSeqMain::ScanTriggerC(void)
 					// The run-out past Trig End is there to absorb exactly this.
 					// DISARM switches the trigger off when the move ends, which
 					// is the backstop.
-					AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, false);
+					AjinTrigger->SetTimerRunning(ScanTriggerChannel(), false);
 					g_bScanTriggerTimerOn    = false;
 					g_dScanTriggerTimerOffAt = dPosMM;
 					ScanTriggerLogCounter("trig off");
@@ -1059,26 +1089,26 @@ void CSeqMain::ScanTriggerC(void)
 		// anything else.
 		if (ScanTriggerIsTimerMode() && g_bScanTriggerTimerOn) {
 			double dNow = 0.0;
-			AjinTrigger->SetTimerRunning(SCANTRIGGER_CHANNEL, false);
+			AjinTrigger->SetTimerRunning(ScanTriggerChannel(), false);
 			g_bScanTriggerTimerOn = false;
-			if (AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dNow)) {
-				g_dScanTriggerTimerOffAt = dNow * SCANTRIGGER_ENC_UNIT_MM;
+			if (AjinTrigger->GetActPos(ScanTriggerChannel(), &dNow)) {
+				g_dScanTriggerTimerOffAt = dNow * ScanTriggerEncUnitMM();
 			}
 		}
 
 		long lCount = 0;
 		g_nScanTriggerLastCount =
-			AjinTrigger->ReadTriggerCount(SCANTRIGGER_CHANNEL, &lCount) ? (int)lCount : -1;
+			AjinTrigger->ReadTriggerCount(ScanTriggerChannel(), &lCount) ? (int)lCount : -1;
 		ScanTriggerDisplay.nTriggerCount = g_nScanTriggerLastCount;
 
 		// Read everything back before the trigger is switched off, so what is
 		// printed is the state the scan actually ran with.
 		ScanTriggerLogCounter("end");
-		AjinTrigger->ReportChannelConfig(SCANTRIGGER_CHANNEL, "end of scan");
+		AjinTrigger->ReportChannelConfig(ScanTriggerChannel(), "end of scan");
 
 		double dEncEnd = 0.0;
-		if (AjinTrigger->GetActPos(SCANTRIGGER_CHANNEL, &dEncEnd)) {
-			const double dEncTravel = (dEncEnd - g_dScanTriggerEncArm) * SCANTRIGGER_ENC_UNIT_MM;
+		if (AjinTrigger->GetActPos(ScanTriggerChannel(), &dEncEnd)) {
+			const double dEncTravel = (dEncEnd - g_dScanTriggerEncArm) * ScanTriggerEncUnitMM();
 			const double dCmdTravel = ScanTriggerDisplay.dMotionEnd - ScanTriggerDisplay.dMotionStart;
 
 			printf("[SCANTRIGGER] counter travelled %.4f mm, the stage was told to travel"
@@ -1155,10 +1185,10 @@ void CSeqMain::ScanTriggerC(void)
 					   " this AXL cannot report how many triggers were emitted\n");
 			}
 
-			AjinTrigger->StopTimerTrigger(SCANTRIGGER_CHANNEL);
+			AjinTrigger->StopTimerTrigger(ScanTriggerChannel());
 		}
 		else {
-			AjinTrigger->StopPeriodicTrigger(SCANTRIGGER_CHANNEL);
+			AjinTrigger->StopPeriodicTrigger(ScanTriggerChannel());
 		}
 		g_nScanTriggerState = SCANTRIGGER_RETURN;
 		break;
@@ -1248,4 +1278,133 @@ void CSeqMain::ScanTriggerC(void)
 	}
 
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Engineer screen.
+//
+// The settings and the counter clear are refused while bit.ScanTriggerRun is
+// set, which covers a scan and an output test alike: both have the channel
+// programmed with the settings they started from, and changing them under a
+// running cycle would leave the board and this file disagreeing about it.
+//////////////////////////////////////////////////////////////////////////
+void CSeqMain::ScanTriggerGetHwCfg(_scantriggerhwcfg& cfg)
+{
+	cfg = g_ScanTriggerHw;
+	cfg.nResult = SCANTRIGGER_HWCFG_OK;
+}
+
+int CSeqMain::ScanTriggerSetHwCfg(const _scantriggerhwcfg& cfg)
+{
+	if (bit.ScanTriggerRun) {
+		printf("[SCANTRIGGER] settings refused, the cycle is running\n");
+		return SCANTRIGGER_HWCFG_BUSY;
+	}
+
+	const long lChannels = (AjinTrigger != NULL) ? AjinTrigger->GetChannelCount() : 0;
+	const bool bChannelOk = (cfg.nChannel >= 0) &&
+							(lChannels == 0 || cfg.nChannel < lChannels);
+	if (!bChannelOk ||
+		cfg.uEncoderInput > 3 ||
+		cfg.uOutPortMask == 0 || cfg.uOutPortMask > 0xF ||
+		!(cfg.dEncUnitMM > 0.0) || cfg.dEncUnitMM > 1.0 ||
+		cfg.uTriggerLevel > 1 ||
+		cfg.uDirectionCheck > 2 ||
+		cfg.dWrongWayCounts < 0.0) {
+		printf("[SCANTRIGGER] settings refused, a value is out of range"
+			   " (ch %d of %ld, enc %u, out 0x%X, unit %.6f mm, level %u, dir %u, wrong way %.0f)\n",
+			   cfg.nChannel, lChannels, cfg.uEncoderInput, cfg.uOutPortMask, cfg.dEncUnitMM,
+			   cfg.uTriggerLevel, cfg.uDirectionCheck, cfg.dWrongWayCounts);
+		return SCANTRIGGER_HWCFG_RANGE;
+	}
+
+	g_ScanTriggerHw = cfg;
+	g_ScanTriggerHw.nResult = SCANTRIGGER_HWCFG_OK;
+	memset(g_ScanTriggerHw.uReserved, 0, sizeof(g_ScanTriggerHw.uReserved));
+
+	printf("[SCANTRIGGER] settings: ch %d, enc input %u, out 0x%X, %.6f mm/count, %s,"
+		   " level %s, direction %u, wrong way %.0f counts\n",
+		   g_ScanTriggerHw.nChannel, g_ScanTriggerHw.uEncoderInput, g_ScanTriggerHw.uOutPortMask,
+		   g_ScanTriggerHw.dEncUnitMM, g_ScanTriggerHw.bEncReverse ? "reversed" : "normal",
+		   g_ScanTriggerHw.uTriggerLevel ? "high" : "low", g_ScanTriggerHw.uDirectionCheck,
+		   g_ScanTriggerHw.dWrongWayCounts);
+	sprintf(strFileLog, "Scan trigger settings written: ch %d, %.6f mm/count",
+			g_ScanTriggerHw.nChannel, g_ScanTriggerHw.dEncUnitMM);
+	LOG_TRACE(strFileLog);
+
+	// The pitch in counts and everything derived from it depend on the unit.
+	ScanTriggerValidate();
+	return SCANTRIGGER_HWCFG_OK;
+}
+
+void CSeqMain::ScanTriggerReadCounter(_scantriggercounter& cnt)
+{
+	memset(&cnt, 0, sizeof(cnt));
+	cnt.nTriggerCount = -1;
+	cnt.nOutput       = -1;
+	cnt.nState        = g_nScanTriggerState;
+	cnt.dArmCount     = g_dScanTriggerEncArm;
+
+	const double dUnit = ScanTriggerEncUnitMM();
+	if (dUnit > 0.0) {
+		cnt.dBlockLowerCnt = ScanTriggerDisplay.dTrigStart / dUnit;
+		cnt.dBlockUpperCnt = ScanTriggerDisplay.dTrigEnd / dUnit;
+	}
+
+	if (AjinTrigger == NULL) return;
+
+	double dPos = 0.0;
+	if (AjinTrigger->GetActPos(ScanTriggerChannel(), &dPos)) {
+		cnt.bRead     = 1;
+		cnt.dEncCount = dPos;
+		cnt.dEncPosMM = dPos * dUnit;
+	}
+	long lCount = 0;
+	if (CAjinTrigger::HasTriggerCountApi() &&
+		AjinTrigger->ReadTriggerCount(ScanTriggerChannel(), &lCount)) {
+		cnt.nTriggerCount = (int)lCount;
+	}
+	bool bOut = false;
+	if (AjinTrigger->ReadOutputState(ScanTriggerChannel(), &bOut)) {
+		cnt.nOutput = bOut ? 1 : 0;
+	}
+}
+
+int CSeqMain::ScanTriggerClearCounter(int nMode)
+{
+	if (bit.ScanTriggerRun) {
+		printf("[SCANTRIGGER] counter clear refused, the cycle is running\n");
+		return SCANTRIGGER_HWCFG_BUSY;
+	}
+	if (AjinTrigger == NULL || AjinTrigger->GetChannelCount() <= ScanTriggerChannel()) {
+		return SCANTRIGGER_HWCFG_RANGE;
+	}
+
+	if (nMode == SCANTRIGGER_CNTCLR_TRIGGER_COUNT) {
+		if (!AjinTrigger->ClearTriggerCount(ScanTriggerChannel())) {
+			return SCANTRIGGER_HWCFG_RANGE;
+		}
+		g_nScanTriggerLastCount = -1;
+		printf("[SCANTRIGGER] trigger count cleared on channel %ld\n", ScanTriggerChannel());
+		return SCANTRIGGER_HWCFG_OK;
+	}
+
+	if (nMode == SCANTRIGGER_CNTCLR_ENC_TO_AXIS) {
+		// Puts the counter in machine coordinates the same way arming does,
+		// so the live position can be checked against the motor screen
+		// without running a scan.
+		CAjinMotor* pAxis = ScanTriggerAxis();
+		const double dUnit = ScanTriggerEncUnitMM();
+		if (pAxis == NULL || pAxis->MMI_PulseRate == 0 || !(dUnit > 0.0)) {
+			return SCANTRIGGER_HWCFG_RANGE;
+		}
+		const double dAxisMM = (double)pAxis->GetActualPosition() / (double)pAxis->MMI_PulseRate;
+		if (!AjinTrigger->ResetScanOrigin(ScanTriggerChannel(), dAxisMM / dUnit)) {
+			return SCANTRIGGER_HWCFG_RANGE;
+		}
+		printf("[SCANTRIGGER] counter set to the axis position, %.4f mm = %.0f counts\n",
+			   dAxisMM, dAxisMM / dUnit);
+		return SCANTRIGGER_HWCFG_OK;
+	}
+	return SCANTRIGGER_HWCFG_RANGE;
 }

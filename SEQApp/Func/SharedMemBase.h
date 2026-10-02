@@ -511,6 +511,62 @@ using _scantriggerdisplay = struct
 	double dRecipeSpeed;         // mm/s
 	double dRecipePulseUS;       // us
 };
+//-------------------------------//
+// Counter board settings the scan trigger runs with. SEQ starts with the
+// values the machine was commissioned with (SCANTRIGGER_DEFAULT_* in
+// SEQ04_ScanTrigger.cpp) and the engineer screen can read and change them.
+// A write is refused while a cycle or an output test is running, and SEQ
+// answers a write with the settings it now holds, so the screen can check
+// them rather than assume.
+enum SCANTRIGGER_HWCFG_RESULT
+{
+	SCANTRIGGER_HWCFG_OK    = 0,
+	SCANTRIGGER_HWCFG_BUSY  = 1,   // a cycle or an output test is running
+	SCANTRIGGER_HWCFG_RANGE = 2,   // a value is outside what the board takes
+};
+using _scantriggerhwcfg = struct
+{
+	int          nChannel;         // counter channel, 0 based
+	unsigned int uEncoderInput;    // which of the four encoder inputs feeds it
+	unsigned int uOutPortMask;     // trigger outputs, bit0 = Trigger Out 0
+	double       dEncUnitMM;       // mm per encoder count
+	int          bEncReverse;      // 1 = count the encoder the other way
+	unsigned int uTriggerLevel;    // 0 = low active, 1 = high active
+	unsigned int uDirectionCheck;  // 0 = both, 1 = count up only, 2 = down only
+	double       dWrongWayCounts;  // counts the counter may run backwards
+	                               // during a scan before it is aborted
+	int          nResult;          // SCANTRIGGER_HWCFG_RESULT, on a write's answer
+
+	unsigned int uReserved[8];
+};
+//-------------------------------//
+// What the counter channel is doing right now, for the live monitor.
+using _scantriggercounter = struct
+{
+	int    bRead;            // 1 when the board answered the position read
+	double dEncCount;        // counter position, counts
+	double dEncPosMM;        // the same in mm
+	int    nTriggerCount;    // pulses counted, -1 when the board cannot say
+	int    nOutput;          // trigger output pin: 1 high, 0 low, -1 unknown
+	double dArmCount;        // counter position when the last scan armed
+	double dBlockLowerCnt;   // trigger block, counts (index 51)
+	double dBlockUpperCnt;   // trigger block, counts (index 52)
+	int    nState;           // SCANTRIGGER_STATE
+
+	unsigned int uReserved[8];
+};
+//-------------------------------//
+// Counter clear. Refused, like a settings write, unless the cycle is idle.
+enum SCANTRIGGER_CNTCLR_MODE
+{
+	SCANTRIGGER_CNTCLR_TRIGGER_COUNT = 0,   // zero the pulse counter
+	SCANTRIGGER_CNTCLR_ENC_TO_AXIS   = 1,   // set the counter to the axis position
+};
+using _scantriggercntclr = struct
+{
+	int nMode;               // SCANTRIGGER_CNTCLR_MODE
+	int nResult;             // SCANTRIGGER_HWCFG_RESULT, on the answer
+};
 using _arg = union
 {
     BYTE		Buffer[12000];
@@ -557,6 +613,9 @@ using _arg = union
 	_rearpkcenteroffset RearPkCenterOffset;
 	_scantriggerrecipe  ScanTriggerRecipe;
 	_scantriggerdisplay ScanTriggerDisplay;
+	_scantriggerhwcfg   ScanTriggerHwCfg;
+	_scantriggercounter ScanTriggerCounter;
+	_scantriggercntclr  ScanTriggerCntClr;
 };
 
 //-------------------------------//
@@ -649,6 +708,10 @@ enum TCmdType {
 	CMD_WRITE_SCANTRIGGER_START,
 	CMD_WRITE_SCANTRIGGER_STOP,
 	CMD_WRITE_SCANTRIGGER_TEST,
+	CMD_READ_SCANTRIGGER_COUNTER,
+	CMD_WRITE_SCANTRIGGER_CNTCLR,
+	CMD_READ_SCANTRIGGER_HWCFG,
+	CMD_WRITE_SCANTRIGGER_HWCFG,
 
 	CMD_PROGRAMEXIT	= 199,
 };

@@ -525,6 +525,12 @@ public:
 	// Commissioning only: drives the trigger output pin directly so it can be
 	// probed, with no encoder, no comparator and no stage motion involved.
 	void ScanTriggerOutputTestM(void);
+	// Engineer screen: the counter board settings, the live counter, and a
+	// counter clear. The writes are refused while the cycle runs.
+	void ScanTriggerGetHwCfg(_scantriggerhwcfg& cfg);
+	int  ScanTriggerSetHwCfg(const _scantriggerhwcfg& cfg);
+	void ScanTriggerReadCounter(_scantriggercounter& cnt);
+	int  ScanTriggerClearCounter(int nMode);
 #pragma endregion
 
 	//////////////////////////////////////////////////////////////////////////
