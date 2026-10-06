@@ -420,6 +420,8 @@ enum SCANTRIGGER_STATE
 	SCANTRIGGER_OUTPUT_TEST = 9,   // driving the trigger pin directly, for a scope
 	SCANTRIGGER_RETURN      = 10,  // going back to the scan start position
 	SCANTRIGGER_WAIT_RETURN = 11,  // waiting for that move to finish
+	SCANTRIGGER_WAIT_VISION = 12,  // at the start position, waiting for the
+	                               // MMI's VISION to be ready for the lines
 };
 //-------------------------------//
 // Line scan trigger recipe. Positions are absolute machine coordinates in mm.
@@ -568,6 +570,22 @@ using _scantriggercntclr = struct
 	int nMode;               // SCANTRIGGER_CNTCLR_MODE
 	int nResult;             // SCANTRIGGER_HWCFG_RESULT, on the answer
 };
+//-------------------------------//
+// VISION handshake. With nUse set, a scan stops at the start position
+// (SCANTRIGGER_WAIT_VISION) until the MMI says its line scan grabber is
+// running and waiting for the lines (nReady), and aborts when that does not
+// come within SCANTRIGGER_VISION_WAIT_MS: a scan the camera is not taking is
+// a scan for nothing. A ready is good for one scan; SEQ clears it when the
+// scan ends, done or aborted. SEQ answers a write with what it now holds.
+using _scantriggervision = struct
+{
+	int          nUse;             // 1 = scans wait for VISION
+	int          nReady;           // 1 = VISION is waiting for the lines, 0 = not,
+	                               // -1 = leave it (a refresh of nUse only)
+	int          nLineCount;       // lines VISION is set up to take, for the log
+
+	unsigned int uReserved[5];
+};
 using _arg = union
 {
     BYTE		Buffer[12000];
@@ -617,6 +635,7 @@ using _arg = union
 	_scantriggerhwcfg   ScanTriggerHwCfg;
 	_scantriggercounter ScanTriggerCounter;
 	_scantriggercntclr  ScanTriggerCntClr;
+	_scantriggervision  ScanTriggerVision;
 };
 
 //-------------------------------//
@@ -713,6 +732,7 @@ enum TCmdType {
 	CMD_WRITE_SCANTRIGGER_CNTCLR,
 	CMD_READ_SCANTRIGGER_HWCFG,
 	CMD_WRITE_SCANTRIGGER_HWCFG,
+	CMD_WRITE_SCANTRIGGER_VISION,
 
 	CMD_PROGRAMEXIT	= 199,
 };

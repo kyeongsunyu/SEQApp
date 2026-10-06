@@ -535,6 +535,8 @@ public:
 	int  ScanTriggerSetHwCfg(const _scantriggerhwcfg& cfg);
 	void ScanTriggerReadCounter(_scantriggercounter& cnt);
 	int  ScanTriggerClearCounter(int nMode);
+	// VISION handshake (_scantriggervision); answers with what it holds.
+	void ScanTriggerSetVision(_scantriggervision& vis);
 #pragma endregion
 
 	//////////////////////////////////////////////////////////////////////////

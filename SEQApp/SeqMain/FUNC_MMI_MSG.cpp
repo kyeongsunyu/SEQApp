@@ -550,6 +550,11 @@ void CSeqMain::MMI_MessageCommunication(void)
 				Mmi2Seq.Arg.ScanTriggerHwCfg.nResult = nResult;
 				break;
 			}
+			case CMD_WRITE_SCANTRIGGER_VISION:
+			{
+				ScanTriggerSetVision(Mmi2Seq.Arg.ScanTriggerVision);
+				break;
+			}
 			case CMD_WRITE_LOAD_CNT_CLEAR:
 			{
 				MachineStatus.UnitInCnt = 0;

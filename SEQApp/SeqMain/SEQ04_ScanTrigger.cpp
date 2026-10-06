@@ -158,6 +158,16 @@ static const long     SCANTRIGGER_TEST_BURST_PULSES = 250;
 static const DWORD    SCANTRIGGER_TEST_BURST_HZ     = 1000;
 
 static int       g_nScanTriggerState = SCANTRIGGER_IDLE;
+
+// VISION handshake, see _scantriggervision. How long a scan waits at the
+// start position for the MMI's VISION before it gives up: long enough for
+// the grabber to be reallocated, short enough that a scan nobody is taking
+// does not sit there.
+static const LONGLONG SCANTRIGGER_VISION_WAIT_MS = 10000;
+static int       g_nScanTriggerVisionUse   = 0;
+static int       g_nScanTriggerVisionReady = 0;
+static int       g_nScanTriggerVisionLines = 0;
+static CRtTimer  g_tmScanTriggerVision;
 static CRtTimer  g_tmScanTriggerSettle;
 static CRtTimer  g_tmScanTriggerLog;
 
@@ -614,6 +624,7 @@ void CSeqMain::ScanTriggerAbort(const char* pszWhy)
 	g_nScanTriggerState = SCANTRIGGER_ABORTED;
 	ScanTriggerDisplay.nState = g_nScanTriggerState;
 	bit.ScanTriggerRun = 0;
+	g_nScanTriggerVisionReady = 0;
 
 	printf("[SCANTRIGGER] aborted: %s\n", (pszWhy != NULL) ? pszWhy : "");
 	sprintf(strFileLog, "Scan aborted: %s", (pszWhy != NULL) ? pszWhy : "");
@@ -865,7 +876,29 @@ void CSeqMain::ScanTriggerC(void)
 			break;
 		}
 		if (g_tmScanTriggerSettle.TimeOvermS(SCANTRIGGER_SETTLE_MS)) {
+			if (g_nScanTriggerVisionUse) {
+				g_tmScanTriggerVision.SetTime();
+				g_nScanTriggerState = SCANTRIGGER_WAIT_VISION;
+			}
+			else {
+				g_nScanTriggerState = SCANTRIGGER_ARM;
+			}
+		}
+		break;
+
+	case SCANTRIGGER_WAIT_VISION:
+		// The grabber has to be taking lines before the first trigger, or the
+		// start of the scan is lost. Nothing is armed yet, so waiting here
+		// costs only time.
+		if (!g_nScanTriggerVisionUse || g_nScanTriggerVisionReady) {
+			if (g_nScanTriggerVisionUse) {
+				printf("[SCANTRIGGER] VISION ready for %d lines (scan has %d)\n",
+					   g_nScanTriggerVisionLines, ScanTriggerDisplay.nLineCount);
+			}
 			g_nScanTriggerState = SCANTRIGGER_ARM;
+		}
+		else if (g_tmScanTriggerVision.TimeOvermS(SCANTRIGGER_VISION_WAIT_MS)) {
+			ScanTriggerAbort("VISION was not ready to take the lines");
 		}
 		break;
 
@@ -1244,6 +1277,7 @@ void CSeqMain::ScanTriggerC(void)
 		// first thing done here rather than something left to fall out of the
 		// state machine.
 		bit.ScanTriggerRun = 0;
+		g_nScanTriggerVisionReady = 0;
 
 		// Parked first, then the verdict. The log is read as the story of the
 		// cycle, and the cycle parks before it is finished.
@@ -1368,6 +1402,27 @@ void CSeqMain::ScanTriggerReadCounter(_scantriggercounter& cnt)
 	if (AjinTrigger->ReadOutputState(ScanTriggerChannel(), &bOut)) {
 		cnt.nOutput = bOut ? 1 : 0;
 	}
+}
+
+void CSeqMain::ScanTriggerSetVision(_scantriggervision& vis)
+{
+	const int nUse = (vis.nUse != 0) ? 1 : 0;
+	// -1 refreshes nUse and leaves the ready as it is
+	const int nReady = !nUse ? 0
+	                 : (vis.nReady < 0) ? g_nScanTriggerVisionReady
+	                 : (vis.nReady != 0) ? 1 : 0;
+
+	if (nUse != g_nScanTriggerVisionUse) {
+		printf("[SCANTRIGGER] VISION handshake %s\n", nUse ? "on" : "off");
+		sprintf(strFileLog, "Scan VISION handshake %s", nUse ? "on" : "off");
+		LOG_TRACE(strFileLog);
+	}
+	g_nScanTriggerVisionUse   = nUse;
+	g_nScanTriggerVisionReady = nReady;
+	if (vis.nReady >= 0) g_nScanTriggerVisionLines = vis.nLineCount;
+
+	vis.nUse   = g_nScanTriggerVisionUse;
+	vis.nReady = g_nScanTriggerVisionReady;
 }
 
 int CSeqMain::ScanTriggerClearCounter(int nMode)
