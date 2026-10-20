@@ -153,8 +153,8 @@ def retext(shape, pidx, text, size=None, bold=None, font=None, color=None):
 for sh in title_slide.shapes:
     if sh.name == '직사각형 8':
         retext(sh, 0, '피드포워드 오토포커스', 54, True, TITLE_FONT, NAVY)
-        retext(sh, 2, '민수개발팀   유경선, 이기성, 최중건', 22, True, BODY_FONT, INK)
-        retext(sh, 3, '2026. 09. 01', 30, True)
+        retext(sh, 2, '개발2팀   유경선, 이기성, 최중건', 22, True, BODY_FONT, INK)
+        retext(sh, 3, '2026. 10. 20', 30, True)
     elif sh.name == 'Text 1':
         sh.left, sh.width = Inches(1.55), Inches(10.3)
         p = retext(sh, 0, '선행 Confocal 측정 기반 실시간 초점 제어 — 지연 상수 설계 검증 및 D.O.F. 오차 예산 분석',
@@ -199,7 +199,7 @@ OV = [('무엇을 찍나', '디스플레이 패널에 TAB 이 붙은 가로 띠 
                       '리드와 정렬 마크가 또렷하게 분해되어야 정상 이미지로 인정한다'),
       ('왜 초점이 문제인가', '초점이 맞는 두께(D.O.F.)가 3.5 µm 뿐이다. '
                             '이 범위를 벗어나면 그 구간의 이미지는 흐려져 검사에 쓸 수 없다'),
-      ('표면은 얼마나 움직이나', '패널 전체로 200 µm, TAB 과 TAB 사이 간극에서는 100–160 µm 가 꺼진다. '
+      ('표면은 얼마나 움직이나', '패널 전체로 200 µm, TAB 과 TAB 사이 간극에서는 100–160 µm 단차가 발생한다. '
                                 '초점 두께의 30–45배다')]
 for i, (h, t) in enumerate(OV):
     x = 0.95 + i * (CW3 + GAP)
@@ -216,13 +216,13 @@ label_in(cl, '그래서 필요한 것 — 찍는 그 순간, 그 지점의 표�
 
 # ================================================================ 0c. 피드포워드 정의
 s = new('피드포워드 정의 — 보기 전에 고치는 제어')
-kicker(s, '되먹임은 결과를 보고 고치고, 피드포워드는 원인을 먼저 재서 미리 고친다')
-DEF = [(0.95, 5.78, '되먹임 (Feedback)', '결과를 보고 고친다', INK, [
+kicker(s, '피드백은 결과를 보고 고치고, 피드포워드는 선행 측정 후 고친다.')
+DEF = [(0.95, 5.78, '피드백 (Feedback)', '결과를 보고 고친다', INK, [
             '오차가 생긴 뒤에만 동작 — 루프 지연이 성능 상한을 정한다',
             '측정점과 보정점이 같아 게인을 올리면 헌팅한다']),
        (6.88, 5.72, '피드포워드 (Feed-forward)', '원인을 먼저 재서 미리 고친다', ACCENT_D, [
             '오차가 생기기 전에 동작 — 타이밍 정확도가 성능을 정한다',
-            '되먹임이 없어 헌팅도 없다. 대신 상수가 틀리면 스스로 못 고친다'])]
+            '피드백이 없어 헌팅도 없다. 대신 상수가 틀리면 스스로 못 고친다'])]
 for x, w, head, sub, hc, lines in DEF:
     rrect(s, x, 2.04, w, 1.34, CARD, INK, 0.75, 0.03)
     para_block(s, x + 0.28, 2.18, w - 0.56, 0.30,
@@ -230,7 +230,7 @@ for x, w, head, sub, hc, lines in DEF:
     para_block(s, x + 0.28, 2.52, w - 0.56, 0.74,
                [dict(text=t, size=11.5, bullet='·', line_pct=120, space_after=5) for t in lines])
 para_block(s, 0.95, 3.52, CW, 0.28,
-           [dict(text='되먹임 — 본 뒤에 고친다. 고쳤을 때 그 지점은 이미 지나간 뒤다',
+           [dict(text='Feedback — 본 뒤에 고친다. 고쳤을 때 그 지점은 이미 지나간 뒤다',
                  size=13, bold=True, color=INK_SOFT)])
 chain(s, 3.84, [('① 촬상 시작', '그 지점을 이미 찍는 중'),
                 ('② 초점 어긋남 감지', '같은 지점에서 측정'),
@@ -244,8 +244,8 @@ chain(s, 5.18, [('① 선행 측정', '촬상점 72.5 mm 앞에서'),
                 ('③ 때맞춰 Z축 이동', '촬상 도착 전에 완료'),
                 ('④ 촬상', '초점이 맞은 상태로')], h=0.84, fill=ACCENT_D)
 banner(s, 6.18, '외란은 자재 표면 높이, 보정량은 Z축 목표 위치 — 성립 조건은 자재 고정 · X축 80 mm/s 등속 · 선행 거리 72.5 mm 일정', 12.5, h=0.44)
-footnote(s, '피드포워드는 되먹임의 반대가 아니라, 되먹임이 손댈 수 없는 지연 구간을 덮는 방법이다 — '
-            '이 설계에서 되먹임이 사라진 것은 Z축에 엔코더가 없어서가 아니라 측정점과 보정점을 떼어 놓았기 때문이다.', 6.72)
+footnote(s, '피드포워드는 피드백의 반대가 아니라, 피드백이 손댈 수 없는 지연 구간을 덮는 방법이다 — '
+            '이 설계에서 피드백이 사라진 것은 Z축에 엔코더가 없어서가 아니라 측정점과 보정점을 떼어 놓았기 때문이다.', 6.72)
 
 # ================================================================ 2. 개발 배경 및 개발 목적
 s = new('개발 배경 및 개발 목적')
@@ -273,7 +273,6 @@ def bullets(slide, x, y, w, items, size=14.5, gap=9):
 bullets(s, LX, 2.88, LW, LB, size=13.5, gap=11)
 bullets(s, RX, 2.88, RW, RB, size=13.5, gap=11)
 banner(s, 5.92, '기존 구조는 오차를 「본 뒤에」 고쳤고, 신규 구조는 오차를 「보기 전에」 고친다', 14)
-footnote(s, '출처 — 「Feedforward Autofocus System 개발」 한국전광(주) 민수개발팀, 2026-07-02 · 정량 해석은 확정 조건에서 역산한 값', 6.60)
 
 # ================================================================ 3. 핵심 성과 지표
 s = new('핵심 성과 지표')
@@ -482,16 +481,16 @@ s = new('운용 화면 — 설정값과 리포트 상수의 대조')
 kicker(s, 'AutoFocusProject 실행 화면 · Position 0.1 µm = 1 pulse · Velocity 0.1 µm/s · Acc/Dec 0.1 µm/s² — '
           '화면의 모든 수치가 이 단위계다')
 s.shapes.add_picture(asset('af-ui.png'), Inches(0.95), Inches(2.05), height=Inches(4.70))
-TUI = [('Delay Time (ms)', '906.250', '72.5 mm ÷ 80 mm/s · 5절 FocusDelayMs', False),
-       ('Lead Control', '사용', 'Z축 이동시간만큼 선행 지령 · 7절', False),
-       ('Deadband / Filter', '사용 / 사용', '±5 mV(±1 µm) · IIR α 0.10 · 7절', False),
-       ('Reference Voltage', '4.391787 V', '초점 기준 전압 refV 4.3918 V · 8절', False),
-       ('Valid Min / Max V', '4.000 / 4.550 V', '유효 대역 — 밖은 기각 · 8절', False),
-       ('Accel / Decel', '200,000,000', '20 m/s² = 200 M · 9절 표 9-2', False),
-       ('Vel', '100,000', '10 µm/ms — 리포트 운용값 150,000 과 다름', True),
+TUI = [('Delay Time (ms)', '906.250', '72.5 mm ÷ 80 mm/s', False),
+       ('Lead Control', '사용', 'Z축 이동시간만큼 선행 지령', False),
+       ('Deadband / Filter', '사용 / 사용', '±5 mV(±1 µm) · IIR α 0.10', False),
+       ('Reference Voltage', '4.391787 V', '초점 기준 전압 refV 4.3918 V', False),
+       ('Valid Min / Max V', '4.000 / 4.550 V', '유효 대역 — 밖은 기각', False),
+       ('Accel / Decel', '200,000,000', '20 m/s² = 200 M', False),
+       ('Vel', '150,000', '15 µm/ms', False),
        ('Home Offset #1', '66,992', '홈 복귀 오프셋 6.6992 mm · 리포트 미기재', False)]
-tb = table(s, 5.00, 2.10, 7.78, 3.90, 9, 3,
-           col_w=[2.30, 1.90, 3.58], header_h=0.42, row_h=0.435)
+tb = table(s, 5.00, 2.10, 7.78, 4.62, 9, 3,
+           col_w=[2.30, 1.90, 3.58], header_h=0.46, row_h=0.52)
 for c, h in enumerate(['화면 항목 (Item#1)', '화면값', '의미 · 근거']):
     cell(tb, 0, c, h, 12, True, WHITE, ACCENT_D, PP_ALIGN.CENTER if c == 1 else PP_ALIGN.LEFT)
 for r, (k, v, meaning, warn) in enumerate(TUI, 1):
@@ -501,12 +500,6 @@ for r, (k, v, meaning, warn) in enumerate(TUI, 1):
              RGBColor(0xFD, 0xF3, 0xE8) if warn else (RGBColor(0xF7, 0xF9, 0xFC) if r % 2 else None),
              PP_ALIGN.CENTER if c == 1 else PP_ALIGN.LEFT)
 style_table(tb)
-al = rrect(s, 5.00, 6.06, 7.78, 0.88, RGBColor(0xFB, 0xEF, 0xEC), ORANGE, 0.75, 0.04)
-para_block(s, 5.22, 6.15, 7.34, 0.72, [
-    dict(text='발표 전 확인 — Vel 화면값 100,000(10 µm/ms) 대 리포트 운용값 150,000(15 µm/ms)',
-         size=11, bold=True, color=RED, line_pct=118, space_after=3),
-    dict(text='Item#2 기준 전압 5.000 V · 유효 대역 3.200–3.500 V 는 초기값 그대로 — 2번 카메라 운용 전 확정 필요(10절)',
-         size=10.5, color=INK_SOFT, line_pct=118)])
 
 # ================================================================ 8. 제어 주기 실측 검증
 s = new('제어 주기 실측 검증 — 500 µs')
