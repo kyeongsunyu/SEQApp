@@ -81,7 +81,9 @@ def micro_fix_all(pres):
     return n
 
 
-SRC = '/tmp/claude-0/-home-user-SEQApp/c46c0310-bc87-528b-9dd4-74e4ac81297d/scratchpad/template.pptx'
+SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template.pptx')
+# 양식(표지 · 감사 슬라이드 · 슬라이드 마스터/레이아웃)만 남긴 파일을 저장소에 둔다.
+# 원본 「제1회 연구소기술경진대회_민수개발팀 윤경현_251030.pptx」 에서 본문을 모두 지운 것이다.
 OUT = sys.argv[1] if len(sys.argv) > 1 else '/tmp/claude-0/-home-user-SEQApp/c46c0310-bc87-528b-9dd4-74e4ac81297d/scratchpad/out.pptx'
 
 prs = Presentation(SRC)
@@ -95,10 +97,11 @@ def drop_slides(prs, idxs):
         prs.part.drop_rel(els[i].get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'))
         lst.remove(els[i])
 
-drop_slides(prs, range(1, 20))       # 2~20번 본문 삭제, 표지/감사 슬라이드 유지
+# template.pptx 는 이미 표지(0)와 '감사 합니다'(1) 두 장뿐이다.
+assert len(prs.slides._sldIdLst) == 2, 'template.pptx 는 표지·감사 두 장이어야 한다'
 title_slide, thanks_slide = prs.slides[0], prs.slides[1]
 
-# 남겨둔 '감사 합니다' 슬라이드는 slide21.xml 을 점유한다. 본문을 20장 넘게 추가하면
+# '감사 합니다' 슬라이드가 slideN.xml 을 점유한 채로 본문을 20장 넘게 추가하면
 # python-pptx 가 같은 이름을 다시 배정해 파트가 덮어써지므로, 미리 비켜 둔다.
 from pptx.opc.packuri import PackURI
 thanks_slide.part.partname = PackURI('/ppt/slides/slide900.xml')
@@ -107,6 +110,23 @@ def new(title, size=26):
     s = prs.slides.add_slide(LAY)
     title_bar(s, title, size)
     return s
+
+CW3, GAP = 3.65, 0.45                # 3단 카드 폭·간격
+GREY_M = RGBColor(0x8E, 0x95, 0xA1)   # 되먹임 도식용 흐린 색
+
+def chain(slide, y, items, x0=0.95, total=None, h=0.92, fill=ACCENT_D, tc=WHITE, size=12):
+    total = CW if total is None else total
+    n = len(items)
+    ov = 0.16
+    w = (total + ov * (n - 1)) / n
+    for i, (a, b) in enumerate(items):
+        sh = slide.shapes.add_shape(MSO_SHAPE.CHEVRON, Inches(x0 + i * (w - ov)),
+                                    Inches(y), Inches(w), Inches(h))
+        sh.fill.solid(); sh.fill.fore_color.rgb = fill
+        no_line(sh); sh.shadow.inherit = False
+        label_in(sh, a + '\n' + b, size, True, tc, line_pct=120)
+        sh.text_frame.paragraphs[1].runs[0].font.size = Pt(size - 2)
+        sh.text_frame.paragraphs[1].runs[0].font.bold = False
 
 # ================================================================ 1. 표지
 def retext(shape, pidx, text, size=None, bold=None, font=None, color=None):
@@ -141,6 +161,92 @@ for sh in title_slide.shapes:
                    16, None, BODY_FONT, INK)
         p.alignment = PP_ALIGN.CENTER
 
+# ================================================================ 0a. 목차
+s = new('목차')
+kicker(s, '정의 → 배경 → 구성 → 설계 검증 → 실측 검증 → 판정 순으로 본다')
+TOC = [('01', '피드포워드 정의', '이 장비가 하는 일 · 되먹임과 피드포워드의 차이'),
+       ('02', '개발 배경', '기존 동축 방식의 구조적 한계 · 핵심 개선 내용'),
+       ('03', '핵심 성과 지표', ''),
+       ('04', '광학 및 하드웨어 구성', '촬상 광학 헤드와 조명 · 시스템 구성(회로도) · 모터 구동 능력'),
+       ('05', 'UI 구성', ''),
+       ('06', '제어 주기', '제어 주기 실측 검증 · 반주기 선보정 · 지연 상수 906.25 ms 의 유도 · 지연 오차 예산'),
+       ('07', '추종 가능한 최대 높이 변화율', ''),
+       ('08', '오차 예산과 D.O.F. 판정', ''),
+       ('09', '실측 조건', '자재 단차 대응과 초기 위치 정렬 · 촬상 영역 상세 · 센서 실측 신호'),
+       ('10', '실측 검증', '측정된 패턴 · 전압 · 지령 궤적 · 실측 로그 검증'),
+       ('11', '종합 판정', ''),
+       ('12', '피드포워드 파급 효과 및 확장 가능성', '')]
+for i, (num, head, subs) in enumerate(TOC):
+    x = 0.95 + (i // 4) * (CW3 + GAP)
+    y = 2.08 + (i % 4) * 1.20
+    rrect(s, x, y, CW3, 1.12, CARD if subs else CARD_B, None, radius=0.05)
+    nb = rrect(s, x + 0.18, y + 0.15, 0.46, 0.30, ACCENT_D, None, radius=0.10)
+    label_in(nb, num, 11, True, WHITE)
+    para_block(s, x + 0.74, y + 0.16, CW3 - 0.94, 0.30,
+               [dict(text=head, size=12.5, bold=True, color=NAVY)])
+    if subs:
+        para_block(s, x + 0.74, y + 0.50, CW3 - 0.94, 0.56,
+                   [dict(text=subs, size=9.5, color=INK_SOFT, line_pct=118)])
+
+# ================================================================ 0b. 장비 개요 (입문)
+s = new('이 장비가 하는 일 — 움직이면서 초점을 맞춰 찍는다')
+kicker(s, '패널 위를 지나가며 한 줄씩 찍는다. 표면이 평평하지 않아, 찍는 동안 초점을 계속 따라가야 한다')
+chain(s, 2.14, [('① 자재 고정', '디스플레이 패널 · 약 200 mm'),
+                ('② 헤드 이동', 'X축 80 mm/s 등속'),
+                ('③ 한 줄씩 촬상', 'Line-scan · 200 mm 를 2.5초에'),
+                ('④ 초점 유지', 'Z축이 표면 높이를 따라간다')], h=0.95)
+OV = [('무엇을 찍나', '디스플레이 패널에 TAB 이 붙은 가로 띠 하나다. '
+                      '리드와 정렬 마크가 또렷하게 분해되어야 정상 이미지로 인정한다'),
+      ('왜 초점이 문제인가', '초점이 맞는 두께(D.O.F.)가 3.5 µm 뿐이다. '
+                            '이 범위를 벗어나면 그 구간의 이미지는 흐려져 검사에 쓸 수 없다'),
+      ('표면은 얼마나 움직이나', '패널 전체로 200 µm, TAB 과 TAB 사이 간극에서는 100–160 µm 가 꺼진다. '
+                                '초점 두께의 30–45배다')]
+for i, (h, t) in enumerate(OV):
+    x = 0.95 + i * (CW3 + GAP)
+    rrect(s, x, 3.32, CW3, 1.72, CARD, INK, 0.75, 0.03)
+    para_block(s, x + 0.26, 3.50, CW3 - 0.52, 0.30,
+               [dict(text=h, size=14, bold=True, color=NAVY)])
+    para_block(s, x + 0.26, 3.88, CW3 - 0.52, 1.02,
+               [dict(text=t, size=11.5, line_pct=122)])
+banner(s, 5.22, '초점이 맞는 두께 3.5 µm   ·   사람 머리카락 약 70 µm   ·   자재 단차 100–160 µm', 15, h=0.58)
+cl = rrect(s, 0.95, 6.00, CW, 0.80, CARD_B, None, radius=0.05)
+label_in(cl, '그래서 필요한 것 — 찍는 그 순간, 그 지점의 표면 높이에 Z축이 이미 가 있어야 한다.\n'
+             '이 발표는 그 「미리 가 있게 하는 방법」에 대한 것이다.',
+         13, True, NAVY, line_pct=130)
+
+# ================================================================ 0c. 피드포워드 정의
+s = new('피드포워드 정의 — 보기 전에 고치는 제어')
+kicker(s, '되먹임은 결과를 보고 고치고, 피드포워드는 원인을 먼저 재서 미리 고친다')
+DEF = [(0.95, 5.78, '되먹임 (Feedback)', '결과를 보고 고친다', INK, [
+            '오차가 생긴 뒤에만 동작 — 루프 지연이 성능 상한을 정한다',
+            '측정점과 보정점이 같아 게인을 올리면 헌팅한다']),
+       (6.88, 5.72, '피드포워드 (Feed-forward)', '원인을 먼저 재서 미리 고친다', ACCENT_D, [
+            '오차가 생기기 전에 동작 — 타이밍 정확도가 성능을 정한다',
+            '되먹임이 없어 헌팅도 없다. 대신 상수가 틀리면 스스로 못 고친다'])]
+for x, w, head, sub, hc, lines in DEF:
+    rrect(s, x, 2.04, w, 1.34, CARD, INK, 0.75, 0.03)
+    para_block(s, x + 0.28, 2.18, w - 0.56, 0.30,
+               [dict(text=head, size=15, bold=True, color=hc)])
+    para_block(s, x + 0.28, 2.52, w - 0.56, 0.74,
+               [dict(text=t, size=11.5, bullet='·', line_pct=120, space_after=5) for t in lines])
+para_block(s, 0.95, 3.52, CW, 0.28,
+           [dict(text='되먹임 — 본 뒤에 고친다. 고쳤을 때 그 지점은 이미 지나간 뒤다',
+                 size=13, bold=True, color=INK_SOFT)])
+chain(s, 3.84, [('① 촬상 시작', '그 지점을 이미 찍는 중'),
+                ('② 초점 어긋남 감지', '같은 지점에서 측정'),
+                ('③ Z축 보정', '루프 지연 약 2 ms 뒤'),
+                ('④ 이미 지나감', '80 mm/s × 2 ms = 160 µm')], h=0.84, fill=GREY_M)
+para_block(s, 0.95, 4.86, CW, 0.28,
+           [dict(text='피드포워드 — 보기 전에 고친다. 그 지점이 촬상점에 올 때 Z축은 이미 가 있다',
+                 size=13, bold=True, color=ACCENT_D)])
+chain(s, 5.18, [('① 선행 측정', '촬상점 72.5 mm 앞에서'),
+                ('② 시각과 함께 보관', '지연 큐 906.25 ms'),
+                ('③ 때맞춰 Z축 이동', '촬상 도착 전에 완료'),
+                ('④ 촬상', '초점이 맞은 상태로')], h=0.84, fill=ACCENT_D)
+banner(s, 6.18, '외란은 자재 표면 높이, 보정량은 Z축 목표 위치 — 성립 조건은 자재 고정 · X축 80 mm/s 등속 · 선행 거리 72.5 mm 일정', 12.5, h=0.44)
+footnote(s, '피드포워드는 되먹임의 반대가 아니라, 되먹임이 손댈 수 없는 지연 구간을 덮는 방법이다 — '
+            '이 설계에서 되먹임이 사라진 것은 Z축에 엔코더가 없어서가 아니라 측정점과 보정점을 떼어 놓았기 때문이다.', 6.72)
+
 # ================================================================ 2. 개발 배경 및 개발 목적
 s = new('개발 배경 및 개발 목적')
 kicker(s, '동축(Co-axial) AFM 의 두 가지 구조적 한계를 선행 측정 피드포워드로 해소한다')
@@ -171,7 +277,6 @@ footnote(s, '출처 — 「Feedforward Autofocus System 개발」 한국전광(�
 
 # ================================================================ 3. 핵심 성과 지표
 s = new('핵심 성과 지표')
-CW3, GAP = 3.65, 0.45
 STATS = [
     ('예비 시간 확보', '906.25 ms', ['72.5 mm ÷ 80 mm/s', 'Z축 이동시간 0.84 ms 의 1,080배']),
     ('추종 한계', '23배 향상', ['0.43 → 10.0 µm/ms', '지연 보상 4종 + 반주기 선보정']),
@@ -277,7 +382,7 @@ for i, (h, t) in enumerate(NOTE):
 
 # ================================================================ 5b. 광학 헤드와 조명
 s = new('촬상 광학 헤드와 조명')
-kicker(s, '선행 측정계와 촬상계가 같은 높이를 본다 — 다른 것은 재는 시각뿐이다')
+kicker(s, '카메라가 또렷하게 보는 면(초점면)과 선행 센서가 재는 면이 같은 높이다 — 다른 것은 재는 시각뿐이다')
 
 # 광학 헤드 : 초점면이 이미지 높이의 12.9 % 지점
 HH = 4.05; HY = 2.18
@@ -320,19 +425,7 @@ banner(s, 6.32, '두 지점은 같은 Z 평면이고 스캔 방향으로만 72.5
 
 # ================================================================ 6. 시스템 구성
 s = new('시스템 구성 — 측정 경로와 지령 경로')
-def chain(slide, y, items, x0=0.95, total=None, h=0.92, fill=ACCENT_D, tc=WHITE, size=12):
-    total = CW if total is None else total
-    n = len(items)
-    ov = 0.16
-    w = (total + ov * (n - 1)) / n
-    for i, (a, b) in enumerate(items):
-        sh = slide.shapes.add_shape(MSO_SHAPE.CHEVRON, Inches(x0 + i * (w - ov)),
-                                    Inches(y), Inches(w), Inches(h))
-        sh.fill.solid(); sh.fill.fore_color.rgb = fill
-        no_line(sh); sh.shadow.inherit = False
-        label_in(sh, a + '\n' + b, size, True, tc, line_pct=120)
-        sh.text_frame.paragraphs[1].runs[0].font.size = Pt(size - 2)
-        sh.text_frame.paragraphs[1].runs[0].font.bold = False
+kicker(s, '위 줄은 표면 높이를 읽어 들이는 길, 아래 줄은 Z축을 움직이는 길이다 — 두 길은 가운데 제어 PC 에서만 만난다')
 para_block(s, 0.95, 2.02, 6.0, 0.28, [dict(text='측정 경로 — 아날로그', size=13.5, bold=True, color=ACCENT_D)])
 chain(s, 2.34, [('자재 표면', '높이 편차 200 µm'), ('FS2404-2', 'Confocal 프로브'),
                 ('IFC2421', '0–10 V = 0–2 mm'), ('SIO-AI8F', '8채널 아날로그 입력'),
@@ -713,6 +806,7 @@ footnote(s, '최소 0.677 · 최대 1.960 · 피크 대 피크 1.283 mm 가 로�
 
 # ================================================================ 14. Z축 구동 능력
 s = new('Z축 구동 능력 — 병목은 구동이 아니다')
+kicker(s, '표 읽는 법 — 1 ms 사이에 표면이 그만큼 변할 때 Z축에 필요한 가속도·속도다. 현재 설정이 어디까지 감당하는지를 본다')
 T92 = [('20 pulse', '2 µm/ms', '40,000,000', '20,000', '5배 여유'),
        ('40 pulse', '4 µm/ms', '80,000,000', '40,000', '2.5배 여유'),
        ('60 pulse', '6 µm/ms', '120,000,000', '60,000', '1.7배 여유'),
@@ -913,9 +1007,57 @@ para_block(s, 0.95, 6.56, CW - 0.10, 0.40, [
          size=9.5, color=INK_SOFT, line_pct=118)])
 
 # ================================================================ 마무리
+ORDER = [
+    '목차',
+    '이 장비가 하는 일 — 움직이면서 초점을 맞춰 찍는다',
+    '피드포워드 정의 — 보기 전에 고치는 제어',
+    '개발 배경 및 개발 목적',
+    '기존 동축 방식의 구조적 한계',
+    '피드포워드 전환 — 선행 측정 구조',
+    '핵심 성과 지표',
+    '촬상 광학 헤드와 조명',
+    '시스템 구성 — 측정 경로와 지령 경로',
+    'Z축 구동 능력 — 병목은 구동이 아니다',
+    '운용 화면 — 설정값과 리포트 상수의 대조',
+    '제어 주기 실측 검증 — 500 µs',
+    '반주기 선보정 — 코드 한 줄로 Δt 절반',
+    '지연 상수 906.25 ms 의 유도',
+    '지연 오차 예산 — 성분과 보상 상태',
+    '추종 가능한 최대 높이 변화율',
+    '오차 예산과 D.O.F. 판정',
+    '자재 단차 대응과 초기 위치 정렬',
+    '촬상 영역 상세 — 평탄–딥 구조의 실체',
+    '센서 실측 신호 — 평탄부 · 딥 · 무신호',
+    '측정된 패턴 — 추종 대상과 기각 대상',
+    '전압 · 지령 궤적 — 같은 곡선이 901.5 ms 뒤에 나간다',
+    '실측 로그 검증 — 36,472행 · 6.9 MB',
+    '종합 판정 — 현 요구 충족',
+    '피드포워드 파급 효과 및 확장 가능성',
+]
+RANK = {t: i for i, t in enumerate(ORDER)}
+
+def slide_title(sl):
+    for sh in sl.shapes:
+        if sh.has_text_frame:
+            t = sh.text_frame.text.strip()
+            if t in RANK:
+                return t
+    return None
+
 lst = prs.slides._sldIdLst
-el = list(lst)[1]                    # '감사 합니다' 슬라이드를 맨 뒤로
-lst.remove(el); lst.append(el)
+pairs = list(zip(list(lst), list(prs.slides)))
+cover_el, thanks_el = pairs[0][0], pairs[1][0]   # 표지 · '감사 합니다'
+body = pairs[2:]
+missing = [p for p in body if slide_title(p[1]) is None]
+assert not missing, '제목을 ORDER 에서 찾지 못한 슬라이드가 있다'
+assert len(body) == len(ORDER), '본문 수(%d)와 ORDER(%d) 가 다르다' % (len(body), len(ORDER))
+body.sort(key=lambda p: RANK[slide_title(p[1])])
+for el, _ in pairs:
+    lst.remove(el)
+lst.append(cover_el)
+for el, _ in body:
+    lst.append(el)
+lst.append(thanks_el)
 
 micro_fix_all(prs)                   # 제목의 µ 가 □ 로 떨어지지 않게
 
