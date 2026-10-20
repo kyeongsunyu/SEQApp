@@ -480,7 +480,8 @@ para_block(s, 0.95, 6.12, CW, 0.86, [
 s = new('운용 화면 — 설정값과 리포트 상수의 대조')
 kicker(s, 'AutoFocusProject 실행 화면 · Position 0.1 µm = 1 pulse · Velocity 0.1 µm/s · Acc/Dec 0.1 µm/s² — '
           '화면의 모든 수치가 이 단위계다')
-s.shapes.add_picture(asset('af-ui.png'), Inches(0.95), Inches(2.05), height=Inches(4.70))
+s.shapes.add_picture(asset('af-ui.png'), Inches(0.95), Inches(2.05), height=Inches(4.62))
+cap_under(s, 0.95, 6.70, 3.70, '화면은 설정 변경 전 캡처 — Vel 은 현재 150,000', 9.5)
 TUI = [('Delay Time (ms)', '906.250', '72.5 mm ÷ 80 mm/s', False),
        ('Lead Control', '사용', 'Z축 이동시간만큼 선행 지령', False),
        ('Deadband / Filter', '사용 / 사용', '±5 mV(±1 µm) · IIR α 0.10', False),
